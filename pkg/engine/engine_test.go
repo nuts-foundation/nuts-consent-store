@@ -63,7 +63,7 @@ func TestDefaultConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 	t.Run("Authorize non-existing consent returns false", func(t *testing.T) {
 
 		rule := pkg.ConsentRule{
-				Actor: "actor",
+				Actor: "actor2",
 				Custodian: "custodian",
 				Subject: "subject",
 				Resources: []pkg.Resource{

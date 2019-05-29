@@ -271,7 +271,8 @@ func (cs *DefaultConsentStore) ConsentAuth(context context.Context, consentRule 
 		Subject: consentRule.Subject,
 	}
 
-	if err := cs.db.Table("consent_rule").Where(copy).Preload("Resources").First(&target).Error; err != nil {
+	// this will always fill target, but if a record does not exist, resources will be empty
+	if err := cs.db.Table("consent_rule").Where(copy).Preload("Resources").FirstOrInit(&target).Error; err != nil {
 		return false, err
 	}
 
