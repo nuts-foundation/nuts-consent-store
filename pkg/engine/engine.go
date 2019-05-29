@@ -33,10 +33,10 @@ import (
 	"github.com/nuts-foundation/nuts-consent-store/migrations"
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
 	"github.com/nuts-foundation/nuts-consent-store/pkg/generated"
-	types "github.com/nuts-foundation/nuts-crypto/pkg"
 	engine "github.com/nuts-foundation/nuts-go/pkg"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go/types"
 	"strings"
 	"sync"
 )
@@ -299,6 +299,7 @@ func (cs *DefaultConsentStore) RecordConsent(context context.Context, consent []
 	}()
 
 	if err := tx.Error; err != nil {
+		tx.Rollback()
 		return err
 	}
 
@@ -311,11 +312,13 @@ func (cs *DefaultConsentStore) RecordConsent(context context.Context, consent []
 
 		// first check if a consent record exists for subject, custodian and actor, if not create
 		if err := tx.Where(tcr).FirstOrCreate(&tcr).Error; err != nil {
+			tx.Rollback()
 			return err
 		}
 
 		tcr.Resources = cr.Resources
 		if err := tx.Save(&tcr).Error; err != nil {
+			tx.Rollback()
 			return err
 		}
 	}
