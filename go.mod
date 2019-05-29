@@ -6,6 +6,7 @@ require (
 	github.com/deepmap/oapi-codegen v1.1.3
 	github.com/getkin/kin-openapi v0.2.0
 	github.com/golang-migrate/migrate/v4 v4.3.1
+	github.com/golang/mock v1.3.1
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jinzhu/gorm v1.9.8
 	github.com/labstack/echo/v4 v4.1.5
