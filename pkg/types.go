@@ -70,8 +70,8 @@ func ResourcesFromStrings(list []string) []Resource {
 func resourceJoin(slice []Resource, sep string) string {
 	a := make([]string, len(slice))
 
-	for _, r := range slice {
-		a = append(a, r.ResourceType)
+	for i, r := range slice {
+		a[i] = r.ResourceType
 	}
 
 	return strings.Join(a, sep)

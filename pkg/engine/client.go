@@ -33,7 +33,7 @@ type ConsentStoreClient interface {
 	// QueryConsentForActor can be used to perform full text searches on the backend. Scoped on actor only.
 	QueryConsentForActor(context context.Context, actor string, query string) ([]pkg.ConsentRule, error)
 	// QueryConsentForActorAndSubject can be used to list the custodians and resources for a given Actor and Subject.
-	QueryConsentForActorAndSubject(context context.Context, subject string, actor string) ([]pkg.ConsentRule, error)
+	QueryConsentForActorAndSubject(context context.Context, actor string, subject string) ([]pkg.ConsentRule, error)
 }
 
 func NewConsentStoreClient() ConsentStoreClient {

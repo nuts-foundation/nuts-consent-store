@@ -21,7 +21,6 @@ package engine
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/golang-migrate/migrate/v4"
@@ -30,7 +29,6 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/go_bindata"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
-	"github.com/labstack/echo/v4"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/nuts-foundation/nuts-consent-store/migrations"
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
@@ -39,8 +37,6 @@ import (
 	engine "github.com/nuts-foundation/nuts-go/pkg"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"io/ioutil"
-	"net/http"
 	"strings"
 	"sync"
 )
@@ -54,6 +50,8 @@ type ConsentStoreEngine interface {
 type DefaultConsentStore struct {
 	connectionString string
 	db              *gorm.DB
+
+	configOnce sync.Once
 }
 
 var instance *DefaultConsentStore
@@ -186,13 +184,10 @@ func (cs *DefaultConsentStore) Cmd() *cobra.Command {
 	return cmd
 }
 
-var configOnce sync.Once
-var ConfigDone bool
-
 func (cs *DefaultConsentStore) Configure() error {
 	var err error
 
-	configOnce.Do(func() {
+	cs.configOnce.Do(func() {
 		db, err := sql.Open("sqlite3", cs.connectionString)
 		if err != nil {
 			return
@@ -270,8 +265,13 @@ func (cs *DefaultConsentStore) Start() error {
 
 func (cs *DefaultConsentStore) ConsentAuth(context context.Context, consentRule pkg.ConsentRule, resourceType string) (bool, error) {
 	target := &pkg.ConsentRule{}
+	copy := pkg.ConsentRule{
+		Actor: consentRule.Actor,
+		Custodian: consentRule.Custodian,
+		Subject: consentRule.Subject,
+	}
 
-	if err := cs.db.Table("consent_rule").Where(consentRule).Preload("Resources").First(&target).Error; err != nil {
+	if err := cs.db.Table("consent_rule").Where(copy).Preload("Resources").First(&target).Error; err != nil {
 		return false, err
 	}
 
@@ -325,141 +325,19 @@ func (cs *DefaultConsentStore) RecordConsent(context context.Context, consent []
 func (cs *DefaultConsentStore) QueryConsentForActor(context context.Context, actor string, query string) ([]pkg.ConsentRule, error) {
 	var rules []pkg.ConsentRule
 
-	if err := cs.db.Where("Actor = ?", actor).Preload("Resource").Find(&rules).Error; err != nil {
+	if err := cs.db.Where("Actor = ?", actor).Preload("Resources").Find(&rules).Error; err != nil {
 		return nil, err
 	}
 
 	return rules, nil
 }
 
-func (cs *DefaultConsentStore) QueryConsentForActorAndSubject(context context.Context, subject string, actor string) ([]pkg.ConsentRule, error) {
+func (cs *DefaultConsentStore) QueryConsentForActorAndSubject(context context.Context, actor string, subject string) ([]pkg.ConsentRule, error) {
 	var rules []pkg.ConsentRule
 
-	if err := cs.db.Where("Actor = ? AND Subject = ?", actor, subject).Preload("Resource").Find(&rules).Error; err != nil {
+	if err := cs.db.Where("Actor = ? AND Subject = ?", actor, subject).Preload("Resources").Find(&rules).Error; err != nil {
 		return nil, err
 	}
 
 	return rules, nil
-}
-
-func (cs *DefaultConsentStore) CreateConsent(ctx echo.Context) error {
-	buf, err := ioutil.ReadAll(ctx.Request().Body)
-	if err != nil {
-		return err
-	}
-
-	var createRequest = &generated.SimplifiedConsent{}
-	err = json.Unmarshal(buf, createRequest)
-
-	if len(createRequest.Subject) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "missing subject in createRequest")
-	}
-
-	if len(createRequest.Custodian) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "missing custodian in createRequest")
-	}
-
-	if len(createRequest.Actors) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "missing actors in createRequest")
-	}
-
-	if len(createRequest.Resources) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "missing resources in createRequest")
-	}
-
-	err = cs.RecordConsent(ctx.Request().Context(), createRequest.ToConsentRule())
-
-	if err != nil {
-		return err
-	}
-
-	return ctx.NoContent(201)
-}
-
-func (cs *DefaultConsentStore) CheckConsent(ctx echo.Context) error {
-	buf, err := ioutil.ReadAll(ctx.Request().Body)
-	if err != nil {
-		return err
-	}
-
-	var checkRequest = &generated.ConsentCheckRequest{}
-	err = json.Unmarshal(buf, checkRequest)
-
-	if len(checkRequest.Subject) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "missing subject in checkRequest")
-	}
-
-	if len(checkRequest.Custodian) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "missing custodian in checkRequest")
-	}
-
-	if len(checkRequest.Actor) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "missing actor in checkRequest")
-	}
-
-	if len(checkRequest.ResourceType) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "missing resourceType in checkRequest")
-	}
-
-	cr := checkRequest.ToConsentRule()
-	cr.Resources = nil
-	auth, err := cs.ConsentAuth(ctx.Request().Context(), cr, checkRequest.ResourceType)
-
-	if err != nil {
-		return err
-	}
-
-	authValue := "no"
-	if auth {
-		authValue = "true"
-	}
-
-	checkResponse := generated.ConsentCheckResponse{
-		ConsentGiven: &authValue,
-	}
-
-	return ctx.JSON(200, checkResponse)
-}
-
-func (cs *DefaultConsentStore) QueryConsent(ctx echo.Context) error {
-	buf, err := ioutil.ReadAll(ctx.Request().Body)
-	if err != nil {
-		return err
-	}
-
-	var checkRequest = &generated.ConsentQueryRequest{}
-	err = json.Unmarshal(buf, checkRequest)
-
-	if len(checkRequest.Actor) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "missing actor in queryRequest")
-	}
-
-	query := checkRequest.Query.(string)
-
-	if len(query) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "missing query in queryRequest")
-	}
-
-	var rules []pkg.ConsentRule
-
-	if strings.Index(query, "urn") == 0 {
-		rules, err = cs.QueryConsentForActorAndSubject(ctx.Request().Context(), query, string(checkRequest.Actor))
-	} else {
-		rules, err = cs.QueryConsentForActor(ctx.Request().Context(), string(checkRequest.Actor), query)
-	}
-
-	if err != nil {
-		return err
-	}
-
-	results, err := generated.FromSimplifiedConsentRule(rules)
-
-	if err != nil {
-		return err
-	}
-
-	return ctx.JSON(200,
-		generated.ConsentQueryResponse{
-			Results: results,
-		})
 }
