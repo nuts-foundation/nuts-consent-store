@@ -18,7 +18,9 @@
 
 package pkg
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestConsentRule_String(t *testing.T) {
 	t.Run("outputs string representation of model", func(t *testing.T) {
@@ -49,4 +51,57 @@ func TestResource_String(t *testing.T) {
 			t.Errorf("Expected resources, Got [%s]", out)
 		}
 	})
+}
+
+func TestConsentRule_SameTriple(t *testing.T) {
+	t.Run("returns true for same Actor, Custodian and Subject", func(t *testing.T) {
+		if !testConsent().SameTriple(testConsent()) {
+			t.Errorf("Expected structs to be the same")
+		}
+	})
+
+	t.Run("ignores resources", func(t *testing.T) {
+		other := testConsent()
+		other.Resources = nil
+
+		if !testConsent().SameTriple(other) {
+			t.Errorf("Expected structs to be the same")
+		}
+	})
+
+	t.Run("returns false for different actor", func(t *testing.T) {
+		other := testConsent()
+		other.Actor = ""
+
+		if testConsent().SameTriple(other) {
+			t.Errorf("Expected structs to be different")
+		}
+	})
+
+	t.Run("returns false for different Custodian", func(t *testing.T) {
+		other := testConsent()
+		other.Custodian = ""
+
+		if testConsent().SameTriple(other) {
+			t.Errorf("Expected structs to be different")
+		}
+	})
+
+	t.Run("returns false for different Subject", func(t *testing.T) {
+		other := testConsent()
+		other.Subject = ""
+
+		if testConsent().SameTriple(other) {
+			t.Errorf("Expected structs to be different")
+		}
+	})
+}
+
+func testConsent() *ConsentRule {
+	return &ConsentRule{
+		Actor: "actor",
+		Custodian: "custodian",
+		Subject: "subject",
+		Resources: []Resource{{ResourceType:"resource"}},
+	}
 }

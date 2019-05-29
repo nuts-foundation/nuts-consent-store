@@ -50,6 +50,7 @@ func (se *ConsentRule) String() string {
 	return fmt.Sprintf("%s@%s for %s: %s", se.Subject, se.Custodian, se.Actor, resourceJoin(se.Resources, ","))
 }
 
+// SameTriple compares this ConsentRule with another one on just Actor, Custiodian and Subject
 func (se *ConsentRule) SameTriple(other *ConsentRule) bool {
 	return se.Subject == other.Subject && se.Custodian == other.Custodian && se.Actor == other.Actor
 }
