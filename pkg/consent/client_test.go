@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package engine
+package consent
 
 import (
 	"reflect"
@@ -24,11 +24,11 @@ import (
 )
 
 func TestNewConsentStoreClient(t *testing.T) {
-	t.Run("returns defaultCryptoEngine by default", func(t *testing.T) {
+	t.Run("returns DefaultConsentStore by default", func(t *testing.T) {
 		cc := NewConsentStoreClient()
 
-		if reflect.TypeOf(cc).String() != "*engine.DefaultConsentStore" {
-			t.Errorf("Expected CryptoClient to be of type *engine.DefaultConsentStore, got %s", reflect.TypeOf(cc))
+		if reflect.TypeOf(cc).String() != "*consent.DefaultConsentStore" {
+			t.Errorf("Expected CLient to be of type *consent.DefaultConsentStore, got %s", reflect.TypeOf(cc))
 		}
 	})
 }

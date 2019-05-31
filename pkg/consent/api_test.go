@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package engine
+package consent
 
 import (
 	"bytes"
@@ -34,7 +34,7 @@ func TestDefaultConsentStore_CheckConsent(t *testing.T) {
 }
 
 func TestDefaultConsentStore_CreateConsent(t *testing.T) {
-	client := createTempEngine()
+	client := defaultConsentStore()
 	defer client.Shutdown()
 
 	t.Run("API call returns 201 Created", func(t *testing.T) {

@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package engine
+package consent
 
 import (
 	"context"
@@ -25,7 +25,7 @@ import (
 )
 
 func TestDefaultConsentStore_RecordConsent_AuthConsent(t *testing.T) {
-	client := createTempEngine()
+	client := defaultConsentStore()
 	defer client.Shutdown()
 
 	t.Run("Recorded consent can be authorized against", func(t *testing.T) {
@@ -86,7 +86,7 @@ func TestDefaultConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 }
 
 func TestDefaultConsentStore_QueryConsentForActor(t *testing.T) {
-	client := createTempEngine()
+	client := defaultConsentStore()
 	defer client.Shutdown()
 
 	rules := []pkg.ConsentRule{
@@ -140,7 +140,7 @@ func TestDefaultConsentStore_QueryConsentForActor(t *testing.T) {
 }
 
 func TestDefaultConsentStore_QueryConsentForActorAndSubject(t *testing.T) {
-	client := createTempEngine()
+	client := defaultConsentStore()
 	defer client.Shutdown()
 
 	rules := []pkg.ConsentRule{
@@ -193,7 +193,7 @@ func TestDefaultConsentStore_QueryConsentForActorAndSubject(t *testing.T) {
 	})
 }
 
-func createTempEngine() DefaultConsentStore {
+func defaultConsentStore() DefaultConsentStore {
 	client := DefaultConsentStore{
 		connectionString: ":memory:",
 	}

@@ -21,25 +21,25 @@ package cmd
 import (
 	goflag "flag"
 	"github.com/labstack/echo/v4"
-	"github.com/nuts-foundation/nuts-consent-store/pkg/engine"
+	"github.com/nuts-foundation/nuts-consent-store/pkg/consent"
 	"github.com/nuts-foundation/nuts-consent-store/pkg/generated"
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 )
 
-var e = engine.NewConsentStoreEngine()
-var rootCmd = e.Cmd()
+var engine = consent.NewConsentStoreEngine()
+var rootCmd = engine.Cmd
 
 func Execute() {
 	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
-	goflag.Parse()
+	flag.Parse()
 
-	if err := e.Configure(); err != nil {
+	if err := engine.Configure(); err != nil {
 		panic(err)
 	}
 
 	// todo: as standalone, for now do it here
-	if err := e.Start(); err != nil {
+	if err := engine.Start(); err != nil {
 		panic(err)
 	}
 
@@ -50,7 +50,7 @@ func Execute() {
 
 			// start webserver
 			e := echo.New()
-			generated.RegisterHandlers(e, engine.NewConsentStoreEngine())
+			generated.RegisterHandlers(e, consent.ConsentStore())
 			e.Logger.Fatal(e.Start(":1323"))
 		},
 	})
@@ -60,7 +60,7 @@ func Execute() {
 	rootCmd.Execute()
 
 	// todo: as standalone, for now do it here
-	if err := e.Shutdown(); err != nil {
+	if err := engine.Shutdown(); err != nil {
 		panic(err)
 	}
 }

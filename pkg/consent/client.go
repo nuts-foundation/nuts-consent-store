@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package engine
+package consent
 
 import (
 	"context"
@@ -37,5 +37,5 @@ type ConsentStoreClient interface {
 }
 
 func NewConsentStoreClient() ConsentStoreClient {
-	return NewConsentStoreEngine()
+	return ConsentStore()
 }

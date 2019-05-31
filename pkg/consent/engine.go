@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package engine
+package consent
 
 import (
 	"context"
@@ -35,39 +35,26 @@ import (
 	"github.com/nuts-foundation/nuts-consent-store/pkg/generated"
 	engine "github.com/nuts-foundation/nuts-go/pkg"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"go/types"
 	"strings"
-	"sync"
 )
 
-type ConsentStoreEngine interface {
-	ConsentStoreClient
-	generated.ServerInterface
-	engine.Engine
+func NewConsentStoreEngine() *engine.Engine {
+	cs := ConsentStore()
+
+	return &engine.Engine{
+		Name: "ConsentStore",
+		Cmd: Cmd(),
+		Configure: cs.Configure,
+		Routes: func(router runtime.EchoRouter) {
+			generated.RegisterHandlers(router, cs)
+		},
+		Start: cs.Start,
+		Shutdown: cs.Shutdown,
+	}
 }
 
-type DefaultConsentStore struct {
-	connectionString string
-	db              *gorm.DB
-
-	configOnce sync.Once
-}
-
-var instance *DefaultConsentStore
-var oneEngine sync.Once
-
-func NewConsentStoreEngine() ConsentStoreEngine {
-	oneEngine.Do(func() {
-		instance = &DefaultConsentStore{
-			connectionString: "file:test.db?cache=shared",
-		}
-	})
-
-	return instance
-}
-
-func (cs *DefaultConsentStore) Cmd() *cobra.Command {
+func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "consent-store",
 		Short: "consent store commands",
@@ -242,14 +229,6 @@ func runMigrations(db *sql.DB) error {
 	return nil
 }
 
-func (cs *DefaultConsentStore) FlagSet() *pflag.FlagSet {
-	return pflag.NewFlagSet("consent-store", pflag.ContinueOnError)
-}
-
-func (cs *DefaultConsentStore) Routes(router runtime.EchoRouter) {
-	generated.RegisterHandlers(router, cs)
-}
-
 func (cs *DefaultConsentStore) Shutdown() error {
 	return cs.db.Close()
 }
@@ -263,85 +242,3 @@ func (cs *DefaultConsentStore) Start() error {
 	return err
 }
 
-func (cs *DefaultConsentStore) ConsentAuth(context context.Context, consentRule pkg.ConsentRule, resourceType string) (bool, error) {
-	target := &pkg.ConsentRule{}
-	copy := pkg.ConsentRule{
-		Actor: consentRule.Actor,
-		Custodian: consentRule.Custodian,
-		Subject: consentRule.Subject,
-	}
-
-	// this will always fill target, but if a record does not exist, resources will be empty
-	if err := cs.db.Table("consent_rule").Where(copy).Preload("Resources").FirstOrInit(&target).Error; err != nil {
-		return false, err
-	}
-
-	var resources []pkg.Resource
-	cs.db.Find(&resources)
-
-	for _, n := range target.Resources {
-		if resourceType == n.ResourceType {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-func (cs *DefaultConsentStore) RecordConsent(context context.Context, consent []pkg.ConsentRule) error {
-
-	// start transaction
-	tx := cs.db.Begin()
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		}
-	}()
-
-	if err := tx.Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	for _, cr := range consent {
-		tcr :=  pkg.ConsentRule{
-			Actor: cr.Actor,
-			Custodian: cr.Custodian,
-			Subject: cr.Subject,
-		}
-
-		// first check if a consent record exists for subject, custodian and actor, if not create
-		if err := tx.Where(tcr).FirstOrCreate(&tcr).Error; err != nil {
-			tx.Rollback()
-			return err
-		}
-
-		tcr.Resources = cr.Resources
-		if err := tx.Save(&tcr).Error; err != nil {
-			tx.Rollback()
-			return err
-		}
-	}
-
-	return tx.Commit().Error
-}
-
-func (cs *DefaultConsentStore) QueryConsentForActor(context context.Context, actor string, query string) ([]pkg.ConsentRule, error) {
-	var rules []pkg.ConsentRule
-
-	if err := cs.db.Where("Actor = ?", actor).Preload("Resources").Find(&rules).Error; err != nil {
-		return nil, err
-	}
-
-	return rules, nil
-}
-
-func (cs *DefaultConsentStore) QueryConsentForActorAndSubject(context context.Context, actor string, subject string) ([]pkg.ConsentRule, error) {
-	var rules []pkg.ConsentRule
-
-	if err := cs.db.Where("Actor = ? AND Subject = ?", actor, subject).Preload("Resources").Find(&rules).Error; err != nil {
-		return nil, err
-	}
-
-	return rules, nil
-}
