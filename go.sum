@@ -150,6 +150,7 @@ github.com/mitchellh/mapstructure v1.1.2/go.mod h1:FVVH3fgwuzCH5S8UJGiWEs2h04kUh
 github.com/mongodb/mongo-go-driver v0.3.0/go.mod h1:NK/HWDIIZkaYsnYa0hmtP443T5ELr0KDecmIioVuuyU=
 github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223/go.mod h1:qRWi+5nqEBWmkhHvq77mSJWrCKwh8bxhgT7d/eI7P4U=
 github.com/nakagami/firebirdsql v0.0.0-20190310045651-3c02a58cfed8/go.mod h1:86wM1zFnC6/uDBfZGNwB65O+pR2OFi5q/YQaEUid1qA=
+github.com/nuts-foundation/nuts-consent-store v0.0.0-20190531121055-813c27871b00/go.mod h1:i4OnsWdK5qN+pPsxCrky0fHeSFsvQtYANbp0+XyXPF8=
 github.com/nuts-foundation/nuts-crypto v0.0.0-20190514100741-540cb973b331/go.mod h1:WYfWFdU0lVkXCBuNNPAPfo6y6xwIEzMpLp3CkfTEto4=
 github.com/nuts-foundation/nuts-crypto v0.0.0-20190514100741-dc8c617c35ac h1:8fcbL6VnM/B+atodRrMgPKWj0iWyMrXn9dfXlMZqiSE=
 github.com/nuts-foundation/nuts-crypto v0.0.0-20190514100741-dc8c617c35ac/go.mod h1:odRVRQSK5zrUkhs+ihcNInvhoAg+SKGEuGWDVrZ7CNA=
@@ -160,6 +161,9 @@ github.com/nuts-foundation/nuts-crypto v0.0.0-20190531110500-401151a27ad2/go.mod
 github.com/nuts-foundation/nuts-fhir-validation v0.0.0-20190531100010-e2c4af6ddd70/go.mod h1:3r14ATalZl+oYGJMEY6/VMmfbGKeWsK7Hitk46ZRiMg=
 github.com/nuts-foundation/nuts-fhir-validation v0.0.0-20190531110356-a3f95f1f47e7 h1:cw5yDrByDM+/0XCZXLCQAa/E+Zrg4uMSR+4Sgs0YuXk=
 github.com/nuts-foundation/nuts-fhir-validation v0.0.0-20190531110356-a3f95f1f47e7/go.mod h1:JXaIzFk8Dhj8atfj1Ipz1pwSQcn8pE0mX3msL4Lkjjc=
+github.com/nuts-foundation/nuts-fhir-validation v0.0.0-20190603114731-170e4d0f8c22/go.mod h1:JXaIzFk8Dhj8atfj1Ipz1pwSQcn8pE0mX3msL4Lkjjc=
+github.com/nuts-foundation/nuts-fhir-validation v0.0.0-20190604083237-b02c5fce77f0 h1:jnwvbay18X8GDzSzO+Z/B1BUmhjRKXb9tyRAnGfqRG8=
+github.com/nuts-foundation/nuts-fhir-validation v0.0.0-20190604083237-b02c5fce77f0/go.mod h1:7MwO8BYMikiJq87pbu1Hh5Wi0pvzfkFTaZS0W484mRc=
 github.com/nuts-foundation/nuts-go v0.0.0-20190513130535-6db5fc9f485ca/go.mod h1:vDPY3Qk0A8DfztMw9LukSk60hgG1BpaBV6bhGB/c6rc=
 github.com/nuts-foundation/nuts-go v0.0.0-20190513130535-ed32562df4321/go.mod h1:t2PnZu3V0wFlv2npZvXEC7jhrpDViEGrMYhYy/FMh0U=
 github.com/nuts-foundation/nuts-go v0.0.0-20190514111850-44f591ad8ca4 h1:Vk1FWAgKJgyIpcwFo6KmTrktm/awVfMnvX7Xm203AkI=
@@ -168,6 +172,9 @@ github.com/nuts-foundation/nuts-go v0.0.0-20190531091145-8849e4f78c5a/go.mod h1:
 github.com/nuts-foundation/nuts-go v0.0.0-20190531110251-4cdd6f59cf74/go.mod h1:pgQb/sYzpjTTOLGWhZkUzIepFMQk10LQD0We/en3rAg=
 github.com/nuts-foundation/nuts-go v0.0.0-20190531110941-7bd66b2a4cfb h1:Qp59Qsk8OVcCo+ix7SXs4p0uwiVyMWwEzXfcxsHMy/A=
 github.com/nuts-foundation/nuts-go v0.0.0-20190531110941-7bd66b2a4cfb/go.mod h1:DKfoD7i0DzeSzOE88mW9+owHiVrrqxLlS93exa+ezBQ=
+github.com/nuts-foundation/nuts-go v0.0.0-20190603140836-fb0085c3f6a1/go.mod h1:bLcIHPwO8W6uca+zxdPYnzWduqhXWRenBCwwAPrGJXI=
+github.com/nuts-foundation/nuts-go v0.0.0-20190604083459-ab133b67da9b h1:p165hYGFngnIT8BNZXnm7cCEVWmRFMNArLxLMuGViTE=
+github.com/nuts-foundation/nuts-go v0.0.0-20190604083459-ab133b67da9b/go.mod h1:aJy0yVan+hdcaNA5IkJYeO70bmwrvhjW3pbaxjGmYa0=
 github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.7.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/gomega v1.4.3/go.mod h1:ex+gbHU/CVuBBDIJjb2X0qEXbFg53c61hWP/1CpauHY=
@@ -192,6 +199,7 @@ github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a/go.mod h1:bCqn
 github.com/satori/go.uuid v1.2.0/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=
 github.com/shopspring/decimal v0.0.0-20180709203117-cd690d0c9e24/go.mod h1:M+9NzErvs504Cn4c5DxATwIqPbtswREoFCre64PpcG4=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
+github.com/sirupsen/logrus v1.4.1 h1:GL2rEmy6nsikmW0r8opw9JIRScdMF5hA8cOYLH7In1k=
 github.com/sirupsen/logrus v1.4.1/go.mod h1:ni0Sbl8bgC9z8RoU9G6nDWqqs/fq4eDPysMBDgk/93Q=
 github.com/spf13/afero v1.1.2 h1:m8/z1t7/fwjysjQRYbP0RD+bUIF/8tJwPdEZsI83ACI=
 github.com/spf13/afero v1.1.2/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=

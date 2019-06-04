@@ -28,11 +28,14 @@ import (
 	"sync"
 )
 
+type consentStoreConfig struct{}
+
 type DefaultConsentStore struct {
 	connectionString string
 	db              *gorm.DB
 
 	configOnce sync.Once
+	Config consentStoreConfig
 }
 
 var instance *DefaultConsentStore

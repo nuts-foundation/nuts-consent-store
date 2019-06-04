@@ -21,7 +21,6 @@ package consent
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
@@ -34,6 +33,7 @@ import (
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
 	"github.com/nuts-foundation/nuts-consent-store/pkg/generated"
 	engine "github.com/nuts-foundation/nuts-go/pkg"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"go/types"
 	"strings"
@@ -46,6 +46,8 @@ func NewConsentStoreEngine() *engine.Engine {
 		Name: "ConsentStore",
 		Cmd: Cmd(),
 		Configure: cs.Configure,
+		Config: &cs.Config,
+		ConfigKey: "cstore",
 		Routes: func(router runtime.EchoRouter) {
 			generated.RegisterHandlers(router, cs)
 		},
@@ -87,14 +89,14 @@ func Cmd() *cobra.Command {
 			}
 
 			if err != nil {
-				fmt.Printf("Error finding consent records: %s\n", err.Error())
+				logrus.Errorf("Error finding consent records: %s\n", err.Error())
 				return
 			}
 
-			fmt.Printf("Found %d records", len(consentList))
-			println()
+			logrus.Errorf("Found %d records\n\n", len(consentList))
+
 			for _, c := range consentList {
-				fmt.Println(c.String())
+				logrus.Errorln(c.String())
 			}
 		},
 	})
@@ -126,11 +128,11 @@ func Cmd() *cobra.Command {
 			})
 
 			if err != nil {
-				fmt.Printf("Error recording consent: %s\n", err.Error())
+				logrus.Errorf("Error recording consent: %s\n", err.Error())
 				return
 			}
 
-			fmt.Println("Consent recorded")
+			logrus.Errorln("Consent recorded")
 		},
 	})
 
@@ -156,14 +158,14 @@ func Cmd() *cobra.Command {
 			}, args[3])
 
 			if err != nil {
-				fmt.Printf("Error checking consent: %s", err.Error())
+				logrus.Errorf("Error checking consent: %s", err.Error())
 				return
 			}
 
 			if auth {
-				fmt.Println("Consent given")
+				logrus.Errorln("Consent given")
 			} else {
-				fmt.Println("No consent given")
+				logrus.Errorln("No consent given")
 			}
 		},
 	})
