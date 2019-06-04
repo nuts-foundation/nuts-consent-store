@@ -16,47 +16,51 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package consent
+package engine
 
 import (
 	"context"
-	"database/sql"
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
-	"github.com/golang-migrate/migrate/v4/source/go_bindata"
-	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/nuts-foundation/nuts-consent-store/migrations"
+	"github.com/nuts-foundation/nuts-consent-store/api"
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
-	"github.com/nuts-foundation/nuts-consent-store/pkg/generated"
 	engine "github.com/nuts-foundation/nuts-go/pkg"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"go/types"
 	"strings"
 )
 
 func NewConsentStoreEngine() *engine.Engine {
-	cs := ConsentStore()
+	cs := pkg.ConsentStoreInstance()
 
 	return &engine.Engine{
-		Name: "ConsentStore",
-		Cmd: Cmd(),
+		Name:      "ConsentStoreInstance",
+		Cmd:       cmd(),
 		Configure: cs.Configure,
-		Config: &cs.Config,
+		Config:    &cs.Config,
 		ConfigKey: "cstore",
+		FlagSet:   flagSet(),
 		Routes: func(router runtime.EchoRouter) {
-			generated.RegisterHandlers(router, cs)
+			api.RegisterHandlers(router, &api.ApiWrapper{Cs: cs})
 		},
 		Start: cs.Start,
 		Shutdown: cs.Shutdown,
 	}
 }
 
-func Cmd() *cobra.Command {
+func flagSet() *pflag.FlagSet {
+	flags := pflag.NewFlagSet("cstore", pflag.ContinueOnError)
+
+	flags.String(pkg.ConfigConnectionString, pkg.ConfigConnectionStringDefault, "Db connectionString")
+
+	return flags
+}
+
+func cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "consent-store",
 		Short: "consent store commands",
@@ -75,7 +79,7 @@ func Cmd() *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			csc := NewConsentStoreClient()
+			csc := pkg.NewConsentStoreClient()
 
 			var (
 				consentList []pkg.ConsentRule
@@ -114,7 +118,7 @@ func Cmd() *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			csc := NewConsentStoreClient()
+			csc := pkg.NewConsentStoreClient()
 
 			resources := pkg.ResourcesFromStrings(strings.Split(args[3], ","))
 
@@ -149,7 +153,7 @@ func Cmd() *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			csc := NewConsentStoreClient()
+			csc := pkg.NewConsentStoreClient()
 
 			auth, err := csc.ConsentAuth(context.TODO(), pkg.ConsentRule{
 				Subject:   args[0],
@@ -172,75 +176,3 @@ func Cmd() *cobra.Command {
 
 	return cmd
 }
-
-func (cs *DefaultConsentStore) Configure() error {
-	var err error
-
-	cs.configOnce.Do(func() {
-		db, err := sql.Open("sqlite3", cs.connectionString)
-		if err != nil {
-			return
-		}
-		defer db.Close()
-
-		// 1 ping
-		err = db.Ping()
-		if err != nil {
-			return
-		}
-
-		// migrate
-		err = runMigrations(db)
-		if err != nil {
-			return
-		}
-
-	})
-
-	return err
-}
-
-func runMigrations(db *sql.DB) error {
-	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
-
-	// wrap assets into Resource
-	s := bindata.Resource(migrations.AssetNames(),
-		func(name string) ([]byte, error) {
-			return migrations.Asset(name)
-		})
-
-	d, err := bindata.WithInstance(s)
-
-	if err != nil {
-		return err
-	}
-
-	// run migrations
-	m, err := migrate.NewWithInstance("go-bindata", d, "test", driver)
-
-	if err != nil {
-		return err
-	}
-
-	err = m.Up()
-
-	if err != nil && err.Error() != "no change" {
-		return err
-	}
-
-	return nil
-}
-
-func (cs *DefaultConsentStore) Shutdown() error {
-	return cs.db.Close()
-}
-
-func (cs *DefaultConsentStore) Start() error {
-	var err error
-
-	// gorm db connection
-	cs.db, err = gorm.Open("sqlite3", cs.connectionString)
-
-	return err
-}
-

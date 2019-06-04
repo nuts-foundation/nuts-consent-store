@@ -16,11 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package consent
+package pkg
 
 import (
 	"context"
-	"github.com/nuts-foundation/nuts-consent-store/pkg"
 	"testing"
 )
 
@@ -30,12 +29,12 @@ func TestDefaultConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 
 	t.Run("Recorded consent can be authorized against", func(t *testing.T) {
 
-		rules := []pkg.ConsentRule{
+		rules := []ConsentRule{
 			{
-				Actor: "actor",
+				Actor:     "actor",
 				Custodian: "custodian",
-				Subject: "subject",
-				Resources: []pkg.Resource{
+				Subject:   "subject",
+				Resources: []Resource{
 					{
 						ResourceType: "resource",
 					},
@@ -62,15 +61,15 @@ func TestDefaultConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 
 	t.Run("Authorize non-existing consent returns false", func(t *testing.T) {
 
-		rule := pkg.ConsentRule{
-				Actor: "actor2",
-				Custodian: "custodian",
-				Subject: "subject",
-				Resources: []pkg.Resource{
-					{
-						ResourceType: "resource",
-					},
+		rule := ConsentRule{
+			Actor:     "actor2",
+			Custodian: "custodian",
+			Subject:   "subject",
+			Resources: []Resource{
+				{
+					ResourceType: "resource",
 				},
+			},
 		}
 
 		auth, err := client.ConsentAuth(context.TODO(), rule, "resource")
@@ -89,22 +88,22 @@ func TestDefaultConsentStore_QueryConsentForActor(t *testing.T) {
 	client := defaultConsentStore()
 	defer client.Shutdown()
 
-	rules := []pkg.ConsentRule{
+	rules := []ConsentRule{
 		{
-			Actor: "actor",
+			Actor:     "actor",
 			Custodian: "custodian",
-			Subject: "subject",
-			Resources: []pkg.Resource{
+			Subject:   "subject",
+			Resources: []Resource{
 				{
 					ResourceType: "resource",
 				},
 			},
 		},
 		{
-			Actor: "actor2",
+			Actor:     "actor2",
 			Custodian: "custodian2",
-			Subject: "subject2",
-			Resources: []pkg.Resource{
+			Subject:   "subject2",
+			Resources: []Resource{
 				{
 					ResourceType: "resource2",
 				},
@@ -143,22 +142,22 @@ func TestDefaultConsentStore_QueryConsentForActorAndSubject(t *testing.T) {
 	client := defaultConsentStore()
 	defer client.Shutdown()
 
-	rules := []pkg.ConsentRule{
+	rules := []ConsentRule{
 		{
-			Actor: "actor",
+			Actor:     "actor",
 			Custodian: "custodian",
-			Subject: "subject",
-			Resources: []pkg.Resource{
+			Subject:   "subject",
+			Resources: []Resource{
 				{
 					ResourceType: "resource",
 				},
 			},
 		},
 		{
-			Actor: "actor2",
+			Actor:     "actor2",
 			Custodian: "custodian2",
-			Subject: "subject2",
-			Resources: []pkg.Resource{
+			Subject:   "subject2",
+			Resources: []Resource{
 				{
 					ResourceType: "resource2",
 				},
@@ -193,16 +192,18 @@ func TestDefaultConsentStore_QueryConsentForActorAndSubject(t *testing.T) {
 	})
 }
 
-func defaultConsentStore() DefaultConsentStore {
-	client := DefaultConsentStore{
-		connectionString: ":memory:",
+func defaultConsentStore() ConsentStore {
+	client := ConsentStore{
+		Config: ConsentStoreConfig{
+			Connectionstring: ":memory:",
+		},
 	}
 
 	if err := client.Start(); err != nil {
 		panic(err)
 	}
 
-	runMigrations(client.db.DB())
+	client.RunMigrations(client.Db.DB())
 
 	return client
 }

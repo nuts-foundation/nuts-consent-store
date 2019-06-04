@@ -16,13 +16,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package consent
+package api
 
 import (
 	"bytes"
 	"encoding/json"
 	"github.com/golang/mock/gomock"
-	"github.com/nuts-foundation/nuts-consent-store/pkg/generated"
+	"github.com/nuts-foundation/nuts-consent-store/pkg"
 	"github.com/nuts-foundation/nuts-go/mock"
 	"io/ioutil"
 	"net/http"
@@ -35,7 +35,7 @@ func TestDefaultConsentStore_CheckConsent(t *testing.T) {
 
 func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 	client := defaultConsentStore()
-	defer client.Shutdown()
+	defer client.Cs.Shutdown()
 
 	t.Run("API call returns 201 Created", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
@@ -59,7 +59,7 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 		echo := mock.NewMockContext(ctrl)
 
 		consent := testConsent()
-		consent.Actors = []generated.Identifier{}
+		consent.Actors = []Identifier{}
 
 		json, _ := json.Marshal(consent)
 		request := &http.Request{
@@ -132,17 +132,35 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 	})
 }
 
-func testConsent() generated.SimplifiedConsent {
-	return generated.SimplifiedConsent{
-		Actors: []generated.Identifier{
-			generated.Identifier("actor"),
+func testConsent() SimplifiedConsent {
+	return SimplifiedConsent{
+		Actors: []Identifier{
+			Identifier("actor"),
 		},
-		Custodian:generated.Identifier("custodian"),
-		Subject:generated.Identifier("subject"),
+		Custodian: Identifier("custodian"),
+		Subject:   Identifier("subject"),
 		Resources: []string{"resource"},
 	}
 }
 
 func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 
+}
+
+
+
+func defaultConsentStore() ApiWrapper {
+	client := pkg.ConsentStore{
+		Config: pkg.ConsentStoreConfig{
+			Connectionstring: ":memory:",
+		},
+	}
+
+	if err := client.Start(); err != nil {
+		panic(err)
+	}
+
+	client.RunMigrations(client.Db.DB())
+
+	return ApiWrapper{Cs: &client}
 }

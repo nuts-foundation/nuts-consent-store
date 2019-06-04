@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package consent
+package pkg
 
 import (
 	"reflect"
@@ -24,11 +24,11 @@ import (
 )
 
 func TestNewConsentStoreClient(t *testing.T) {
-	t.Run("returns DefaultConsentStore by default", func(t *testing.T) {
+	t.Run("returns ConsentStore by default", func(t *testing.T) {
 		cc := NewConsentStoreClient()
 
-		if reflect.TypeOf(cc).String() != "*consent.DefaultConsentStore" {
-			t.Errorf("Expected CLient to be of type *consent.DefaultConsentStore, got %s", reflect.TypeOf(cc))
+		if reflect.TypeOf(cc).String() != "*pkg.ConsentStore" {
+			t.Errorf("Expected Client to be of type *consent.ConsentStore, got %s", reflect.TypeOf(cc))
 		}
 	})
 }

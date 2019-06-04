@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package generated
+package api
 
 import (
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
@@ -36,9 +36,9 @@ func (sc SimplifiedConsent) ToConsentRule() []pkg.ConsentRule {
 	for _, a := range sc.Actors {
 
 		rules = append(rules, pkg.ConsentRule{
-			Subject: string(sc.Subject),
+			Subject:   string(sc.Subject),
 			Custodian: string(sc.Custodian),
-			Actor: string(a),
+			Actor:     string(a),
 			Resources: resources,
 		})
 	}
@@ -50,9 +50,9 @@ func (sc SimplifiedConsent) ToConsentRule() []pkg.ConsentRule {
 func (sc ConsentCheckRequest) ToConsentRule() pkg.ConsentRule {
 
 	return pkg.ConsentRule{
-		Subject: string(sc.Subject),
+		Subject:   string(sc.Subject),
 		Custodian: string(sc.Custodian),
-		Actor: string(sc.Actor),
+		Actor:     string(sc.Actor),
 		Resources: []pkg.Resource{{ResourceType: sc.ResourceType}},
 	}
 }
@@ -62,7 +62,7 @@ func (sc ConsentCheckRequest) ToConsentRule() pkg.ConsentRule {
 func FromSimplifiedConsentRule(rules []pkg.ConsentRule) ([]SimplifiedConsent, error) {
 	var (
 		firstActor *string
-		consent []SimplifiedConsent
+		consent    []SimplifiedConsent
 	)
 
 	for _, r := range rules {
@@ -70,7 +70,7 @@ func FromSimplifiedConsentRule(rules []pkg.ConsentRule) ([]SimplifiedConsent, er
 			firstActor = &r.Actor
 		} else {
 			if *firstActor != r.Actor {
-				return nil, types.Error{Msg:"Can not convert consent rules with multiple actors"}
+				return nil, types.Error{Msg: "Can not convert consent rules with multiple actors"}
 			}
 
 			var resources = make([]string, len(r.Resources))
@@ -79,9 +79,9 @@ func FromSimplifiedConsentRule(rules []pkg.ConsentRule) ([]SimplifiedConsent, er
 			}
 
 			consent = append(consent, SimplifiedConsent{
-				Subject: Identifier(r.Subject),
-				Custodian:Identifier(r.Custodian),
-				Actors: []Identifier{Identifier(r.Actor)},
+				Subject:   Identifier(r.Subject),
+				Custodian: Identifier(r.Custodian),
+				Actors:    []Identifier{Identifier(r.Actor)},
 				Resources: resources,
 			})
 		}

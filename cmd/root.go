@@ -20,14 +20,15 @@ package cmd
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/nuts-foundation/nuts-consent-store/pkg/consent"
-	"github.com/nuts-foundation/nuts-consent-store/pkg/generated"
+	"github.com/nuts-foundation/nuts-consent-store/api"
+	"github.com/nuts-foundation/nuts-consent-store/engine"
+	"github.com/nuts-foundation/nuts-consent-store/pkg"
 	cfg "github.com/nuts-foundation/nuts-go/pkg"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-var e = consent.NewConsentStoreEngine()
+var e = engine.NewConsentStoreEngine()
 var rootCmd = e.Cmd
 
 func Execute() {
@@ -55,10 +56,14 @@ func Execute() {
 
 			// start webserver
 			e := echo.New()
-			generated.RegisterHandlers(e, consent.ConsentStore())
+			api.RegisterHandlers(e, &api.ApiWrapper{Cs: pkg.ConsentStoreInstance()})
 			logrus.Fatal(e.Start(":1323"))
 		},
 	})
+
+	if err := e.Start(); err != nil {
+		panic(err)
+	}
 
 	rootCmd.Execute()
 

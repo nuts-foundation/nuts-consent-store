@@ -25,9 +25,9 @@ import (
 func TestConsentRule_String(t *testing.T) {
 	t.Run("outputs string representation of model", func(t *testing.T) {
 		model := ConsentRule{
-			Actor: "actor",
+			Actor:     "actor",
 			Custodian: "custodian",
-			Subject: "subject",
+			Subject:   "subject",
 			Resources: ResourcesFromStrings([]string{"resources"}),
 		}
 
@@ -99,9 +99,9 @@ func TestConsentRule_SameTriple(t *testing.T) {
 
 func testConsent() *ConsentRule {
 	return &ConsentRule{
-		Actor: "actor",
+		Actor:     "actor",
 		Custodian: "custodian",
-		Subject: "subject",
-		Resources: []Resource{{ResourceType:"resource"}},
+		Subject:   "subject",
+		Resources: []Resource{{ResourceType: "resource"}},
 	}
 }
