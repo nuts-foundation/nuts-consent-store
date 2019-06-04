@@ -19,27 +19,32 @@
 package cmd
 
 import (
-	goflag "flag"
 	"github.com/labstack/echo/v4"
 	"github.com/nuts-foundation/nuts-consent-store/pkg/consent"
 	"github.com/nuts-foundation/nuts-consent-store/pkg/generated"
+	cfg "github.com/nuts-foundation/nuts-go/pkg"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	flag "github.com/spf13/pflag"
 )
 
-var engine = consent.NewConsentStoreEngine()
-var rootCmd = engine.Cmd
+var e = consent.NewConsentStoreEngine()
+var rootCmd = e.Cmd
 
 func Execute() {
-	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
-	flag.Parse()
-
-	if err := engine.Configure(); err != nil {
+	c := cfg.NutsConfig()
+	c.IgnoredPrefixes = append(c.IgnoredPrefixes, e.ConfigKey)
+	c.RegisterFlags(e)
+	if err := c.Load(); err != nil {
 		panic(err)
 	}
 
-	// todo: as standalone, for now do it here
-	if err := engine.Start(); err != nil {
+	c.PrintConfig()
+
+	if err := c.InjectIntoEngine(e); err != nil {
+		panic(err)
+	}
+
+	if err := e.Configure(); err != nil {
 		panic(err)
 	}
 
@@ -51,16 +56,13 @@ func Execute() {
 			// start webserver
 			e := echo.New()
 			generated.RegisterHandlers(e, consent.ConsentStore())
-			e.Logger.Fatal(e.Start(":1323"))
+			logrus.Fatal(e.Start(":1323"))
 		},
 	})
 
-
-
 	rootCmd.Execute()
 
-	// todo: as standalone, for now do it here
-	if err := engine.Shutdown(); err != nil {
+	if err := e.Shutdown(); err != nil {
 		panic(err)
 	}
 }
