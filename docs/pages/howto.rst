@@ -24,7 +24,7 @@ Then run
 
 .. code-block:: shell
 
-   oapi-codegen -package api -generate server PATH_TO_NUTS_SPEC/nuts-consent-store.yaml > api/generated.go
+   oapi-codegen -package api PATH_TO_NUTS_SPEC/nuts-consent-store.yaml > api/generated.go
 
 
 

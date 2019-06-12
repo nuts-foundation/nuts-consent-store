@@ -25,6 +25,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/nuts-foundation/nuts-consent-store/api"
+	"github.com/nuts-foundation/nuts-consent-store/client"
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
 	engine "github.com/nuts-foundation/nuts-go/pkg"
 	"github.com/sirupsen/logrus"
@@ -38,7 +39,7 @@ func NewConsentStoreEngine() *engine.Engine {
 	cs := pkg.ConsentStoreInstance()
 
 	return &engine.Engine{
-		Name:      "ConsentStoreInstance",
+		Name:      "ConsentStore",
 		Cmd:       cmd(),
 		Configure: cs.Configure,
 		Config:    &cs.Config,
@@ -56,6 +57,8 @@ func flagSet() *pflag.FlagSet {
 	flags := pflag.NewFlagSet("cstore", pflag.ContinueOnError)
 
 	flags.String(pkg.ConfigConnectionString, pkg.ConfigConnectionStringDefault, "Db connectionString")
+	flags.String(pkg.ConfigAddress, "localhost:1323", "Interface and port for http server to bind to")
+	flags.String(pkg.ConfigMode, "server", "server or client, when client it uses the HttpClient")
 
 	return flags
 }
@@ -79,7 +82,7 @@ func cmd() *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			csc := pkg.NewConsentStoreClient()
+			csc := client.NewConsentStoreClient()
 
 			var (
 				consentList []pkg.ConsentRule
@@ -118,7 +121,7 @@ func cmd() *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			csc := pkg.NewConsentStoreClient()
+			csc := client.NewConsentStoreClient()
 
 			resources := pkg.ResourcesFromStrings(strings.Split(args[3], ","))
 
@@ -153,7 +156,7 @@ func cmd() *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			csc := pkg.NewConsentStoreClient()
+			csc := client.NewConsentStoreClient()
 
 			auth, err := csc.ConsentAuth(context.TODO(), pkg.ConsentRule{
 				Subject:   args[0],

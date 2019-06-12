@@ -98,7 +98,7 @@ func (w *ApiWrapper) CheckConsent(ctx echo.Context) error {
 		return err
 	}
 
-	authValue := "no"
+	authValue := "false"
 	if auth {
 		authValue = "true"
 	}

@@ -16,19 +16,29 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package pkg
+package client
 
 import (
-	"reflect"
-	"testing"
+	"github.com/nuts-foundation/nuts-consent-store/api"
+	"github.com/nuts-foundation/nuts-consent-store/pkg"
+	"github.com/sirupsen/logrus"
+	"time"
 )
 
-func TestNewConsentStoreClient(t *testing.T) {
-	t.Run("returns ConsentStore by default", func(t *testing.T) {
-		cc := NewConsentStoreClient()
+// NewConsentStoreClient creates a new Local- or RemoteClient for the nuts consent-store
+func NewConsentStoreClient() pkg.ConsentStoreClient {
+	consentStore := pkg.ConsentStoreInstance()
 
-		if reflect.TypeOf(cc).String() != "*pkg.ConsentStore" {
-			t.Errorf("Expected Client to be of type *consent.ConsentStore, got %s", reflect.TypeOf(cc))
+	if consentStore.Config.Mode == "server" {
+		if err := consentStore.Configure(); err != nil {
+			logrus.Panic(err)
 		}
-	})
+
+		return consentStore
+	} else {
+		return api.HttpClient{
+			ServerAddress: consentStore.Config.Address,
+			Timeout: time.Second,
+		}
+	}
 }
