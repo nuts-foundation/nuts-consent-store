@@ -133,7 +133,7 @@ func (w *ApiWrapper) QueryConsent(ctx echo.Context) error {
 	var rules []pkg.ConsentRule
 
 	if strings.Index(query, "urn") == 0 {
-		rules, err = w.Cs.QueryConsentForActorAndSubject(ctx.Request().Context(), query, string(checkRequest.Actor))
+		rules, err = w.Cs.QueryConsentForActorAndSubject(ctx.Request().Context(), string(checkRequest.Actor), query)
 	} else {
 		rules, err = w.Cs.QueryConsentForActor(ctx.Request().Context(), string(checkRequest.Actor), query)
 	}
