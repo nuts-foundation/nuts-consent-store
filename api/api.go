@@ -153,5 +153,6 @@ func (w *ApiWrapper) QueryConsent(ctx echo.Context) error {
 	return ctx.JSON(200,
 		ConsentQueryResponse{
 			Results: results,
+			TotalResults: int32(len(results)),
 		})
 }
