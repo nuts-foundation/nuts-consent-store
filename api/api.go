@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"github.com/labstack/echo/v4"
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -140,6 +141,8 @@ func (w *ApiWrapper) QueryConsent(ctx echo.Context) error {
 	if err != nil {
 		return err
 	}
+
+	logrus.Debugf("Found %d results", len(rules))
 
 	results, err := FromSimplifiedConsentRule(rules)
 
