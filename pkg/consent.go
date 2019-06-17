@@ -29,6 +29,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/nuts-foundation/nuts-consent-store/migrations"
+	"github.com/sirupsen/logrus"
 	"sync"
 )
 
@@ -118,6 +119,9 @@ func (cs *ConsentStore) Start() error {
 
 	// gorm db connection
 	cs.Db, err = gorm.Open("sqlite3", cs.Config.Connectionstring)
+
+	// logging
+	cs.Db.SetLogger(logrus.StandardLogger())
 
 	return err
 }
@@ -220,7 +224,7 @@ func (cs *ConsentStore) RecordConsent(context context.Context, consent []Consent
 func (cs *ConsentStore) QueryConsentForActor(context context.Context, actor string, query string) ([]ConsentRule, error) {
 	var rules []ConsentRule
 
-	if err := cs.Db.Where("Actor = ?", actor).Preload("Resources").Find(&rules).Error; err != nil {
+	if err := cs.Db.Debug().Where("Actor = ?", actor).Preload("Resources").Find(&rules).Error; err != nil {
 		return nil, err
 	}
 
@@ -230,7 +234,7 @@ func (cs *ConsentStore) QueryConsentForActor(context context.Context, actor stri
 func (cs *ConsentStore) QueryConsentForActorAndSubject(context context.Context, actor string, subject string) ([]ConsentRule, error) {
 	var rules []ConsentRule
 
-	if err := cs.Db.Where("Actor = ? AND Subject = ?", actor, subject).Preload("Resources").Find(&rules).Error; err != nil {
+	if err := cs.Db.Debug().Where("Actor = ? AND Subject = ?", actor, subject).Preload("Resources").Find(&rules).Error; err != nil {
 		return nil, err
 	}
 
