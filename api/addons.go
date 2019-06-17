@@ -72,20 +72,18 @@ func FromSimplifiedConsentRule(rules []pkg.ConsentRule) ([]SimplifiedConsent, er
 			if *firstActor != r.Actor {
 				return nil, types.Error{Msg: "Can not convert consent rules with multiple actors"}
 			}
-
-			var resources = make([]string, len(r.Resources))
-			for _, r2 := range r.Resources {
-				resources = append(resources, r2.ResourceType)
-			}
-
-			consent = append(consent, SimplifiedConsent{
-				Subject:   Identifier(r.Subject),
-				Custodian: Identifier(r.Custodian),
-				Actors:    []Identifier{Identifier(r.Actor)},
-				Resources: resources,
-			})
+		}
+		var resources = make([]string, len(r.Resources))
+		for _, r2 := range r.Resources {
+			resources = append(resources, r2.ResourceType)
 		}
 
+		consent = append(consent, SimplifiedConsent{
+			Subject:   Identifier(r.Subject),
+			Custodian: Identifier(r.Custodian),
+			Actors:    []Identifier{Identifier(r.Actor)},
+			Resources: resources,
+		})
 	}
 
 	return consent, nil
