@@ -70,7 +70,7 @@ func TestHttpClient_RecordConsent(t *testing.T) {
 			return
 		}
 
-		expected := "Creating multiple consent records currently not supported"
+		expected := "creating multiple consent records currently not supported"
 		if expected != err.Error() {
 			t.Errorf("Expected error [%s], got [%v]", expected, err)
 		}
@@ -219,7 +219,7 @@ func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
 			return
 		}
 
-		expected := "Consent store returned 500, reason: error"
+		expected := "consent store returned 500, reason: error"
 		if err.Error() != expected {
 			t.Errorf("Expected error [%s], got [%v]", expected, err.Error())
 		}

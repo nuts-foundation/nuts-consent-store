@@ -60,7 +60,7 @@ func (hb HttpClient) ConsentAuth(ctx context.Context, consentRule pkg.ConsentRul
 
 	var ccr ConsentCheckResponse
 	if err := json.Unmarshal(body, &ccr); err != nil {
-		hb.Logger.Error("could not unmarshal response body")
+		err := fmt.Errorf("could not unmarshal response body, reason: %v", err)
 		return false, err
 	}
 
