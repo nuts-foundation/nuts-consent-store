@@ -200,6 +200,42 @@ func TestConsentStore_QueryConsentForActorAndSubject(t *testing.T) {
 	})
 }
 
+func TestConsentStore_Configure(t *testing.T) {
+	t.Run("works OK for in memory db", func(t *testing.T) {
+		client := ConsentStore{
+			Config: ConsentStoreConfig{
+				Connectionstring: ":memory:",
+				Mode: "server",
+			},
+		}
+
+		if err := client.Configure();err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+
+	t.Run("gives error if DB can't be found", func(t *testing.T) {
+		client := ConsentStore{
+			Config: ConsentStoreConfig{
+				Connectionstring: "file:test.db?mode=ro",
+				Mode: "server",
+			},
+		}
+
+		err := client.Configure()
+
+		if err == nil {
+			t.Errorf("Expected error, got nothing")
+			return
+		}
+
+		expected := "unable to open database file"
+		if err.Error() != expected {
+			t.Errorf("Expected error [%s], got [%v]", expected, err.Error())
+		}
+	})
+}
+
 func defaultConsentStore() ConsentStore {
 	client := ConsentStore{
 		Config: ConsentStoreConfig{
