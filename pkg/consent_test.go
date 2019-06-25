@@ -23,7 +23,15 @@ import (
 	"testing"
 )
 
-func TestDefaultConsentStore_RecordConsent_AuthConsent(t *testing.T) {
+func TestConsentStoreInstance(t *testing.T) {
+	t.Run("returns same instance every time", func(t *testing.T) {
+		if ConsentStoreInstance() != ConsentStoreInstance() {
+			t.Error("Expected instance to be the same")
+		}
+	})
+}
+
+func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 	client := defaultConsentStore()
 	defer client.Shutdown()
 
@@ -84,7 +92,7 @@ func TestDefaultConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 	})
 }
 
-func TestDefaultConsentStore_QueryConsentForActor(t *testing.T) {
+func TestConsentStore_QueryConsentForActor(t *testing.T) {
 	client := defaultConsentStore()
 	defer client.Shutdown()
 
@@ -138,7 +146,7 @@ func TestDefaultConsentStore_QueryConsentForActor(t *testing.T) {
 	})
 }
 
-func TestDefaultConsentStore_QueryConsentForActorAndSubject(t *testing.T) {
+func TestConsentStore_QueryConsentForActorAndSubject(t *testing.T) {
 	client := defaultConsentStore()
 	defer client.Shutdown()
 

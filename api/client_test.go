@@ -59,6 +59,23 @@ func TestHttpClient_RecordConsent(t *testing.T) {
 		}
 	})
 
+	t.Run("too many rules returns error", func(t *testing.T) {
+		client := testClient(201, []byte{})
+
+		c := []pkg.ConsentRule{}
+		err := client.RecordConsent(context.TODO(), c)
+
+		if err == nil {
+			t.Error("Expected error, got nothing")
+			return
+		}
+
+		expected := "Creating multiple consent records currently not supported"
+		if expected != err.Error() {
+			t.Errorf("Expected error [%s], got [%v]", expected, err)
+		}
+	})
+
 	t.Run("body read error returns error", func(t *testing.T) {
 		client := newTestClient(func(req *http.Request) *http.Response {
 			// Test request parameters
@@ -123,6 +140,22 @@ func TestHttpClient_ConsentAuth(t *testing.T) {
 		}
 
 		expected := "error while reading response body: error"
+		if err.Error() != expected {
+			t.Errorf("Expected error [%s], got [%v]", expected, err.Error())
+		}
+	})
+
+	t.Run("client returns invalid json gives error", func(t *testing.T) {
+		client := testClient(200, []byte("{"))
+
+		_, err := client.ConsentAuth(context.TODO(), consentRule(), "resource")
+
+		if err == nil {
+			t.Error("Expected error, got nothing")
+			return
+		}
+
+		expected := "could not unmarshal response body, reason: unexpected end of JSON input"
 		if err.Error() != expected {
 			t.Errorf("Expected error [%s], got [%v]", expected, err.Error())
 		}

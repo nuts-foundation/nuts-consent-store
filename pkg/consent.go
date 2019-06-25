@@ -42,7 +42,7 @@ type ConsentStoreConfig struct {
 const ConfigConnectionString = "connectionstring"
 const ConfigMode = "mode"
 const ConfigAddress = "address"
-const ConfigConnectionStringDefault = "file:test.Db?cache=shared"
+const ConfigConnectionStringDefault = ":memory:"
 
 type ConsentStore struct {
 	Db *gorm.DB

@@ -48,12 +48,12 @@ func (hb HttpClient) ConsentAuth(ctx context.Context, consentRule pkg.ConsentRul
 
 	result, err := hb.client().CheckConsent(ctx, req)
 	if err != nil {
-		err := errors.New(fmt.Sprintf("error while checking for consent in consent-store: %v", err))
+		err := fmt.Errorf("error while checking for consent in consent-store: %v", err)
 		hb.Logger.Error(err)
 		return false, err
 	}
 
-	body, err := hb.checkResponse(err, result)
+	body, err := hb.checkResponse(result)
 	if err != nil {
 		return false, err
 	}
@@ -72,7 +72,7 @@ func (hb HttpClient) RecordConsent(ctx context.Context, consent []pkg.ConsentRul
 	var req SimplifiedConsent
 
 	if len(consent) != 1 {
-		err := errors.New("Creating multiple consent records currently not supported")
+		err := errors.New("creating multiple consent records currently not supported")
 		hb.Logger.Error(err)
 		return err
 	}
@@ -92,7 +92,7 @@ func (hb HttpClient) RecordConsent(ctx context.Context, consent []pkg.ConsentRul
 		return err
 	}
 
-	_, err = hb.checkResponse(err, result)
+	_, err = hb.checkResponse(result)
 	if err != nil {
 		return err
 	}
@@ -110,19 +110,19 @@ func (hb HttpClient) QueryConsentForActor(ctx context.Context, actor string, que
 
 	result, err := hb.client().QueryConsent(ctx, req)
 	if err != nil {
-		err = errors.New(fmt.Sprintf("error while querying for consent in consent-store: %v", err))
+		err = fmt.Errorf("error while querying for consent in consent-store: %v", err)
 		hb.Logger.Error(err)
 		return rules, err
 	}
 
-	body, err := hb.checkResponse(err, result)
+	body, err := hb.checkResponse(result)
 	if err != nil {
 		return nil, err
 	}
 
 	var cqr ConsentQueryResponse
 	if err := json.Unmarshal(body, &cqr); err != nil {
-		err = errors.New(fmt.Sprintf("could not unmarshal response body, reason: %v", err))
+		err = fmt.Errorf("could not unmarshal response body, reason: %v", err)
 		hb.Logger.Error(err)
 		return rules, err
 	}
@@ -149,22 +149,16 @@ func (hb HttpClient) QueryConsentForActorAndSubject(ctx context.Context, actor s
 	return hb.QueryConsentForActor(ctx, actor, subject)
 }
 
-func (hb *HttpClient) checkResponse(err error, result *http.Response) ([]byte, error) {
-	if err != nil {
-		err = errors.New(fmt.Sprintf("error while checking for consent in consent-store: %v", err))
-		hb.Logger.Error(err)
-		return nil, err
-	}
-
+func (hb *HttpClient) checkResponse(result *http.Response) ([]byte, error) {
 	body, err := ioutil.ReadAll(result.Body)
 	if err != nil {
-		err = errors.New(fmt.Sprintf("error while reading response body: %v", err))
+		err = fmt.Errorf("error while reading response body: %v", err)
 		hb.Logger.Error(err)
 		return nil, err
 	}
 
 	if result.StatusCode >= http.StatusBadRequest {
-		err = errors.New(fmt.Sprintf("Consent store returned %d, reason: %s", result.StatusCode, body))
+		err = fmt.Errorf("consent store returned %d, reason: %s", result.StatusCode, body)
 		hb.Logger.Error(err.Error())
 		return nil, err
 	}
