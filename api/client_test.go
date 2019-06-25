@@ -23,6 +23,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -42,21 +43,13 @@ func newTestClient(fn RoundTripFunc) HttpClient {
 		customClient: &http.Client{
 			Transport: RoundTripFunc(fn),
 		},
+		Logger: logrus.StandardLogger().WithField("component", "API-client"),
 	}
 }
 
 func TestHttpClient_RecordConsent(t *testing.T) {
 	t.Run("201", func(t *testing.T) {
-		client := newTestClient(func(req *http.Request) *http.Response {
-			// Test request parameters
-			return &http.Response{
-				StatusCode: 201,
-				Body:       ioutil.NopCloser(bytes.NewReader([]byte{})),
-				Header: http.Header{
-					"Content-Type": []string{"application/json"},
-				},
-			}
-		})
+		client := testClient(201, []byte{})
 
 		c := []pkg.ConsentRule{{}}
 		err := client.RecordConsent(context.TODO(), c)
@@ -71,16 +64,7 @@ func TestHttpClient_ConsentAuth(t *testing.T) {
 	t.Run("200", func(t *testing.T) {
 		tr := "true"
 		resp, _ := json.Marshal(ConsentCheckResponse{ConsentGiven: &tr})
-		client := newTestClient(func(req *http.Request) *http.Response {
-			// Test request parameters
-			return &http.Response{
-				StatusCode: 200,
-				Body:       ioutil.NopCloser(bytes.NewReader(resp)),
-				Header: http.Header{
-					"Content-Type": []string{"application/json"},
-				},
-			}
-		})
+		client := testClient(200, resp)
 
 		cr := pkg.ConsentRule{}
 		res, err := client.ConsentAuth(context.TODO(), cr, "test")
@@ -105,16 +89,7 @@ func TestHttpClient_QueryConsentForActor(t *testing.T) {
 				Custodian: Identifier("custodian"),
 			},
 		}})
-		client := newTestClient(func(req *http.Request) *http.Response {
-			// Test request parameters
-			return &http.Response{
-				StatusCode: 200,
-				Body:       ioutil.NopCloser(bytes.NewReader(resp)),
-				Header: http.Header{
-					"Content-Type": []string{"application/json"},
-				},
-			}
-		})
+		client := testClient(200, resp)
 
 		res, err := client.QueryConsentForActor(context.TODO(), "actor", "test")
 
@@ -124,6 +99,100 @@ func TestHttpClient_QueryConsentForActor(t *testing.T) {
 
 		if len(res) != 1 {
 			t.Errorf("Expected 1 consentRule, got %d", len(res))
+		}
+	})
+}
+
+func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
+	t.Run("200", func(t *testing.T) {
+		resp, _ := json.Marshal(ConsentQueryResponse{Results: []SimplifiedConsent{
+			{
+				Resources: []string{"test"},
+				Actors:    []Identifier{"actor"},
+				Subject:   Identifier("subject"),
+				Custodian: Identifier("custodian"),
+			},
+		}})
+		client := testClient(200, resp)
+
+		res, err := client.QueryConsentForActorAndSubject(context.TODO(), "actor", "urn:subject")
+
+		if err != nil {
+			t.Errorf("Expected no error, got [%s]", err.Error())
+		}
+
+		if len(res) != 1 {
+			t.Errorf("Expected 1 consentRule, got %d", len(res))
+		}
+	})
+
+	t.Run("client returns error", func(t *testing.T) {
+		client := testClient(500, []byte("error"))
+
+		_, err := client.QueryConsentForActorAndSubject(context.TODO(), "actor", "urn:subject")
+
+		if err == nil {
+			t.Error("Expected error, got nothing")
+			return
+		}
+
+		expected := "Consent store returned 500, reason: error"
+		if err.Error() != expected {
+			t.Errorf("Expected error [%s], got [%v]", expected, err.Error())
+		}
+	})
+
+	t.Run("client returns invalid json", func(t *testing.T) {
+		client := testClient(200, []byte("{"))
+
+		_, err := client.QueryConsentForActorAndSubject(context.TODO(), "actor", "urn:subject")
+
+		if err == nil {
+			t.Error("Expected error, got nothing")
+			return
+		}
+
+		expected := "could not unmarshal response body, reason: unexpected end of JSON input"
+		if err.Error() != expected {
+			t.Errorf("Expected error [%s], got [%v]", expected, err.Error())
+		}
+	})
+
+	t.Run("body read error returns error", func(t *testing.T) {
+		client := newTestClient(func(req *http.Request) *http.Response {
+			// Test request parameters
+			return &http.Response{
+				StatusCode: 500,
+				Body:       errorCloser{},
+				Header: http.Header{
+					"Content-Type": []string{"application/json"},
+				},
+			}
+		})
+
+		_, err := client.QueryConsentForActorAndSubject(context.TODO(), "actor", "urn:subject")
+
+		if err == nil {
+			t.Error("Expected error, got nothing")
+			return
+		}
+
+		expected := "error while reading response body: error"
+		if err.Error() != expected {
+			t.Errorf("Expected error [%s], got [%v]", expected, err.Error())
+		}
+	})
+}
+
+func testClient(status int, body []byte) HttpClient {
+	return newTestClient(func(req *http.Request) *http.Response {
+		// Test request parameters
+		return &http.Response{
+			StatusCode: status,
+			Body:       ioutil.NopCloser(bytes.NewReader(body)),
+			Header: http.Header{
+				"Content-Type": []string{"application/json"},
+			},
 		}
 	})
 }
