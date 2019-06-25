@@ -22,6 +22,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/golang/mock/gomock"
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
 	"github.com/nuts-foundation/nuts-go/mock"
@@ -84,6 +85,52 @@ func TestDefaultConsentStore_CheckConsent(t *testing.T) {
 	})
 
 	t.Run("Missing body gives 400", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		echo := mock.NewMockContext(ctrl)
+
+		request := &http.Request{}
+
+		echo.EXPECT().Request().Return(request)
+
+		err := client.CheckConsent(echo)
+
+		if err == nil {
+			t.Error("Expected error got nothing")
+			return
+		}
+
+		expected := "code=400, message=missing body in request"
+		if err.Error() != expected {
+			t.Errorf("Expected error [%s], got: [%s]", expected, err.Error())
+		}
+	})
+
+	t.Run("Reading error gives 400", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		echo := mock.NewMockContext(ctrl)
+
+		request := &http.Request{
+			Body: errorCloser{},
+		}
+
+		echo.EXPECT().Request().Return(request)
+
+		err := client.CheckConsent(echo)
+
+		if err == nil {
+			t.Error("Expected error got nothing")
+			return
+		}
+
+		expected := "code=400, message=error reading request: error"
+		if err.Error() != expected {
+			t.Errorf("Expected error [%s], got: [%s]", expected, err.Error())
+		}
+	})
+
+	t.Run("Invalid body gives 400", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 		echo := mock.NewMockContext(ctrl)
@@ -594,4 +641,14 @@ func consentRuleForQuery() pkg.ConsentRule {
 			{ResourceType: "resource"},
 		},
 	}
+}
+
+type errorCloser struct{}
+
+func (errorCloser) Read(p []byte) (n int, err error) {
+	return 0, errors.New("error")
+}
+
+func (errorCloser) Close() error {
+	return errors.New("error")
 }
