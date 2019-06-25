@@ -58,6 +58,31 @@ func TestHttpClient_RecordConsent(t *testing.T) {
 			t.Errorf("Expected no error, got [%s]", err.Error())
 		}
 	})
+
+	t.Run("body read error returns error", func(t *testing.T) {
+		client := newTestClient(func(req *http.Request) *http.Response {
+			// Test request parameters
+			return &http.Response{
+				StatusCode: 500,
+				Body:       errorCloser{},
+				Header: http.Header{
+					"Content-Type": []string{"application/json"},
+				},
+			}
+		})
+
+		err := client.RecordConsent(context.TODO(), []pkg.ConsentRule{consentRule()})
+
+		if err == nil {
+			t.Error("Expected error, got nothing")
+			return
+		}
+
+		expected := "error while reading response body: error"
+		if err.Error() != expected {
+			t.Errorf("Expected error [%s], got [%v]", expected, err.Error())
+		}
+	})
 }
 
 func TestHttpClient_ConsentAuth(t *testing.T) {
@@ -75,6 +100,31 @@ func TestHttpClient_ConsentAuth(t *testing.T) {
 
 		if !res {
 			t.Errorf("Expected auth to be true, got false")
+		}
+	})
+
+	t.Run("body read error returns error", func(t *testing.T) {
+		client := newTestClient(func(req *http.Request) *http.Response {
+			// Test request parameters
+			return &http.Response{
+				StatusCode: 500,
+				Body:       errorCloser{},
+				Header: http.Header{
+					"Content-Type": []string{"application/json"},
+				},
+			}
+		})
+
+		_, err := client.ConsentAuth(context.TODO(), consentRule(), "resource")
+
+		if err == nil {
+			t.Error("Expected error, got nothing")
+			return
+		}
+
+		expected := "error while reading response body: error"
+		if err.Error() != expected {
+			t.Errorf("Expected error [%s], got [%v]", expected, err.Error())
 		}
 	})
 }

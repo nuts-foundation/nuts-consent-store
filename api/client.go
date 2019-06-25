@@ -48,19 +48,13 @@ func (hb HttpClient) ConsentAuth(ctx context.Context, consentRule pkg.ConsentRul
 
 	result, err := hb.client().CheckConsent(ctx, req)
 	if err != nil {
-		hb.Logger.Error("error while checking for consent in consent-store", err)
+		err := errors.New(fmt.Sprintf("error while checking for consent in consent-store: %v", err))
+		hb.Logger.Error(err)
 		return false, err
 	}
 
-	body, err := ioutil.ReadAll(result.Body)
+	body, err := hb.checkResponse(err, result)
 	if err != nil {
-		hb.Logger.Error("error while reading response body", err)
-		return false, err
-	}
-
-	if result.StatusCode != http.StatusOK {
-		err = errors.New(fmt.Sprintf("Consent store returned %d, reason: %s", result.StatusCode, body))
-		hb.Logger.Error(err.Error())
 		return false, err
 	}
 
@@ -98,15 +92,8 @@ func (hb HttpClient) RecordConsent(ctx context.Context, consent []pkg.ConsentRul
 		return err
 	}
 
-	body, err := ioutil.ReadAll(result.Body)
+	_, err = hb.checkResponse(err, result)
 	if err != nil {
-		hb.Logger.Error("error while reading response body", err)
-		return err
-	}
-
-	if result.StatusCode != http.StatusCreated {
-		err = errors.New(fmt.Sprintf("Consent store returned %d, reason: %s", result.StatusCode, body))
-		hb.Logger.Error(err.Error())
 		return err
 	}
 
@@ -128,17 +115,9 @@ func (hb HttpClient) QueryConsentForActor(ctx context.Context, actor string, que
 		return rules, err
 	}
 
-	body, err := ioutil.ReadAll(result.Body)
+	body, err := hb.checkResponse(err, result)
 	if err != nil {
-		err = errors.New(fmt.Sprintf("error while reading response body: %v", err))
-		hb.Logger.Error(err)
-		return rules, err
-	}
-
-	if result.StatusCode != http.StatusOK {
-		err = errors.New(fmt.Sprintf("Consent store returned %d, reason: %s", result.StatusCode, body))
-		hb.Logger.Error(err)
-		return rules, err
+		return nil, err
 	}
 
 	var cqr ConsentQueryResponse
@@ -168,6 +147,29 @@ func (hb HttpClient) QueryConsentForActor(ctx context.Context, actor string, que
 // QueryConsentForActorAndSubject does the same as QueryConsentForActor, the backend just checks if the query starts with urn:
 func (hb HttpClient) QueryConsentForActorAndSubject(ctx context.Context, actor string, subject string) ([]pkg.ConsentRule, error) {
 	return hb.QueryConsentForActor(ctx, actor, subject)
+}
+
+func (hb *HttpClient) checkResponse(err error, result *http.Response) ([]byte, error) {
+	if err != nil {
+		err = errors.New(fmt.Sprintf("error while checking for consent in consent-store: %v", err))
+		hb.Logger.Error(err)
+		return nil, err
+	}
+
+	body, err := ioutil.ReadAll(result.Body)
+	if err != nil {
+		err = errors.New(fmt.Sprintf("error while reading response body: %v", err))
+		hb.Logger.Error(err)
+		return nil, err
+	}
+
+	if result.StatusCode >= http.StatusBadRequest {
+		err = errors.New(fmt.Sprintf("Consent store returned %d, reason: %s", result.StatusCode, body))
+		hb.Logger.Error(err.Error())
+		return nil, err
+	}
+
+	return body, nil
 }
 
 func (hb HttpClient) client() *Client {
