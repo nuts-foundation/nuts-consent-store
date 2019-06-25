@@ -39,10 +39,10 @@ type HttpClient struct {
 
 func (hb HttpClient) ConsentAuth(ctx context.Context, consentRule pkg.ConsentRule, resourceType string) (bool, error) {
 	req := ConsentCheckRequest{
-		Actor: Identifier(consentRule.Actor),
-		Custodian: Identifier(consentRule.Custodian),
-		Subject: Identifier(consentRule.Subject),
-		ResourceType:resourceType,
+		Actor:        Identifier(consentRule.Actor),
+		Custodian:    Identifier(consentRule.Custodian),
+		Subject:      Identifier(consentRule.Subject),
+		ResourceType: resourceType,
 	}
 
 	result, err := hb.client().CheckConsent(ctx, req)
@@ -146,13 +146,13 @@ func (hb HttpClient) QueryConsentForActor(ctx context.Context, actor string, que
 
 	for _, sr := range cqr.Results {
 		rule := pkg.ConsentRule{
-			Actor: actor,
-			Subject: string(sr.Subject),
+			Actor:     actor,
+			Subject:   string(sr.Subject),
 			Custodian: string(sr.Custodian),
 		}
 
 		for _, r := range sr.Resources {
-			rule.Resources = append(rule.Resources, pkg.Resource{ResourceType:r})
+			rule.Resources = append(rule.Resources, pkg.Resource{ResourceType: r})
 		}
 
 		rules = append(rules, rule)
@@ -178,4 +178,3 @@ func (hb HttpClient) client() *Client {
 		Server: fmt.Sprintf("http://%v", hb.ServerAddress),
 	}
 }
-

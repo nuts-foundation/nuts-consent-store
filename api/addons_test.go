@@ -26,9 +26,9 @@ import (
 func TestConsentCheckRequest_ToConsentRule(t *testing.T) {
 	t.Run("Data is converted", func(t *testing.T) {
 		csr := ConsentCheckRequest{
-			Subject: Identifier("subject"),
-			Custodian: Identifier("custodian"),
-			Actor: Identifier("actor"),
+			Subject:      Identifier("subject"),
+			Custodian:    Identifier("custodian"),
+			Actor:        Identifier("actor"),
 			ResourceType: "resource",
 		}
 
@@ -115,11 +115,11 @@ func TestFromSimplifiedConsentRule(t *testing.T) {
 
 func consentRule() pkg.ConsentRule {
 	return pkg.ConsentRule{
-		Subject: "subject",
+		Subject:   "subject",
 		Custodian: "custodian",
-		Actor: "actor",
+		Actor:     "actor",
 		Resources: []pkg.Resource{
-			{ResourceType:"resource"},
+			{ResourceType: "resource"},
 		},
 	}
 }

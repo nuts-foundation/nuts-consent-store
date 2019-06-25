@@ -52,7 +52,7 @@ func TestHttpClient_RecordConsent(t *testing.T) {
 			return &http.Response{
 				StatusCode: 201,
 				Body:       ioutil.NopCloser(bytes.NewReader([]byte{})),
-				Header:     http.Header{
+				Header: http.Header{
 					"Content-Type": []string{"application/json"},
 				},
 			}
@@ -76,7 +76,7 @@ func TestHttpClient_ConsentAuth(t *testing.T) {
 			return &http.Response{
 				StatusCode: 200,
 				Body:       ioutil.NopCloser(bytes.NewReader(resp)),
-				Header:     http.Header{
+				Header: http.Header{
 					"Content-Type": []string{"application/json"},
 				},
 			}
@@ -100,9 +100,9 @@ func TestHttpClient_QueryConsentForActor(t *testing.T) {
 		resp, _ := json.Marshal(ConsentQueryResponse{Results: []SimplifiedConsent{
 			{
 				Resources: []string{"test"},
-				Actors: []Identifier{"actor"},
-				Subject:Identifier("subject"),
-				Custodian:Identifier("custodian"),
+				Actors:    []Identifier{"actor"},
+				Subject:   Identifier("subject"),
+				Custodian: Identifier("custodian"),
 			},
 		}})
 		client := newTestClient(func(req *http.Request) *http.Response {
@@ -110,7 +110,7 @@ func TestHttpClient_QueryConsentForActor(t *testing.T) {
 			return &http.Response{
 				StatusCode: 200,
 				Body:       ioutil.NopCloser(bytes.NewReader(resp)),
-				Header:     http.Header{
+				Header: http.Header{
 					"Content-Type": []string{"application/json"},
 				},
 			}

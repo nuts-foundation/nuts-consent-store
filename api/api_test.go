@@ -30,11 +30,9 @@ import (
 	"testing"
 )
 
-
-
 func TestDefaultConsentStore_CheckConsent(t *testing.T) {
 	client := defaultConsentStore()
-	client.Cs.RecordConsent(context.Background(), []pkg.ConsentRule{consentRule()})
+	client.Cs.RecordConsent(context.Background(), []pkg.ConsentRule{consentRuleForQuery()})
 	defer client.Cs.Shutdown()
 
 	t.Run("API call returns 200 for no auth", func(t *testing.T) {
@@ -185,7 +183,7 @@ func TestDefaultConsentStore_CheckConsent(t *testing.T) {
 
 		expected := "code=400, message=missing custodian in checkRequest"
 		if err.Error() != expected {
-			t.Errorf("Expected error [%s], got: [%v]", expected,  err)
+			t.Errorf("Expected error [%s], got: [%v]", expected, err)
 		}
 	})
 
@@ -367,7 +365,7 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 
 func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 	client := defaultConsentStore()
-	client.Cs.RecordConsent(context.Background(), []pkg.ConsentRule{consentRule()})
+	client.Cs.RecordConsent(context.Background(), []pkg.ConsentRule{consentRuleForQuery()})
 	defer client.Cs.Shutdown()
 
 	t.Run("API call returns 200 for empty query", func(t *testing.T) {
@@ -385,7 +383,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 		echo.EXPECT().Request().Return(request).AnyTimes()
 		echo.EXPECT().JSON(200, ConsentQueryResponse{
 			TotalResults: 0,
-			Page:PageDefinition{},
+			Page:         PageDefinition{},
 		})
 
 		err := client.QueryConsent(echo)
@@ -410,8 +408,8 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 			TotalResults: 1,
 			Results: []SimplifiedConsent{
 				{
-					Subject:Identifier("subject"),
-					Custodian:Identifier("custodian"),
+					Subject:   Identifier("urn:subject"),
+					Custodian: Identifier("custodian"),
 					Actors: []Identifier{
 						"actor",
 					},
@@ -420,7 +418,44 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 					},
 				},
 			},
-			Page:PageDefinition{},
+			Page: PageDefinition{},
+		})
+
+		err := client.QueryConsent(echo)
+
+		if err != nil {
+			t.Errorf("Expected no error, got [%v]", err)
+		}
+	})
+
+	t.Run("API call returns 200 with results for subject search", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		echo := mock.NewMockContext(ctrl)
+
+		query := consentQuery()
+		query.Query = "urn:subject"
+		json, _ := json.Marshal(query)
+		request := &http.Request{
+			Body: ioutil.NopCloser(bytes.NewReader(json)),
+		}
+
+		echo.EXPECT().Request().Return(request).AnyTimes()
+		echo.EXPECT().JSON(200, ConsentQueryResponse{
+			TotalResults: 1,
+			Results: []SimplifiedConsent{
+				{
+					Subject:   Identifier("urn:subject"),
+					Custodian: Identifier("custodian"),
+					Actors: []Identifier{
+						"actor",
+					},
+					Resources: []string{
+						"resource",
+					},
+				},
+			},
+			Page: PageDefinition{},
 		})
 
 		err := client.QueryConsent(echo)
@@ -513,27 +548,26 @@ func testConsent() SimplifiedConsent {
 			Identifier("actor"),
 		},
 		Custodian: Identifier("custodian"),
-		Subject:   Identifier("subject"),
+		Subject:   Identifier("urn:subject"),
 		Resources: []string{"resource"},
 	}
 }
 
 func consentCheckRequest() ConsentCheckRequest {
 	return ConsentCheckRequest{
-		Subject:Identifier("subject"),
-		Custodian:Identifier("custodian"),
-		Actor: Identifier("actor"),
+		Subject:      Identifier("urn:subject"),
+		Custodian:    Identifier("custodian"),
+		Actor:        Identifier("actor"),
 		ResourceType: "resource",
 	}
 }
 
 func consentQuery() ConsentQueryRequest {
 	return ConsentQueryRequest{
-		Actor:Identifier("actor"),
-		Query:"subject",
+		Actor: Identifier("actor"),
+		Query: "subject",
 	}
 }
-
 
 func defaultConsentStore() ApiWrapper {
 	client := pkg.ConsentStore{
@@ -549,4 +583,15 @@ func defaultConsentStore() ApiWrapper {
 	client.RunMigrations(client.Db.DB())
 
 	return ApiWrapper{Cs: &client}
+}
+
+func consentRuleForQuery() pkg.ConsentRule {
+	return pkg.ConsentRule{
+		Subject:   "urn:subject",
+		Custodian: "custodian",
+		Actor:     "actor",
+		Resources: []pkg.Resource{
+			{ResourceType: "resource"},
+		},
+	}
 }

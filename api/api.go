@@ -153,11 +153,10 @@ func (w *ApiWrapper) QueryConsent(ctx echo.Context) error {
 
 	return ctx.JSON(200,
 		ConsentQueryResponse{
-			Results: results,
+			Results:      results,
 			TotalResults: int32(len(results)),
 		})
 }
-
 
 func readBody(ctx echo.Context) ([]byte, error) {
 	req := ctx.Request()

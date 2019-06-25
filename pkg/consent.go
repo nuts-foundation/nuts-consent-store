@@ -82,7 +82,7 @@ func ConsentStoreInstance() *ConsentStore {
 func (cs *ConsentStore) Configure() error {
 	var (
 		err error
-		db *sql.DB
+		db  *sql.DB
 	)
 
 	cs.ConfigOnce.Do(func() {

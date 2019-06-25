@@ -38,7 +38,7 @@ func NewConsentStoreClient() pkg.ConsentStoreClient {
 	} else {
 		return api.HttpClient{
 			ServerAddress: consentStore.Config.Address,
-			Timeout: time.Second,
+			Timeout:       time.Second,
 		}
 	}
 }
