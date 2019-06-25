@@ -47,7 +47,7 @@ const ConfigConnectionStringDefault = "file:test.Db?cache=shared"
 type ConsentStore struct {
 	Db *gorm.DB
 
-	configOnce sync.Once
+	ConfigOnce sync.Once
 	Config     ConsentStoreConfig
 }
 
@@ -80,11 +80,14 @@ func ConsentStoreInstance() *ConsentStore {
 }
 
 func (cs *ConsentStore) Configure() error {
-	var err error
+	var (
+		err error
+		db *sql.DB
+	)
 
-	cs.configOnce.Do(func() {
+	cs.ConfigOnce.Do(func() {
 		if cs.Config.Mode == "server" {
-			db, err := sql.Open("sqlite3", cs.Config.Connectionstring)
+			db, err = sql.Open("sqlite3", cs.Config.Connectionstring)
 			if err != nil {
 				return
 			}

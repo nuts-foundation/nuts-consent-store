@@ -19,8 +19,8 @@
 package api
 
 import (
+	"errors"
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
-	"go/types"
 )
 
 // ToConsentRule converts the SimplifiedConsent object to an internal ConsentRule
@@ -61,16 +61,16 @@ func (sc ConsentCheckRequest) ToConsentRule() pkg.ConsentRule {
 // it cannot convert when numtiple actors are involved
 func FromSimplifiedConsentRule(rules []pkg.ConsentRule) ([]SimplifiedConsent, error) {
 	var (
-		firstActor *string
+		firstActor string
 		consent    []SimplifiedConsent
 	)
 
 	for _, r := range rules {
-		if firstActor == nil {
-			firstActor = &r.Actor
+		if firstActor == "" {
+			firstActor = r.Actor
 		} else {
-			if *firstActor != r.Actor {
-				return nil, types.Error{Msg: "Can not convert consent rules with multiple actors"}
+			if firstActor != r.Actor {
+				return nil, errors.New("Can not convert consent rules with multiple actors")
 			}
 		}
 		var resources []string

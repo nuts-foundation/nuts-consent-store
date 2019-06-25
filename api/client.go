@@ -21,10 +21,10 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
 	"github.com/sirupsen/logrus"
-	"go/types"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -58,7 +58,7 @@ func (hb HttpClient) ConsentAuth(ctx context.Context, consentRule pkg.ConsentRul
 	}
 
 	if result.StatusCode != http.StatusOK {
-		err = types.Error{Msg: fmt.Sprintf("Consent store returned %d, reason: %s", result.StatusCode, body)}
+		err = errors.New(fmt.Sprintf("Consent store returned %d, reason: %s", result.StatusCode, body))
 		logrus.Error(err.Error())
 		return false, err
 	}
@@ -77,7 +77,7 @@ func (hb HttpClient) RecordConsent(ctx context.Context, consent []pkg.ConsentRul
 	var req SimplifiedConsent
 
 	if len(consent) != 1 {
-		err := types.Error{Msg: "Creating multiple consent records currently not supported"}
+		err := errors.New("Creating multiple consent records currently not supported")
 		logrus.Error(err)
 		return err
 	}
@@ -104,7 +104,7 @@ func (hb HttpClient) RecordConsent(ctx context.Context, consent []pkg.ConsentRul
 	}
 
 	if result.StatusCode != http.StatusCreated {
-		err = types.Error{Msg: fmt.Sprintf("Consent store returned %d, reason: %s", result.StatusCode, body)}
+		err = errors.New(fmt.Sprintf("Consent store returned %d, reason: %s", result.StatusCode, body))
 		logrus.Error(err.Error())
 		return err
 	}
@@ -133,7 +133,7 @@ func (hb HttpClient) QueryConsentForActor(ctx context.Context, actor string, que
 	}
 
 	if result.StatusCode != http.StatusOK {
-		err = types.Error{Msg: fmt.Sprintf("Consent store returned %d, reason: %s", result.StatusCode, body)}
+		err = errors.New(fmt.Sprintf("Consent store returned %d, reason: %s", result.StatusCode, body))
 		logrus.Error(err.Error())
 		return rules, err
 	}

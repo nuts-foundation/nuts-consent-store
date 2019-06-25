@@ -20,6 +20,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
 	"github.com/sirupsen/logrus"
@@ -33,7 +34,7 @@ type ApiWrapper struct {
 }
 
 func (w *ApiWrapper) CreateConsent(ctx echo.Context) error {
-	buf, err := ioutil.ReadAll(ctx.Request().Body)
+	buf, err := readBody(ctx)
 	if err != nil {
 		return err
 	}
@@ -67,7 +68,7 @@ func (w *ApiWrapper) CreateConsent(ctx echo.Context) error {
 }
 
 func (w *ApiWrapper) CheckConsent(ctx echo.Context) error {
-	buf, err := ioutil.ReadAll(ctx.Request().Body)
+	buf, err := readBody(ctx)
 	if err != nil {
 		return err
 	}
@@ -112,7 +113,7 @@ func (w *ApiWrapper) CheckConsent(ctx echo.Context) error {
 }
 
 func (w *ApiWrapper) QueryConsent(ctx echo.Context) error {
-	buf, err := ioutil.ReadAll(ctx.Request().Body)
+	buf, err := readBody(ctx)
 	if err != nil {
 		return err
 	}
@@ -155,4 +156,23 @@ func (w *ApiWrapper) QueryConsent(ctx echo.Context) error {
 			Results: results,
 			TotalResults: int32(len(results)),
 		})
+}
+
+
+func readBody(ctx echo.Context) ([]byte, error) {
+	req := ctx.Request()
+	if req.Body == nil {
+		msg := "missing body in request"
+		logrus.Error(msg)
+		return nil, echo.NewHTTPError(http.StatusBadRequest, msg)
+	}
+
+	buf, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		msg := fmt.Sprintf("error reading request: %v", err)
+		logrus.Error(msg)
+		return nil, echo.NewHTTPError(http.StatusBadRequest, msg)
+	}
+
+	return buf, nil
 }

@@ -20,6 +20,7 @@ package engine
 
 import (
 	"context"
+	"errors"
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
@@ -31,7 +32,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"go/types"
 	"strings"
 )
 
@@ -76,7 +76,7 @@ func cmd() *cobra.Command {
 
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 1 {
-				return types.Error{Msg: "requires an actor argument"}
+				return errors.New("requires an actor argument")
 			}
 
 			return nil
@@ -115,7 +115,7 @@ func cmd() *cobra.Command {
 
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 4 {
-				return types.Error{Msg: "requires 4 arguments"}
+				return errors.New("requires 4 arguments")
 			}
 
 			return nil
@@ -150,7 +150,7 @@ func cmd() *cobra.Command {
 
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 4 {
-				return types.Error{Msg: "requires 4 arguments"}
+				return errors.New("requires 4 arguments")
 			}
 
 			return nil
