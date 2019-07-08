@@ -57,7 +57,7 @@ func flagSet() *pflag.FlagSet {
 	flags := pflag.NewFlagSet("cstore", pflag.ContinueOnError)
 
 	flags.String(pkg.ConfigConnectionString, pkg.ConfigConnectionStringDefault, "Db connectionString")
-	flags.String(pkg.ConfigAddress, "localhost:1323", "Interface and port for http server to bind to")
+	flags.String(pkg.ConfigAddress, "localhost:1323", "Address of the server when in client mode")
 	flags.String(pkg.ConfigMode, "server", "server or client, when client it uses the HttpClient")
 
 	return flags

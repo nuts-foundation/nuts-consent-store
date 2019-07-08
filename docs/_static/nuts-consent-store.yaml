@@ -1,0 +1,192 @@
+openapi: "3.0.0"
+info:
+  title: Nuts consent store spec
+  description: >
+    API specification for consent services available at nuts consent store.
+    The Nuts consent store has a database of decrypted Subject, Custodian, Actor, Resource combinations.
+    This allows for vendor specific logic to query and check for specific consent.
+  version: 0.1.0
+  license:
+    name: GPLv3
+paths:
+  /consent/check:
+    post:
+      summary: "Send a request for checking if the given combination exists"
+      operationId: checkConsent
+      tags:
+        - consent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConsentCheckRequest"
+            example:
+              {
+                "subject": " urn:oid:2.16.840.1.113883.2.4.6.3:999999990",
+                "custodian": "urn:oid:2.16.840.1.113883.2.4.6.1:00000000",
+                "actor": "urn:oid:2.16.840.1.113883.2.4.6.1:00000007",
+                "resourceType": "Observation"
+              }
+      responses:
+        '200':
+          description: "OK response, body holds outcome of request"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsentCheckResponse"
+        '400':
+          description: "Invalid request"
+          content:
+            text/plain:
+              example: "missing value for subject"
+              schema:
+                type: string
+  /consent/query:
+    post:
+      summary: "Do a query for available consent"
+      operationId: queryConsent
+      tags:
+        - consent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConsentQueryRequest"
+      responses:
+        '200':
+          description: "OK response, body holds outcome of request"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsentQueryResponse"
+        '400':
+          description: "Invalid request"
+          content:
+            text/plain:
+              example: "missing value for actor"
+              schema:
+                type: string
+  /consent:
+    post:
+      summary: "Create a new consent record"
+      operationId: createConsent
+      tags:
+        - consent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SimplifiedConsent"
+      responses:
+        '201':
+          description: "Created response"
+        '400':
+          description: "Invalid request"
+          content:
+            text/plain:
+              example: "missing value for actor"
+              schema:
+                type: string
+components:
+  schemas:
+    ConsentCheckRequest:
+      required:
+        - subject
+        - custodian
+        - actor
+        - resourceType
+      properties:
+        subject:
+          $ref: "#/components/schemas/Identifier"
+        custodian:
+          $ref: "#/components/schemas/Identifier"
+        actor:
+          $ref: "#/components/schemas/Identifier"
+        resourceType:
+          type: string
+          description: "FHIR resource that is requested"
+          example: "Observation"
+    ConsentCheckResponse:
+      required:
+        - outcome
+      properties:
+        consentGiven:
+          type: string
+          enum: ["yes", "no", "limited"]
+        limitations:
+          type: string
+          description: "for future use"
+          example:
+            "Only measurements are allowed, SOEP not"
+    ConsentQueryRequest:
+      description: "Query can either be a full text search string like * or a subject identifier"
+      required:
+        - actor
+        - query
+      properties:
+        actor:
+          $ref: "#/components/schemas/Identifier"
+        page:
+          $ref: "#/components/schemas/PageDefinition"
+        query:
+          oneOf:
+            - $ref: "#/components/schemas/SubjectQuery"
+            - $ref: "#/components/schemas/Identifier"
+    ConsentQueryResponse:
+      required:
+        - page
+        - results
+        - totalResults
+      properties:
+        page:
+          $ref: "#/components/schemas/PageDefinition"
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/SimplifiedConsent"
+        totalResults:
+          type: integer
+          description: Total number of results
+    SimplifiedConsent:
+      description: "Simplified consent record"
+      required:
+        - actors
+        - custodian
+        - resources
+        - subject
+      properties:
+        actors:
+          type: array
+          items:
+            $ref: "#/components/schemas/Identifier"
+        custodian:
+          $ref: "#/components/schemas/Identifier"
+        resources:
+          description: "Array of fhir resources"
+          type: array
+          items:
+            type: string
+        subject:
+          $ref: "#/components/schemas/Identifier"
+    PageDefinition:
+      required:
+        - offset
+        - limit
+      properties:
+        offset:
+          type: integer
+        limit:
+          type: integer
+    SubjectQuery:
+      type: string
+      description: "Free text search for finding subjects"
+      example: "Mr Janse*"
+    Identifier:
+      type: string
+      description: >
+        Generic identifier used for representing BSN, agbcode, etc.
+        It's always constructed as an URN followed by a double colon (:) and then the identifying value of the given URN
+      example: urn:oid:2.16.840.1.113883.2.4.6.1:00000007
