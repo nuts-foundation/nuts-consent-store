@@ -39,7 +39,7 @@ func Execute() {
 		panic(err)
 	}
 
-	c.PrintConfig()
+	c.PrintConfig(logrus.StandardLogger())
 
 	if err := c.InjectIntoEngine(e); err != nil {
 		panic(err)
