@@ -120,9 +120,17 @@ func (w *ApiWrapper) QueryConsent(ctx echo.Context) error {
 
 	var checkRequest = &ConsentQueryRequest{}
 	err = json.Unmarshal(buf, checkRequest)
+	var (
+		actor, custodian string
+	)
 
-	if len(checkRequest.Actor) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "missing actor in queryRequest")
+	if checkRequest.Actor != nil {
+		//	return echo.NewHTTPError(http.StatusBadRequest, "missing actor in queryRequest")
+		actor = string(*checkRequest.Actor)
+	}
+
+	if checkRequest.Custodian != nil {
+		custodian = string(*checkRequest.Custodian)
 	}
 
 	query := checkRequest.Query.(string)
@@ -133,10 +141,19 @@ func (w *ApiWrapper) QueryConsent(ctx echo.Context) error {
 
 	var rules []pkg.ConsentRule
 
+	if len(actor) == 0 && len(custodian) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "missing actor or custodian in queryRequest")
+	}
+
 	if strings.Index(query, "urn") == 0 {
-		rules, err = w.Cs.QueryConsentForActorAndSubject(ctx.Request().Context(), string(checkRequest.Actor), query)
+		if len(actor) != 0 {
+			rules, err = w.Cs.QueryConsentForActorAndSubject(ctx.Request().Context(), actor, query)
+		}
+		if len(custodian) != 0 {
+			rules, err = w.Cs.QueryConsentForCustodianAndSubject(ctx.Request().Context(), custodian, query)
+		}
 	} else {
-		rules, err = w.Cs.QueryConsentForActor(ctx.Request().Context(), string(checkRequest.Actor), query)
+		rules, err = w.Cs.QueryConsentForActor(ctx.Request().Context(), actor, query)
 	}
 
 	if err != nil {
@@ -154,7 +171,7 @@ func (w *ApiWrapper) QueryConsent(ctx echo.Context) error {
 	return ctx.JSON(200,
 		ConsentQueryResponse{
 			Results:      results,
-			TotalResults: int32(len(results)),
+			TotalResults: len(results),
 		})
 }
 

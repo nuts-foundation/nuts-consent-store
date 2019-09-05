@@ -251,3 +251,68 @@ func defaultConsentStore() ConsentStore {
 
 	return client
 }
+
+func TestConsentStore_QueryConsent(t *testing.T) {
+	client := defaultConsentStore()
+	defer client.Shutdown()
+
+	rules := []ConsentRule{
+		{
+			Actor:     "actor",
+			Custodian: "custodian",
+			Subject:   "subject",
+			Resources: []Resource{
+				{
+					ResourceType: "resource",
+				},
+			},
+		},
+		{
+			Actor:     "actor2",
+			Custodian: "custodian2",
+			Subject:   "subject",
+			Resources: []Resource{
+				{
+					ResourceType: "resource2",
+				},
+			},
+		},
+	}
+
+	if err := client.RecordConsent(context.TODO(), rules); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("Recorded consent can be found by subject", func(t *testing.T) {
+		subject := "subject"
+
+		consent, err := client.QueryConsent(context.TODO(), nil, nil, &subject)
+
+		if err != nil {
+			t.Errorf("Expected no error, got [%v]", err)
+		}
+
+		if len(consent) != 2 {
+			t.Errorf("Expected 2 results, got [%d]", len(consent))
+		}
+	})
+
+	t.Run("Recorded consent can be found by custodian", func(t *testing.T) {
+		custodian := "custodian2"
+
+		consent, err := client.QueryConsent(context.TODO(), nil, &custodian, nil)
+
+		if err != nil {
+			t.Errorf("Expected no error, got [%v]", err)
+		}
+
+		if len(consent) != 1 {
+			t.Errorf("Expected 1 results, got [%d]", len(consent))
+		}
+
+		if consent[0].Custodian != custodian {
+			t.Errorf("Expected custodian to be [%s] got [%s]", custodian, consent[0].Custodian)
+		}
+	})
+
+}

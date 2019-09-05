@@ -23,13 +23,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/golang/mock/gomock"
-	"github.com/nuts-foundation/nuts-consent-store/pkg"
-	"github.com/nuts-foundation/nuts-go-core/mock"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/golang/mock/gomock"
+	"github.com/nuts-foundation/nuts-consent-store/pkg"
+	"github.com/nuts-foundation/nuts-go-core/mock"
 )
 
 func TestDefaultConsentStore_CheckConsent(t *testing.T) {
@@ -425,7 +426,8 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 		echo := mock.NewMockContext(ctrl)
 
 		ccr := consentQuery()
-		ccr.Actor = "actor2"
+		actor := Identifier("actor2")
+		ccr.Actor = &actor
 		json, _ := json.Marshal(ccr)
 		request := &http.Request{
 			Body: ioutil.NopCloser(bytes.NewReader(json)),
@@ -544,7 +546,8 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 		echo := mock.NewMockContext(ctrl)
 
 		consent := consentQuery()
-		consent.Actor = ""
+		actor := Identifier("")
+		consent.Actor = &actor
 
 		json, _ := json.Marshal(consent)
 		request := &http.Request{
@@ -559,8 +562,8 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 			t.Error("Expected error got nothing")
 		}
 
-		expected := "code=400, message=missing actor in queryRequest"
-		if !strings.Contains(err.Error(), expected) {
+		expected := "code=400, message=missing actor or custodian in queryRequest"
+		if err.Error() != expected {
 			t.Errorf("Expected error [%s], got: [%v]", expected, err)
 		}
 	})
@@ -613,9 +616,10 @@ func consentCheckRequest() ConsentCheckRequest {
 	}
 }
 
-func consentQuery() ConsentQueryRequest {
-	return ConsentQueryRequest{
-		Actor: Identifier("actor"),
+func consentQuery() QueryConsentJSONRequestBody {
+	actor := Identifier("actor")
+	return QueryConsentJSONRequestBody{
+		Actor: &actor,
 		Query: "subject",
 	}
 }
