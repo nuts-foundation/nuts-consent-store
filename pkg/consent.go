@@ -29,7 +29,6 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/nuts-foundation/nuts-consent-store/migrations"
-	"github.com/nuts-foundation/nuts-event-octopus/pkg"
 	"github.com/sirupsen/logrus"
 	"sync"
 )
