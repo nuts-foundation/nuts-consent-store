@@ -26,7 +26,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
-	"strings"
 )
 
 type ApiWrapper struct {
@@ -121,16 +120,17 @@ func (w *ApiWrapper) QueryConsent(ctx echo.Context) error {
 	var checkRequest = &ConsentQueryRequest{}
 	err = json.Unmarshal(buf, checkRequest)
 	var (
-		actor, custodian string
+		actor, custodian *string
 	)
 
-	if checkRequest.Actor != nil {
-		//	return echo.NewHTTPError(http.StatusBadRequest, "missing actor in queryRequest")
-		actor = string(*checkRequest.Actor)
+	if checkRequest.Actor != nil  && len(*checkRequest.Actor) > 0 {
+		actorString := string(*checkRequest.Actor)
+		actor = &actorString
 	}
 
-	if checkRequest.Custodian != nil {
-		custodian = string(*checkRequest.Custodian)
+	if checkRequest.Custodian != nil && len(*checkRequest.Custodian) > 0 {
+		custodianString := string(*checkRequest.Custodian)
+		custodian = &custodianString
 	}
 
 	query := checkRequest.Query.(string)
@@ -141,20 +141,11 @@ func (w *ApiWrapper) QueryConsent(ctx echo.Context) error {
 
 	var rules []pkg.ConsentRule
 
-	if len(actor) == 0 && len(custodian) == 0 {
+	if actor == nil && custodian == nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "missing actor or custodian in queryRequest")
 	}
 
-	if strings.Index(query, "urn") == 0 {
-		if len(actor) != 0 {
-			rules, err = w.Cs.QueryConsentForActorAndSubject(ctx.Request().Context(), actor, query)
-		}
-		if len(custodian) != 0 {
-			rules, err = w.Cs.QueryConsentForCustodianAndSubject(ctx.Request().Context(), custodian, query)
-		}
-	} else {
-		rules, err = w.Cs.QueryConsentForActor(ctx.Request().Context(), actor, query)
-	}
+	rules, err = w.Cs.QueryConsent(ctx.Request().Context(), actor, custodian, &query)
 
 	if err != nil {
 		return err
