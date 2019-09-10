@@ -28,7 +28,7 @@ import (
 	"github.com/nuts-foundation/nuts-consent-store/api"
 	"github.com/nuts-foundation/nuts-consent-store/client"
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
-	engine "github.com/nuts-foundation/nuts-go/pkg"
+	engine "github.com/nuts-foundation/nuts-go-core"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"

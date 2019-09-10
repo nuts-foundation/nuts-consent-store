@@ -22,7 +22,7 @@ import (
 	"errors"
 	"github.com/golang/mock/gomock"
 	"github.com/labstack/echo/v4"
-	"github.com/nuts-foundation/nuts-go/mock"
+	"github.com/nuts-foundation/nuts-go-core/mock"
 	"net/http/httptest"
 	"testing"
 )

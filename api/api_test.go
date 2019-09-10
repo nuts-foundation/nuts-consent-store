@@ -25,9 +25,10 @@ import (
 	"errors"
 	"github.com/golang/mock/gomock"
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
-	"github.com/nuts-foundation/nuts-go/mock"
+	"github.com/nuts-foundation/nuts-go-core/mock"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -101,7 +102,7 @@ func TestDefaultConsentStore_CheckConsent(t *testing.T) {
 		}
 
 		expected := "code=400, message=missing body in request"
-		if err.Error() != expected {
+		if !strings.Contains(err.Error(), expected) {
 			t.Errorf("Expected error [%s], got: [%s]", expected, err.Error())
 		}
 	})
@@ -125,7 +126,7 @@ func TestDefaultConsentStore_CheckConsent(t *testing.T) {
 		}
 
 		expected := "code=400, message=error reading request: error"
-		if err.Error() != expected {
+		if !strings.Contains(err.Error(), expected) {
 			t.Errorf("Expected error [%s], got: [%s]", expected, err.Error())
 		}
 	})
@@ -147,7 +148,7 @@ func TestDefaultConsentStore_CheckConsent(t *testing.T) {
 		}
 
 		expected := "code=400, message=missing body in request"
-		if err.Error() != expected {
+		if !strings.Contains(err.Error(), expected) {
 			t.Errorf("Expected error [%s], got: [%s]", expected, err.Error())
 		}
 	})
@@ -174,7 +175,7 @@ func TestDefaultConsentStore_CheckConsent(t *testing.T) {
 		}
 
 		expected := "code=400, message=missing actor in checkRequest"
-		if err.Error() != expected {
+		if !strings.Contains(err.Error(), expected) {
 			t.Errorf("Expected error [%s], got: [%v]", expected, err)
 		}
 	})
@@ -201,7 +202,7 @@ func TestDefaultConsentStore_CheckConsent(t *testing.T) {
 		}
 
 		expected := "code=400, message=missing subject in checkRequest"
-		if err.Error() != expected {
+		if !strings.Contains(err.Error(), expected) {
 			t.Errorf("Expected error [%s], got: [%v]", expected, err)
 		}
 	})
@@ -229,7 +230,7 @@ func TestDefaultConsentStore_CheckConsent(t *testing.T) {
 		}
 
 		expected := "code=400, message=missing custodian in checkRequest"
-		if err.Error() != expected {
+		if !strings.Contains(err.Error(), expected) {
 			t.Errorf("Expected error [%s], got: [%v]", expected, err)
 		}
 	})
@@ -256,7 +257,7 @@ func TestDefaultConsentStore_CheckConsent(t *testing.T) {
 		}
 
 		expected := "code=400, message=missing resourceType in checkRequest"
-		if err.Error() != expected {
+		if !strings.Contains(err.Error(), expected) {
 			t.Errorf("Expected error [%s], got: [%v]", expected, err)
 		}
 	})
@@ -299,7 +300,7 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 		}
 
 		expected := "code=400, message=missing body in request"
-		if err.Error() != expected {
+		if !strings.Contains(err.Error(), expected) {
 			t.Errorf("Expected error [%s], got: [%s]", expected, err.Error())
 		}
 	})
@@ -325,8 +326,9 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 			t.Error("Expected error got nothing")
 		}
 
-		if err.Error() != "code=400, message=missing actors in createRequest" {
-			t.Errorf("Expected error code=400, message=missing actors in createRequest, got: [%s]", err.Error())
+		expected := "code=400, message=missing actors in createRequest"
+		if !strings.Contains(err.Error(), expected) {
+			t.Errorf("Expected error %s, got: [%s]", expected, err.Error())
 		}
 	})
 
@@ -351,8 +353,9 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 			t.Error("Expected error got nothing")
 		}
 
-		if err.Error() != "code=400, message=missing subject in createRequest" {
-			t.Errorf("Expected error code=400, message=missing subject in createRequest, got: [%s]", err.Error())
+		expected := "code=400, message=missing subject in createRequest"
+		if !strings.Contains(err.Error(), expected) {
+			t.Errorf("Expected error %s, got: [%s]", expected, err.Error())
 		}
 	})
 
@@ -377,8 +380,9 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 			t.Error("Expected error got nothing")
 		}
 
-		if err.Error() != "code=400, message=missing custodian in createRequest" {
-			t.Errorf("Expected error code=400, message=missing custodian in createRequest, got: [%s]", err.Error())
+		expected := "code=400, message=missing custodian in createRequest"
+		if !strings.Contains(err.Error(), expected) {
+			t.Errorf("Expected error %s, got: [%s]", expected, err.Error())
 		}
 	})
 
@@ -404,7 +408,7 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 		}
 
 		expected := "code=400, message=missing resources in createRequest"
-		if err.Error() != expected {
+		if !strings.Contains(err.Error(), expected) {
 			t.Errorf("Expected error [%s], got: [%v]", expected, err)
 		}
 	})
@@ -529,7 +533,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 		}
 
 		expected := "code=400, message=missing body in request"
-		if err.Error() != expected {
+		if !strings.Contains(err.Error(), expected) {
 			t.Errorf("Expected error [%s], got: [%s]", expected, err.Error())
 		}
 	})
@@ -556,7 +560,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 		}
 
 		expected := "code=400, message=missing actor in queryRequest"
-		if err.Error() != expected {
+		if !strings.Contains(err.Error(), expected) {
 			t.Errorf("Expected error [%s], got: [%v]", expected, err)
 		}
 	})
@@ -583,7 +587,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 		}
 
 		expected := "code=400, message=missing query in queryRequest"
-		if err.Error() != expected {
+		if !strings.Contains(err.Error(), expected) {
 			t.Errorf("Expected error [%s], got: [%v]", expected, err)
 		}
 	})
