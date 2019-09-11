@@ -23,13 +23,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/golang/mock/gomock"
-	"github.com/nuts-foundation/nuts-consent-store/pkg"
-	"github.com/nuts-foundation/nuts-go-core/mock"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/golang/mock/gomock"
+	"github.com/nuts-foundation/nuts-consent-store/pkg"
+	"github.com/nuts-foundation/nuts-go-core/mock"
 )
 
 func TestDefaultConsentStore_CheckConsent(t *testing.T) {
@@ -416,7 +417,9 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 
 func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 	client := defaultConsentStore()
-	client.Cs.RecordConsent(context.Background(), []pkg.ConsentRule{consentRuleForQuery()})
+	if err := client.Cs.RecordConsent(context.Background(), []pkg.ConsentRule{consentRuleForQuery()}); err != nil {
+		t.Fatal(err)
+	}
 	defer client.Cs.Shutdown()
 
 	t.Run("API call returns 200 for empty query", func(t *testing.T) {
@@ -425,7 +428,8 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 		echo := mock.NewMockContext(ctrl)
 
 		ccr := consentQuery()
-		ccr.Actor = "actor2"
+		actor := Identifier("actor2")
+		ccr.Actor = &actor
 		json, _ := json.Marshal(ccr)
 		request := &http.Request{
 			Body: ioutil.NopCloser(bytes.NewReader(json)),
@@ -449,7 +453,9 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 		defer ctrl.Finish()
 		echo := mock.NewMockContext(ctrl)
 
-		json, _ := json.Marshal(consentQuery())
+		query := consentQuery()
+		query.Query = "%"
+		json, _ := json.Marshal(query)
 		request := &http.Request{
 			Body: ioutil.NopCloser(bytes.NewReader(json)),
 		}
@@ -538,13 +544,14 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 		}
 	})
 
-	t.Run("API call returns 400 for missing actor", func(t *testing.T) {
+	t.Run("API call returns 400 for missing actor and custodian", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 		echo := mock.NewMockContext(ctrl)
 
 		consent := consentQuery()
-		consent.Actor = ""
+		consent.Actor = nil
+		consent.Custodian = nil
 
 		json, _ := json.Marshal(consent)
 		request := &http.Request{
@@ -559,8 +566,8 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 			t.Error("Expected error got nothing")
 		}
 
-		expected := "code=400, message=missing actor in queryRequest"
-		if !strings.Contains(err.Error(), expected) {
+		expected := "code=400, message=missing actor or custodian in queryRequest"
+		if !strings.HasPrefix(err.Error(), expected) {
 			t.Errorf("Expected error [%s], got: [%v]", expected, err)
 		}
 	})
@@ -613,9 +620,10 @@ func consentCheckRequest() ConsentCheckRequest {
 	}
 }
 
-func consentQuery() ConsentQueryRequest {
-	return ConsentQueryRequest{
-		Actor: Identifier("actor"),
+func consentQuery() QueryConsentJSONRequestBody {
+	actor := Identifier("actor")
+	return QueryConsentJSONRequestBody{
+		Actor: &actor,
 		Query: "subject",
 	}
 }

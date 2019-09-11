@@ -47,8 +47,10 @@ const ConfigConnectionStringDefault = ":memory:"
 type ConsentStore struct {
 	Db *gorm.DB
 
-	ConfigOnce sync.Once
-	Config     ConsentStoreConfig
+	ConfigOnce       sync.Once
+	Config           ConsentStoreConfig
+	//NutsEventOctopus pkg.EventOctopusClient
+	//EventPublisher   pkg.IEventPublisher
 }
 
 var instance *ConsentStore
@@ -65,6 +67,7 @@ type ConsentStoreClient interface {
 	QueryConsentForActor(context context.Context, actor string, query string) ([]ConsentRule, error)
 	// QueryConsentForActorAndSubject can be used to list the custodians and resources for a given Actor and Subject.
 	QueryConsentForActorAndSubject(context context.Context, actor string, subject string) ([]ConsentRule, error)
+	QueryConsent(context context.Context, actor, custodian, subject *string) ([]ConsentRule, error)
 }
 
 func ConsentStoreInstance() *ConsentStore {
@@ -77,6 +80,10 @@ func ConsentStoreInstance() *ConsentStore {
 	})
 
 	return instance
+}
+
+func Logger() *logrus.Entry {
+	return logrus.StandardLogger().WithField("module", "consent-store")
 }
 
 func (cs *ConsentStore) Configure() error {
@@ -238,6 +245,30 @@ func (cs *ConsentStore) QueryConsentForActorAndSubject(context context.Context, 
 	var rules []ConsentRule
 
 	if err := cs.Db.Debug().Where("Actor = ? AND Subject = ?", actor, subject).Preload("Resources").Find(&rules).Error; err != nil {
+		return nil, err
+	}
+
+	return rules, nil
+}
+func (cs *ConsentStore) QueryConsent(context context.Context, _actor, _custodian, _subject *string) ([]ConsentRule, error) {
+	var rules []ConsentRule
+	var (
+		actor, custodian, subject string
+	)
+
+	if actor = "%"; _actor != nil {
+		actor = *_actor
+	}
+
+	if custodian = "%"; _custodian != nil {
+		custodian = *_custodian
+	}
+
+	if subject = "%"; _subject != nil {
+		subject = *_subject
+	}
+
+	if err := cs.Db.Debug().Where("Actor LIKE ? AND Subject LIKE ? AND Custodian LIKE ?", actor, subject, custodian).Preload("Resources").Find(&rules).Error; err != nil {
 		return nil, err
 	}
 

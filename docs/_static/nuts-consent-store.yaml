@@ -122,11 +122,12 @@ components:
           example:
             "Only measurements are allowed, SOEP not"
     ConsentQueryRequest:
-      description: "Query can either be a full text search string like * or a subject identifier"
+      description: "Query can either be a full text search string like % or a subject identifier."
       required:
-        - actor
         - query
       properties:
+        custodian:
+          $ref: "#/components/schemas/Identifier"
         actor:
           $ref: "#/components/schemas/Identifier"
         page:
@@ -183,7 +184,7 @@ components:
     SubjectQuery:
       type: string
       description: "Free text search for finding subjects"
-      example: "Mr Janse*"
+      example: "Mr Janse%"
     Identifier:
       type: string
       description: >

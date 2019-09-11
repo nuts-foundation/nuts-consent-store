@@ -38,8 +38,12 @@ type HttpClient struct {
 	customClient  *http.Client
 }
 
+func (hb HttpClient) QueryConsent(context context.Context, actor, custodian, subject *string) ([]pkg.ConsentRule, error) {
+	panic("implement me")
+}
+
 func (hb HttpClient) ConsentAuth(ctx context.Context, consentRule pkg.ConsentRule, resourceType string) (bool, error) {
-	req := ConsentCheckRequest{
+	req := CheckConsentJSONRequestBody{
 		Actor:        Identifier(consentRule.Actor),
 		Custodian:    Identifier(consentRule.Custodian),
 		Subject:      Identifier(consentRule.Subject),
@@ -69,7 +73,7 @@ func (hb HttpClient) ConsentAuth(ctx context.Context, consentRule pkg.ConsentRul
 
 // RecordConsent currently only supports the creation of a single record
 func (hb HttpClient) RecordConsent(ctx context.Context, consent []pkg.ConsentRule) error {
-	var req SimplifiedConsent
+	var req CreateConsentJSONRequestBody
 
 	if len(consent) != 1 {
 		err := errors.New("creating multiple consent records currently not supported")
@@ -102,9 +106,10 @@ func (hb HttpClient) RecordConsent(ctx context.Context, consent []pkg.ConsentRul
 
 func (hb HttpClient) QueryConsentForActor(ctx context.Context, actor string, query string) ([]pkg.ConsentRule, error) {
 	var rules []pkg.ConsentRule
+	actorIdentifier := Identifier(actor)
 
-	req := ConsentQueryRequest{
-		Actor: Identifier(actor),
+	req := QueryConsentJSONRequestBody{
+		Actor: &actorIdentifier,
 		Query: query,
 	}
 
