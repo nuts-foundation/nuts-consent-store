@@ -567,7 +567,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 		}
 
 		expected := "code=400, message=missing actor or custodian in queryRequest"
-		if err.Error() != expected {
+		if !strings.HasPrefix(err.Error(), expected) {
 			t.Errorf("Expected error [%s], got: [%v]", expected, err)
 		}
 	})
