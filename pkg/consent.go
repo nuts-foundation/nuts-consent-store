@@ -21,6 +21,7 @@ package pkg
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
@@ -31,6 +32,7 @@ import (
 	"github.com/nuts-foundation/nuts-consent-store/migrations"
 	"github.com/sirupsen/logrus"
 	"sync"
+	"time"
 )
 
 type ConsentStoreConfig struct {
@@ -58,8 +60,8 @@ var oneEngine sync.Once
 
 // ConsentStoreClient defines all actions possible through a direct connection, command-line and REST api
 type ConsentStoreClient interface {
-	// ConsentAuth checks if a record exists in the Db for the given combination and returns a bool.
-	ConsentAuth(context context.Context, consentRule PatientConsent, resourceType string) (bool, error)
+	// ConsentAuth checks if a record exists in the Db for the given combination and returns a bool. Checkpoint is optional and default to time.Now()
+	ConsentAuth(context context.Context, custodian string ,subject string, actor string, resourceType string, checkpoint *time.Time) (bool, error)
 	// RecordConsent records a record in the Db, this is not to be used to create a new distributed consent record. It's only valid for the local node.
 	// It should only be called by the consent logic component (or for development purposes)
 	RecordConsent(context context.Context, consent []PatientConsent) error
@@ -67,7 +69,10 @@ type ConsentStoreClient interface {
 	QueryConsentForActor(context context.Context, actor string, query string) ([]PatientConsent, error)
 	// QueryConsentForActorAndSubject can be used to list the custodians and resources for a given Actor and Subject.
 	QueryConsentForActorAndSubject(context context.Context, actor string, subject string) ([]PatientConsent, error)
-	QueryConsent(context context.Context, actor, custodian, subject *string) ([]PatientConsent, error)
+	// QueryConsent can be used to query consent from a custodian/actor point of view.
+	QueryConsent(context context.Context, actor *string, custodian *string, subject *string) ([]PatientConsent, error)
+	// DeleteConsentRecordByHash removes a ConsentRecord from the db. Returns true if the record was found and deleted.
+	DeleteConsentRecordByHash(context context.Context, proofHash string) (bool, error)
 }
 
 func ConsentStoreInstance() *ConsentStore {
@@ -168,16 +173,25 @@ func (cs *ConsentStore) RunMigrations(db *sql.DB) error {
 	return nil
 }
 
-func (cs *ConsentStore) ConsentAuth(context context.Context, consentRule PatientConsent, resourceType string) (bool, error) {
+func (cs *ConsentStore) ConsentAuth(context context.Context, custodian string, subject string, actor string, resourceType string, checkpoint *time.Time) (bool, error) {
 	target := &PatientConsent{}
-	copy := PatientConsent{
-		Actor:     consentRule.Actor,
-		Custodian: consentRule.Custodian,
-		Subject:   consentRule.Subject,
+
+	cp := time.Now()
+
+	if checkpoint != nil {
+		cp = *checkpoint
 	}
 
 	// this will always fill target, but if a record does not exist, resources will be empty
-	if err := cs.Db.Debug().Preload("Records").Preload("Records.Resources").Table(consentRule.TableName()).Where(copy).FirstOrInit(&target).Error; err != nil {
+	var tdb = cs.Db.Debug()
+	tdb = tdb.Table("patient_consent")
+	tdb = tdb.Joins("JOIN consent_record ON consent_record.patient_consent_id = patient_consent.id")
+	tdb = tdb.Preload("Records.Resources")
+	tdb = tdb.Where("custodian = ? AND subject = ? AND actor = ?", custodian, subject, actor)
+	tdb = tdb.Where("consent_record.valid_from <= ?", cp)
+	tdb = tdb.Where("consent_record.valid_to > ?", cp)
+
+	if err := tdb.FirstOrInit(&target).Error; err != nil {
 		return false, err
 	}
 
@@ -225,6 +239,13 @@ func (cs *ConsentStore) RecordConsent(context context.Context, consent []Patient
 			tcr := ConsentRecord{
 				PatientConsentID: tpc.ID,
 				ProofHash: cr.ProofHash,
+				ValidFrom: cr.ValidFrom,
+				ValidTo: cr.ValidTo,
+			}
+
+			if !tcr.ValidTo.After(tcr.ValidFrom) {
+				tx.Rollback()
+				return errors.New("ConsentRecord validation failed: ValidTo must come after ValidFrom")
 			}
 
 			// find existing record
@@ -263,7 +284,7 @@ func (cs *ConsentStore) QueryConsentForActorAndSubject(context context.Context, 
 
 	return rules, nil
 }
-func (cs *ConsentStore) QueryConsent(context context.Context, _actor, _custodian, _subject *string) ([]PatientConsent, error) {
+func (cs *ConsentStore) QueryConsent(context context.Context, _actor *string, _custodian *string, _subject *string) ([]PatientConsent, error) {
 	var rules []PatientConsent
 	var (
 		actor, custodian, subject string
@@ -286,4 +307,21 @@ func (cs *ConsentStore) QueryConsent(context context.Context, _actor, _custodian
 	}
 
 	return rules, nil
+}
+
+func (cs *ConsentStore) DeleteConsentRecordByHash(context context.Context, proofHash string) (bool, error) {
+	record := ConsentRecord{}
+
+	if err := cs.Db.Debug().Where("proof_hash = ?", proofHash).First(&record).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	if err := cs.Db.Debug().Delete(&record).Error; err != nil {
+		return false, err
+	}
+
+	return true, nil
 }

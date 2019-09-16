@@ -150,7 +150,7 @@ func cmd() *cobra.Command {
 	cmd.AddCommand(&cobra.Command{
 		Use:     "check [subject] [custodian] [actor] [resource]",
 		Example: "check urn:oid:2.16.840.1.113883.2.4.6.3:999999990 urn:oid:2.16.840.1.113883.2.4.6.1:00000007 urn:oid:2.16.840.1.113883.2.4.6.1:00000007 Observation",
-		Short:   "check if consent is given for the given combination",
+		Short:   "check if there's an active consent record for the given combination",
 
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 4 {
@@ -162,11 +162,13 @@ func cmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			csc := client.NewConsentStoreClient()
 
-			auth, err := csc.ConsentAuth(context.TODO(), pkg.PatientConsent{
-				Subject:   args[0],
-				Custodian: args[1],
-				Actor:     args[2],
-			}, args[3])
+			auth, err := csc.ConsentAuth(
+				context.TODO(),
+				args[0],
+				args[1],
+				args[2],
+				args[3],
+				nil)
 
 			if err != nil {
 				logrus.Errorf("Error checking consent: %s", err.Error())

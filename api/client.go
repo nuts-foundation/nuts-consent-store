@@ -38,16 +38,32 @@ type HttpClient struct {
 	customClient  *http.Client
 }
 
-func (hb HttpClient) QueryConsent(context context.Context, actor, custodian, subject *string) ([]pkg.PatientConsent, error) {
+func (hb HttpClient) QueryConsent(context context.Context, actor *string, custodian *string, subject *string) ([]pkg.PatientConsent, error) {
 	panic("implement me")
 }
 
-func (hb HttpClient) ConsentAuth(ctx context.Context, consentRule pkg.PatientConsent, resourceType string) (bool, error) {
+func (hb HttpClient) DeleteConsentRecordByHash(context context.Context, proofHash string) (bool, error) {
+	// delete record, if it doesn't exist an error is returned
+	if _, err := hb.client().DeleteConsent(context, proofHash); err != nil {
+		err := fmt.Errorf("error while deleting consent in consent-store: %v", err)
+		hb.Logger.Error(err)
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (hb HttpClient) ConsentAuth(ctx context.Context, custodian string, subject string, actor string, resourceType string, checkpoint *time.Time) (bool, error) {
 	req := CheckConsentJSONRequestBody{
-		Actor:        Identifier(consentRule.Actor),
-		Custodian:    Identifier(consentRule.Custodian),
-		Subject:      Identifier(consentRule.Subject),
+		Actor:        Identifier(actor),
+		Custodian:    Identifier(custodian),
+		Subject:      Identifier(subject),
 		ResourceType: resourceType,
+	}
+
+	if checkpoint != nil {
+		s := checkpoint.Format("2020-01-01")
+		req.ValidAt = &s
 	}
 
 	result, err := hb.client().CheckConsent(ctx, req)
@@ -81,7 +97,7 @@ func (hb HttpClient) RecordConsent(ctx context.Context, consent []pkg.PatientCon
 		return err
 	}
 
-	req.Actors = []Identifier{Identifier(consent[0].Actor)}
+	req.Actor = Identifier(consent[0].Actor)
 	req.Custodian = Identifier(consent[0].Custodian)
 	req.Subject = Identifier(consent[0].Subject)
 

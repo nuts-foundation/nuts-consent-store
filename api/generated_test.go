@@ -35,6 +35,10 @@ var siws = []*ServerInterfaceWrapper{
 	serverInterfaceWrapper(nil), serverInterfaceWrapper(errors.New("Server error")),
 }
 
+func (t *testServer) DeleteConsent(ctx echo.Context, proofHash string) error {
+	return t.err
+}
+
 func (t *testServer) CreateConsent(ctx echo.Context) error {
 	return t.err
 }
@@ -46,6 +50,8 @@ func (t *testServer) CheckConsent(ctx echo.Context) error {
 func (t *testServer) QueryConsent(ctx echo.Context) error {
 	return t.err
 }
+
+
 
 func TestServerInterfaceWrapper_CheckConsent(t *testing.T) {
 	for _, siw := range siws {
@@ -104,6 +110,7 @@ func TestRegisterHandlers(t *testing.T) {
 		echo.EXPECT().POST("/consent", gomock.Any())
 		echo.EXPECT().POST("/consent/check", gomock.Any())
 		echo.EXPECT().POST("/consent/query", gomock.Any())
+		echo.EXPECT().DELETE("/consent/:proofHash", gomock.Any())
 
 		RegisterHandlers(echo, &testServer{})
 	})

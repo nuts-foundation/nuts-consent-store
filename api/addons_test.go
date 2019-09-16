@@ -23,40 +23,6 @@ import (
 	"testing"
 )
 
-func TestConsentCheckRequest_ToConsentRule(t *testing.T) {
-	t.Run("Data is converted", func(t *testing.T) {
-		csr := ConsentCheckRequest{
-			Subject:      Identifier("subject"),
-			Custodian:    Identifier("custodian"),
-			Actor:        Identifier("actor"),
-			ResourceType: "resource",
-		}
-
-		cr := csr.ToPatientConsent()
-
-		if cr.Subject != "subject" {
-			t.Error("Expected Subject to equal [subject]")
-		}
-
-		if cr.Custodian != "custodian" {
-			t.Error("Expected Custodian to equal [custodian]")
-		}
-
-		if cr.Actor != "actor" {
-			t.Error("Expected Actor to equal [actor]")
-		}
-
-		if len(cr.Resources()) != 1 {
-			t.Error("Expected resources to have 1 item")
-			return
-		}
-
-		if cr.Resources()[0].ResourceType != "resource" {
-			t.Error("Expected Resource to equal [resource]")
-		}
-	})
-}
-
 func TestFromSimplifiedConsentRule(t *testing.T) {
 	t.Run("single consentRule converted", func(t *testing.T) {
 		scs, _ := FromSimplifiedConsentRule([]pkg.PatientConsent{consentRule()})
@@ -76,13 +42,8 @@ func TestFromSimplifiedConsentRule(t *testing.T) {
 			t.Error("Expected Custodian to equal [custodian]")
 		}
 
-		if len(sc.Actors) != 1 {
-			t.Error("Expected Actors to have 1 item")
-			return
-		}
-
-		if sc.Actors[0] != "actor" {
-			t.Error("Expected Actor to equal [actor]")
+		if sc.Actor != "actor" {
+			t.Error("Expected Actor to equal actor")
 		}
 
 		if len(sc.Resources) != 1 {

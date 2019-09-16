@@ -30,7 +30,7 @@ The client and server API is generated from the nuts-consent-store open-api spec
 
 .. code-block:: shell
 
-    oapi-codegen -package api docs/_static/nuts-consent-store.yaml > api/generated.go
+    oapi-codegen -generate server,client,types -package api docs/_static/nuts-consent-store.yaml > api/generated.go
 
 
 Binary format migrations

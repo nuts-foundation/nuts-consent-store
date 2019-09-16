@@ -21,38 +21,26 @@ package api
 import (
 	"errors"
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
+	"time"
 )
 
 // ToPatientConsent converts the SimplifiedConsent object to an internal PatientConsent
-func (sc SimplifiedConsent) ToPatientConsent() []pkg.PatientConsent {
+func (sc SimplifiedConsent) ToPatientConsent() (pkg.PatientConsent, error) {
 
-	var rules = make([]pkg.PatientConsent, len(sc.Actors))
 	var resources = make([]pkg.Resource, len(sc.Resources))
 
 	for _, a := range sc.Resources {
 		resources = append(resources, pkg.Resource{ResourceType: a})
 	}
 
-	for _, a := range sc.Actors {
-
-		rules = append(rules, pkg.PatientConsent{
-			Subject:   string(sc.Subject),
-			Custodian: string(sc.Custodian),
-			Actor:     string(a),
-			Records: []pkg.ConsentRecord{
-				{
-					ProofHash: "23645928",
-					Resources: resources,
-				},
-			},
-		})
+	validFrom, err := time.Parse("2020-01-01", string(sc.ValidFrom))
+	if err != nil {
+		return pkg.PatientConsent{}, err
 	}
-
-	return rules
-}
-
-// ToPatientConsent converts the ConsentCheckRequest object to an internal PatientConsent
-func (sc ConsentCheckRequest) ToPatientConsent() pkg.PatientConsent {
+	validTo, err := time.Parse("2020-01-01", string(sc.ValidTo))
+	if err != nil {
+		return pkg.PatientConsent{}, err
+	}
 
 	return pkg.PatientConsent{
 		Subject:   string(sc.Subject),
@@ -60,11 +48,13 @@ func (sc ConsentCheckRequest) ToPatientConsent() pkg.PatientConsent {
 		Actor:     string(sc.Actor),
 		Records: []pkg.ConsentRecord{
 			{
-				ProofHash: "23645928",
-				Resources: []pkg.Resource{{ResourceType: sc.ResourceType}},
+				ValidFrom: validFrom,
+				ValidTo: validTo,
+				ProofHash: *sc.ProofHash,
+				Resources: resources,
 			},
 		},
-	}
+	}, nil
 }
 
 // FromSimplifiedConsentRule converts a slice of pkg.PatientConsent to a slice of SimplifiedConsent
@@ -88,12 +78,13 @@ func FromSimplifiedConsentRule(patientConsent []pkg.PatientConsent) ([]Simplifie
 			for _, r2 := range r.Resources {
 				resources = append(resources, r2.ResourceType)
 			}
-
 			consent = append(consent, SimplifiedConsent{
 				Subject:   Identifier(c.Subject),
 				Custodian: Identifier(c.Custodian),
-				Actors:    []Identifier{Identifier(c.Actor)},
+				Actor:    Identifier(c.Actor),
 				Resources: resources,
+				ValidFrom: ValidFrom(r.ValidFrom.Format("2020-01-01")),
+				ValidTo: ValidTo(r.ValidTo.Format("2020-01-01")),
 			})
 		}
 	}

@@ -15,9 +15,15 @@ CREATE TABLE consent_record (
     proof_hash VARCHAR(255) NOT NULL UNIQUE
 );
 
+CREATE UNIQUE INDEX uniq_record ON consent_record(proof_hash);
+
 CREATE TABLE resource (
-    consent_record_id INTEGER REFERENCES consent_record(id),
-    resource_type VARCHAR(255) NOT NULL
+    consent_record_id INTEGER,
+    resource_type VARCHAR(255) NOT NULL,
+
+    FOREIGN KEY(consent_record_id)
+    REFERENCES consent_record (id)
+    ON DELETE CASCADE
 );
 
 CREATE UNIQUE INDEX uniq_resource ON resource(consent_record_id, resource_type);

@@ -23,10 +23,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/labstack/gommon/random"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
@@ -281,7 +283,10 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 		echo.EXPECT().Request().Return(request).AnyTimes()
 		echo.EXPECT().NoContent(http.StatusCreated)
 
-		client.CreateConsent(echo)
+		if err := client.CreateConsent(echo); err != nil {
+			t.Errorf("Expected no error, got %v", err)
+			return
+		}
 	})
 
 	t.Run("Missing body gives 400", func(t *testing.T) {
@@ -312,7 +317,7 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 		echo := mock.NewMockContext(ctrl)
 
 		consent := testConsent()
-		consent.Actors = []Identifier{}
+		consent.Actor = Identifier("")
 
 		json, _ := json.Marshal(consent)
 		request := &http.Request{
@@ -327,7 +332,34 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 			t.Error("Expected error got nothing")
 		}
 
-		expected := "code=400, message=missing actors in createRequest"
+		expected := "code=400, message=missing actor in createRequest"
+		if !strings.Contains(err.Error(), expected) {
+			t.Errorf("Expected error %s, got: [%s]", expected, err.Error())
+		}
+	})
+
+	t.Run("API call returns 400 for missing proofHash", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		echo := mock.NewMockContext(ctrl)
+
+		consent := testConsent()
+		consent.ProofHash = nil
+
+		json, _ := json.Marshal(consent)
+		request := &http.Request{
+			Body: ioutil.NopCloser(bytes.NewReader(json)),
+		}
+
+		echo.EXPECT().Request().Return(request).AnyTimes()
+
+		err := client.CreateConsent(echo)
+
+		if err == nil {
+			t.Error("Expected error got nothing")
+		}
+
+		expected := "code=400, message=missing proofHash in createRequest"
 		if !strings.Contains(err.Error(), expected) {
 			t.Errorf("Expected error %s, got: [%s]", expected, err.Error())
 		}
@@ -467,12 +499,12 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 				{
 					Subject:   Identifier("urn:subject"),
 					Custodian: Identifier("custodian"),
-					Actors: []Identifier{
-						"actor",
-					},
+					Actor: Identifier("actor"),
 					Resources: []string{
 						"resource",
 					},
+					ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format("2020-01-01")),
+					ValidTo: ValidTo(time.Now().Add(time.Hour * 24).Format("2020-01-01")),
 				},
 			},
 			Page: PageDefinition{},
@@ -504,12 +536,12 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 				{
 					Subject:   Identifier("urn:subject"),
 					Custodian: Identifier("custodian"),
-					Actors: []Identifier{
-						"actor",
-					},
+					Actor: Identifier("actor"),
 					Resources: []string{
 						"resource",
 					},
+					ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format("2020-01-01")),
+					ValidTo: ValidTo(time.Now().Add(time.Hour * 24).Format("2020-01-01")),
 				},
 			},
 			Page: PageDefinition{},
@@ -601,13 +633,15 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 }
 
 func testConsent() SimplifiedConsent {
+	hash := random.String(8)
 	return SimplifiedConsent{
-		Actors: []Identifier{
-			Identifier("actor"),
-		},
+		Actor: Identifier("actor"),
 		Custodian: Identifier("custodian"),
 		Subject:   Identifier("urn:subject"),
+		ProofHash: &hash,
 		Resources: []string{"resource"},
+		ValidFrom: ValidFrom("2019-01-01"),
+		ValidTo: ValidTo("2030-01-01"),
 	}
 }
 
@@ -651,6 +685,8 @@ func consentRuleForQuery() pkg.PatientConsent {
 		Actor:     "actor",
 		Records: []pkg.ConsentRecord{
 			{
+				ValidFrom: time.Now().Add(time.Hour * -24),
+				ValidTo: time.Now().Add(time.Hour * 24),
 				Resources: []pkg.Resource{
 					{ResourceType: "resource"},
 				},

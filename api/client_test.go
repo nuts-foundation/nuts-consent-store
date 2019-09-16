@@ -108,8 +108,7 @@ func TestHttpClient_ConsentAuth(t *testing.T) {
 		resp, _ := json.Marshal(ConsentCheckResponse{ConsentGiven: &tr})
 		client := testClient(200, resp)
 
-		cr := pkg.PatientConsent{}
-		res, err := client.ConsentAuth(context.TODO(), cr, "test")
+		res, err := client.ConsentAuth(context.TODO(), "", "", "", "test", nil)
 
 		if err != nil {
 			t.Errorf("Expected no error, got [%s]", err.Error())
@@ -132,7 +131,7 @@ func TestHttpClient_ConsentAuth(t *testing.T) {
 			}
 		})
 
-		_, err := client.ConsentAuth(context.TODO(), consentRule(), "resource")
+		_, err := client.ConsentAuth(context.TODO(), "custodian", "subject", "actor", "resource", nil)
 
 		if err == nil {
 			t.Error("Expected error, got nothing")
@@ -148,7 +147,7 @@ func TestHttpClient_ConsentAuth(t *testing.T) {
 	t.Run("client returns invalid json gives error", func(t *testing.T) {
 		client := testClient(200, []byte("{"))
 
-		_, err := client.ConsentAuth(context.TODO(), consentRule(), "resource")
+		_, err := client.ConsentAuth(context.TODO(), "custodian", "subject", "actor", "resource", nil)
 
 		if err == nil {
 			t.Error("Expected error, got nothing")
@@ -167,7 +166,7 @@ func TestHttpClient_QueryConsentForActor(t *testing.T) {
 		resp, _ := json.Marshal(ConsentQueryResponse{Results: []SimplifiedConsent{
 			{
 				Resources: []string{"test"},
-				Actors:    []Identifier{"actor"},
+				Actor:    Identifier("actor"),
 				Subject:   Identifier("subject"),
 				Custodian: Identifier("custodian"),
 			},
@@ -191,7 +190,7 @@ func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
 		resp, _ := json.Marshal(ConsentQueryResponse{Results: []SimplifiedConsent{
 			{
 				Resources: []string{"test"},
-				Actors:    []Identifier{"actor"},
+				Actor:    Identifier("actor"),
 				Subject:   Identifier("subject"),
 				Custodian: Identifier("custodian"),
 			},

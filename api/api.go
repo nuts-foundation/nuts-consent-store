@@ -26,6 +26,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 type ApiWrapper struct {
@@ -49,15 +50,24 @@ func (w *ApiWrapper) CreateConsent(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "missing custodian in createRequest")
 	}
 
-	if len(createRequest.Actors) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "missing actors in createRequest")
+	if len(createRequest.Actor) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "missing actor in createRequest")
 	}
 
 	if len(createRequest.Resources) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "missing resources in createRequest")
 	}
 
-	err = w.Cs.RecordConsent(ctx.Request().Context(), createRequest.ToPatientConsent())
+	if createRequest.ProofHash == nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "missing proofHash in createRequest")
+	}
+
+	c, err := createRequest.ToPatientConsent()
+	if createRequest.ProofHash == nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error transforming record: %v", err))
+	}
+
+	err = w.Cs.RecordConsent(ctx.Request().Context(), []pkg.PatientConsent{c})
 
 	if err != nil {
 		return err
@@ -91,9 +101,22 @@ func (w *ApiWrapper) CheckConsent(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "missing resourceType in checkRequest")
 	}
 
-	cr := checkRequest.ToPatientConsent()
-	cr.Records = nil
-	auth, err := w.Cs.ConsentAuth(ctx.Request().Context(), cr, checkRequest.ResourceType)
+	var checkpoint *time.Time
+	if checkRequest.ValidAt != nil {
+		cp, err := time.Parse("2020-01-01", *checkRequest.ValidAt)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid value for validAt: %s", *checkRequest.ValidAt))
+		}
+		checkpoint = &cp
+	}
+
+	auth, err := w.Cs.ConsentAuth(
+		ctx.Request().Context(),
+		string(checkRequest.Custodian),
+		string(checkRequest.Subject),
+		string(checkRequest.Actor),
+		checkRequest.ResourceType,
+		checkpoint)
 
 	if err != nil {
 		return err
@@ -109,6 +132,23 @@ func (w *ApiWrapper) CheckConsent(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(200, checkResponse)
+}
+
+func (w *ApiWrapper) DeleteConsent(ctx echo.Context, proofHash string) error {
+	if len(proofHash) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "missing proofHash")
+	}
+
+	// delete record, if it doesn't exist an error is returned
+	if f, err := w.Cs.DeleteConsentRecordByHash(ctx.Request().Context(), proofHash); err != nil {
+		if !f {
+			return echo.NewHTTPError(http.StatusNotFound, "no ConsentRecord found for given hash")
+		}
+
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	return ctx.NoContent(202)
 }
 
 func (w *ApiWrapper) QueryConsent(ctx echo.Context) error {

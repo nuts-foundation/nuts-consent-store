@@ -70,7 +70,7 @@ paths:
                 type: string
   /consent:
     post:
-      summary: "Create a new consent record"
+      summary: "Create a new consent record for a C-S-A combination."
       operationId: createConsent
       tags:
         - consent
@@ -88,6 +88,29 @@ paths:
           content:
             text/plain:
               example: "missing value for actor"
+              schema:
+                type: string
+  /consent/{proofHash}:
+    delete:
+      summary: "Remove a consent record for a C-S-A combination."
+      operationId: deleteConsent
+      tags:
+        - consent
+      parameters:
+        - name: proofHash
+          in: path
+          description: "the hash of the consent proof, acts as an identifier for the consent record"
+          required: true
+          schema:
+            type: string
+      responses:
+        '202':
+          description: "Accepted response"
+        '404':
+          description: "not found"
+          content:
+            text/plain:
+              example: "Record not found with hash X"
               schema:
                 type: string
 components:
@@ -109,6 +132,9 @@ components:
           type: string
           description: "FHIR resource that is requested"
           example: "Observation"
+        validAt:
+          type: string
+          description: "Date at which consent has to be valid. Optional, when empty, Now() is used. format: 2020-01-01"
     ConsentCheckResponse:
       required:
         - outcome
@@ -132,6 +158,10 @@ components:
           $ref: "#/components/schemas/Identifier"
         page:
           $ref: "#/components/schemas/PageDefinition"
+        validAt:
+          type: string
+          format: date
+          description: "Date at which consent has to be valid. Optional, when empty, Now() is used"
         query:
           oneOf:
             - $ref: "#/components/schemas/SubjectQuery"
@@ -154,15 +184,15 @@ components:
     SimplifiedConsent:
       description: "Simplified consent record"
       required:
-        - actors
+        - actor
         - custodian
         - resources
         - subject
+        - validFrom
+        - validTo
       properties:
-        actors:
-          type: array
-          items:
-            $ref: "#/components/schemas/Identifier"
+        actor:
+          $ref: "#/components/schemas/Identifier"
         custodian:
           $ref: "#/components/schemas/Identifier"
         resources:
@@ -172,6 +202,13 @@ components:
             type: string
         subject:
           $ref: "#/components/schemas/Identifier"
+        validFrom:
+          $ref: "#/components/schemas/ValidFrom"
+        validTo:
+          $ref: "#/components/schemas/ValidTo"
+        proofHash:
+          type: string
+          description: "the unique hash for the consent record"
     PageDefinition:
       required:
         - offset
@@ -191,3 +228,11 @@ components:
         Generic identifier used for representing BSN, agbcode, etc.
         It's always constructed as an URN followed by a double colon (:) and then the identifying value of the given URN
       example: urn:oid:2.16.840.1.113883.2.4.6.1:00000007
+    ValidFrom:
+      type: string
+      format: '2020-01-01'
+      description: "Date from which a record is valid (inclusive)"
+    ValidTo:
+      type: string
+      format: '2020-01-01'
+      description: "Date to which a record is valid (exclusive)"
