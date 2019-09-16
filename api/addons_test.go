@@ -32,7 +32,7 @@ func TestConsentCheckRequest_ToConsentRule(t *testing.T) {
 			ResourceType: "resource",
 		}
 
-		cr := csr.ToConsentRule()
+		cr := csr.ToPatientConsent()
 
 		if cr.Subject != "subject" {
 			t.Error("Expected Subject to equal [subject]")
@@ -46,12 +46,12 @@ func TestConsentCheckRequest_ToConsentRule(t *testing.T) {
 			t.Error("Expected Actor to equal [actor]")
 		}
 
-		if len(cr.Resources) != 1 {
+		if len(cr.Resources()) != 1 {
 			t.Error("Expected resources to have 1 item")
 			return
 		}
 
-		if cr.Resources[0].ResourceType != "resource" {
+		if cr.Resources()[0].ResourceType != "resource" {
 			t.Error("Expected Resource to equal [resource]")
 		}
 	})
@@ -59,7 +59,7 @@ func TestConsentCheckRequest_ToConsentRule(t *testing.T) {
 
 func TestFromSimplifiedConsentRule(t *testing.T) {
 	t.Run("single consentRule converted", func(t *testing.T) {
-		scs, _ := FromSimplifiedConsentRule([]pkg.ConsentRule{consentRule()})
+		scs, _ := FromSimplifiedConsentRule([]pkg.PatientConsent{consentRule()})
 
 		if len(scs) != 1 {
 			t.Error("Expected rules to have 1 item")
@@ -96,7 +96,7 @@ func TestFromSimplifiedConsentRule(t *testing.T) {
 	})
 
 	t.Run("multiple actors gives error", func(t *testing.T) {
-		crs := []pkg.ConsentRule{consentRule(), consentRule()}
+		crs := []pkg.PatientConsent{consentRule(), consentRule()}
 		crs[1].Actor = "actor2"
 
 		_, err := FromSimplifiedConsentRule(crs)
@@ -113,13 +113,17 @@ func TestFromSimplifiedConsentRule(t *testing.T) {
 	})
 }
 
-func consentRule() pkg.ConsentRule {
-	return pkg.ConsentRule{
+func consentRule() pkg.PatientConsent {
+	return pkg.PatientConsent{
 		Subject:   "subject",
 		Custodian: "custodian",
 		Actor:     "actor",
-		Resources: []pkg.Resource{
-			{ResourceType: "resource"},
+		Records: []pkg.ConsentRecord{
+			{
+				Resources: []pkg.Resource{
+					{ResourceType: "resource"},
+				},
+			},
 		},
 	}
 }

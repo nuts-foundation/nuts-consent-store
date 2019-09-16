@@ -85,7 +85,7 @@ func cmd() *cobra.Command {
 			csc := client.NewConsentStoreClient()
 
 			var (
-				consentList []pkg.ConsentRule
+				consentList []pkg.PatientConsent
 				err         error
 			)
 
@@ -125,12 +125,16 @@ func cmd() *cobra.Command {
 
 			resources := pkg.ResourcesFromStrings(strings.Split(args[3], ","))
 
-			err := csc.RecordConsent(context.TODO(), []pkg.ConsentRule{
+			err := csc.RecordConsent(context.TODO(), []pkg.PatientConsent{
 				{
 					Subject:   args[0],
 					Custodian: args[1],
 					Actor:     args[2],
-					Resources: resources,
+					Records: []pkg.ConsentRecord{
+						{
+							Resources: resources,
+						},
+					},
 				},
 			})
 
@@ -158,7 +162,7 @@ func cmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			csc := client.NewConsentStoreClient()
 
-			auth, err := csc.ConsentAuth(context.TODO(), pkg.ConsentRule{
+			auth, err := csc.ConsentAuth(context.TODO(), pkg.PatientConsent{
 				Subject:   args[0],
 				Custodian: args[1],
 				Actor:     args[2],

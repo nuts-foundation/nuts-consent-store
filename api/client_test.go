@@ -51,7 +51,7 @@ func TestHttpClient_RecordConsent(t *testing.T) {
 	t.Run("201", func(t *testing.T) {
 		client := testClient(201, []byte{})
 
-		c := []pkg.ConsentRule{{}}
+		c := []pkg.PatientConsent{{}}
 		err := client.RecordConsent(context.TODO(), c)
 
 		if err != nil {
@@ -62,7 +62,7 @@ func TestHttpClient_RecordConsent(t *testing.T) {
 	t.Run("too many rules returns error", func(t *testing.T) {
 		client := testClient(201, []byte{})
 
-		c := []pkg.ConsentRule{}
+		c := []pkg.PatientConsent{}
 		err := client.RecordConsent(context.TODO(), c)
 
 		if err == nil {
@@ -88,7 +88,7 @@ func TestHttpClient_RecordConsent(t *testing.T) {
 			}
 		})
 
-		err := client.RecordConsent(context.TODO(), []pkg.ConsentRule{consentRule()})
+		err := client.RecordConsent(context.TODO(), []pkg.PatientConsent{consentRule()})
 
 		if err == nil {
 			t.Error("Expected error, got nothing")
@@ -108,7 +108,7 @@ func TestHttpClient_ConsentAuth(t *testing.T) {
 		resp, _ := json.Marshal(ConsentCheckResponse{ConsentGiven: &tr})
 		client := testClient(200, resp)
 
-		cr := pkg.ConsentRule{}
+		cr := pkg.PatientConsent{}
 		res, err := client.ConsentAuth(context.TODO(), cr, "test")
 
 		if err != nil {

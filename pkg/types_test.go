@@ -20,21 +20,21 @@ package pkg
 
 import (
 	"testing"
+	"time"
 )
 
 func TestConsentRule_String(t *testing.T) {
 	t.Run("outputs string representation of model", func(t *testing.T) {
-		model := ConsentRule{
+		model := PatientConsent{
 			Actor:     "actor",
 			Custodian: "custodian",
 			Subject:   "subject",
-			Resources: ResourcesFromStrings([]string{"resources"}),
 		}
 
 		out := model.String()
 
-		if out != "subject@custodian for actor: resources" {
-			t.Errorf("Expected subject@custodian for actor: resources, Got [%s]", out)
+		if out != "subject@custodian for actor" {
+			t.Errorf("Expected subject@custodian for actor, Got [%s]", out)
 		}
 	})
 }
@@ -56,15 +56,6 @@ func TestResource_String(t *testing.T) {
 func TestConsentRule_SameTriple(t *testing.T) {
 	t.Run("returns true for same Actor, Custodian and Subject", func(t *testing.T) {
 		if !testConsent().SameTriple(testConsent()) {
-			t.Errorf("Expected structs to be the same")
-		}
-	})
-
-	t.Run("ignores resources", func(t *testing.T) {
-		other := testConsent()
-		other.Resources = nil
-
-		if !testConsent().SameTriple(other) {
 			t.Errorf("Expected structs to be the same")
 		}
 	})
@@ -97,11 +88,17 @@ func TestConsentRule_SameTriple(t *testing.T) {
 	})
 }
 
-func testConsent() *ConsentRule {
-	return &ConsentRule{
+func testConsent() *PatientConsent {
+	return &PatientConsent{
 		Actor:     "actor",
 		Custodian: "custodian",
 		Subject:   "subject",
-		Resources: []Resource{{ResourceType: "resource"}},
+		Records: []ConsentRecord{
+			{
+				ValidFrom: time.Now(),
+				ValidTo: time.Now().Add(time.Hour * 24 * 365),
+				Resources: []Resource{{ResourceType: "resource"}},
+			},
+		},
 	}
 }

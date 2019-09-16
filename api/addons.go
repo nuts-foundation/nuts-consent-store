@@ -23,10 +23,10 @@ import (
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
 )
 
-// ToConsentRule converts the SimplifiedConsent object to an internal ConsentRule
-func (sc SimplifiedConsent) ToConsentRule() []pkg.ConsentRule {
+// ToPatientConsent converts the SimplifiedConsent object to an internal PatientConsent
+func (sc SimplifiedConsent) ToPatientConsent() []pkg.PatientConsent {
 
-	var rules = make([]pkg.ConsentRule, len(sc.Actors))
+	var rules = make([]pkg.PatientConsent, len(sc.Actors))
 	var resources = make([]pkg.Resource, len(sc.Resources))
 
 	for _, a := range sc.Resources {
@@ -35,55 +35,67 @@ func (sc SimplifiedConsent) ToConsentRule() []pkg.ConsentRule {
 
 	for _, a := range sc.Actors {
 
-		rules = append(rules, pkg.ConsentRule{
+		rules = append(rules, pkg.PatientConsent{
 			Subject:   string(sc.Subject),
 			Custodian: string(sc.Custodian),
 			Actor:     string(a),
-			Resources: resources,
+			Records: []pkg.ConsentRecord{
+				{
+					ProofHash: "23645928",
+					Resources: resources,
+				},
+			},
 		})
 	}
 
 	return rules
 }
 
-// ToConsentRule converts the ConsentCheckRequest object to an internal ConsentRule
-func (sc ConsentCheckRequest) ToConsentRule() pkg.ConsentRule {
+// ToPatientConsent converts the ConsentCheckRequest object to an internal PatientConsent
+func (sc ConsentCheckRequest) ToPatientConsent() pkg.PatientConsent {
 
-	return pkg.ConsentRule{
+	return pkg.PatientConsent{
 		Subject:   string(sc.Subject),
 		Custodian: string(sc.Custodian),
 		Actor:     string(sc.Actor),
-		Resources: []pkg.Resource{{ResourceType: sc.ResourceType}},
+		Records: []pkg.ConsentRecord{
+			{
+				ProofHash: "23645928",
+				Resources: []pkg.Resource{{ResourceType: sc.ResourceType}},
+			},
+		},
 	}
 }
 
-// FromSimplifiedConsentRule converts a slice of pkg.ConsentRule to a slice of SimplifiedConsent
-// it cannot convert when numtiple actors are involved
-func FromSimplifiedConsentRule(rules []pkg.ConsentRule) ([]SimplifiedConsent, error) {
+// FromSimplifiedConsentRule converts a slice of pkg.PatientConsent to a slice of SimplifiedConsent
+// it cannot convert when multiple actors are involved
+func FromSimplifiedConsentRule(patientConsent []pkg.PatientConsent) ([]SimplifiedConsent, error) {
 	var (
 		firstActor string
 		consent    []SimplifiedConsent
 	)
 
-	for _, r := range rules {
+	for _, c := range patientConsent {
 		if firstActor == "" {
-			firstActor = r.Actor
+			firstActor = c.Actor
 		} else {
-			if firstActor != r.Actor {
+			if firstActor != c.Actor {
 				return nil, errors.New("Can not convert consent rules with multiple actors")
 			}
 		}
 		var resources []string
-		for _, r2 := range r.Resources {
-			resources = append(resources, r2.ResourceType)
-		}
+		for _, r := range c.Records {
+			for _, r2 := range r.Resources {
+				resources = append(resources, r2.ResourceType)
+			}
 
-		consent = append(consent, SimplifiedConsent{
-			Subject:   Identifier(r.Subject),
-			Custodian: Identifier(r.Custodian),
-			Actors:    []Identifier{Identifier(r.Actor)},
-			Resources: resources,
-		})
+			consent = append(consent, SimplifiedConsent{
+				Subject:   Identifier(c.Subject),
+				Custodian: Identifier(c.Custodian),
+				Actors:    []Identifier{Identifier(c.Actor)},
+				Resources: resources,
+			})
+		}
 	}
 
 	return consent, nil

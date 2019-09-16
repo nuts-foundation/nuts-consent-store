@@ -20,25 +20,47 @@ package pkg
 
 import (
 	"fmt"
-	"strings"
+	"time"
 )
 
-// ConsentRule defines struct for consent_rule table.
-type ConsentRule struct {
+// PatientConsent defines struct for patient_consent table.
+type PatientConsent struct {
 	ID        uint   `gorm:"AUTO_INCREMENT"`
 	Actor     string `gorm:"not null"`
 	Custodian string `gorm:"not null"`
-	Resources []Resource
+	Records []ConsentRecord
 	Subject   string `gorm:"not null"`
 }
 
-func (ConsentRule) TableName() string {
-	return "consent_rule"
+func (PatientConsent) TableName() string {
+	return "patient_consent"
+}
+
+func (pc PatientConsent) Resources() []Resource {
+	resources := []Resource{}
+	for _, r := range  pc.Records {
+		resources = append(resources, r.Resources...)
+	}
+	return resources
+}
+
+// ConsentRecord represents the individual records/attachments for a PatientConsent
+type ConsentRecord struct {
+	ID         		 uint   	`gorm:"AUTO_INCREMENT"`
+	PatientConsentID uint
+	ValidFrom  		 time.Time	`gorm:"not null"`
+	ValidTo    		 time.Time	`gorm:"not null"`
+	ProofHash  		 string		`gorm:"not null"`
+	Resources 		 []Resource
+}
+
+func (ConsentRecord) TableName() string {
+	return "consent_record"
 }
 
 // Resource defines struct for resource table
 type Resource struct {
-	ConsentRuleID uint
+	ConsentRecordID uint
 	ResourceType  string `gorm:"not null"`
 }
 
@@ -46,12 +68,12 @@ func (Resource) TableName() string {
 	return "resource"
 }
 
-func (se *ConsentRule) String() string {
-	return fmt.Sprintf("%s@%s for %s: %s", se.Subject, se.Custodian, se.Actor, resourceJoin(se.Resources, ","))
+func (se *PatientConsent) String() string {
+	return fmt.Sprintf("%s@%s for %s", se.Subject, se.Custodian, se.Actor)
 }
 
-// SameTriple compares this ConsentRule with another one on just Actor, Custiodian and Subject
-func (se *ConsentRule) SameTriple(other *ConsentRule) bool {
+// SameTriple compares this PatientConsent with another one on just Actor, Custiodian and Subject
+func (se *PatientConsent) SameTriple(other *PatientConsent) bool {
 	return se.Subject == other.Subject && se.Custodian == other.Custodian && se.Actor == other.Actor
 }
 
@@ -66,14 +88,4 @@ func ResourcesFromStrings(list []string) []Resource {
 		a[i] = Resource{ResourceType: l}
 	}
 	return a
-}
-
-func resourceJoin(slice []Resource, sep string) string {
-	a := make([]string, len(slice))
-
-	for i, r := range slice {
-		a[i] = r.ResourceType
-	}
-
-	return strings.Join(a, sep)
 }

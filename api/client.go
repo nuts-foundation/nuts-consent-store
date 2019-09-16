@@ -38,11 +38,11 @@ type HttpClient struct {
 	customClient  *http.Client
 }
 
-func (hb HttpClient) QueryConsent(context context.Context, actor, custodian, subject *string) ([]pkg.ConsentRule, error) {
+func (hb HttpClient) QueryConsent(context context.Context, actor, custodian, subject *string) ([]pkg.PatientConsent, error) {
 	panic("implement me")
 }
 
-func (hb HttpClient) ConsentAuth(ctx context.Context, consentRule pkg.ConsentRule, resourceType string) (bool, error) {
+func (hb HttpClient) ConsentAuth(ctx context.Context, consentRule pkg.PatientConsent, resourceType string) (bool, error) {
 	req := CheckConsentJSONRequestBody{
 		Actor:        Identifier(consentRule.Actor),
 		Custodian:    Identifier(consentRule.Custodian),
@@ -72,7 +72,7 @@ func (hb HttpClient) ConsentAuth(ctx context.Context, consentRule pkg.ConsentRul
 }
 
 // RecordConsent currently only supports the creation of a single record
-func (hb HttpClient) RecordConsent(ctx context.Context, consent []pkg.ConsentRule) error {
+func (hb HttpClient) RecordConsent(ctx context.Context, consent []pkg.PatientConsent) error {
 	var req CreateConsentJSONRequestBody
 
 	if len(consent) != 1 {
@@ -85,7 +85,7 @@ func (hb HttpClient) RecordConsent(ctx context.Context, consent []pkg.ConsentRul
 	req.Custodian = Identifier(consent[0].Custodian)
 	req.Subject = Identifier(consent[0].Subject)
 
-	for _, r := range consent[0].Resources {
+	for _, r := range consent[0].Resources() {
 		req.Resources = append(req.Resources, r.ResourceType)
 	}
 
@@ -104,8 +104,8 @@ func (hb HttpClient) RecordConsent(ctx context.Context, consent []pkg.ConsentRul
 	return nil
 }
 
-func (hb HttpClient) QueryConsentForActor(ctx context.Context, actor string, query string) ([]pkg.ConsentRule, error) {
-	var rules []pkg.ConsentRule
+func (hb HttpClient) QueryConsentForActor(ctx context.Context, actor string, query string) ([]pkg.PatientConsent, error) {
+	var rules []pkg.PatientConsent
 	actorIdentifier := Identifier(actor)
 
 	req := QueryConsentJSONRequestBody{
@@ -133,24 +133,30 @@ func (hb HttpClient) QueryConsentForActor(ctx context.Context, actor string, que
 	}
 
 	for _, sr := range cqr.Results {
-		rule := pkg.ConsentRule{
+		patientConsent := pkg.PatientConsent{
 			Actor:     actor,
 			Subject:   string(sr.Subject),
 			Custodian: string(sr.Custodian),
+			Records: []pkg.ConsentRecord{
+				{
+					ProofHash: "unknown",
+					Resources: []pkg.Resource{},
+				},
+			},
 		}
 
 		for _, r := range sr.Resources {
-			rule.Resources = append(rule.Resources, pkg.Resource{ResourceType: r})
+			patientConsent.Records[0].Resources = append(patientConsent.Records[0].Resources, pkg.Resource{ResourceType: r})
 		}
 
-		rules = append(rules, rule)
+		rules = append(rules, patientConsent)
 	}
 
 	return rules, nil
 }
 
 // QueryConsentForActorAndSubject does the same as QueryConsentForActor, the backend just checks if the query starts with urn:
-func (hb HttpClient) QueryConsentForActorAndSubject(ctx context.Context, actor string, subject string) ([]pkg.ConsentRule, error) {
+func (hb HttpClient) QueryConsentForActorAndSubject(ctx context.Context, actor string, subject string) ([]pkg.PatientConsent, error) {
 	return hb.QueryConsentForActor(ctx, actor, subject)
 }
 

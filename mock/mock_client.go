@@ -35,7 +35,7 @@ func (m *MockConsentStoreClient) EXPECT() *MockConsentStoreClientMockRecorder {
 }
 
 // ConsentAuth mocks base method
-func (m *MockConsentStoreClient) ConsentAuth(context context.Context, consentRule pkg.ConsentRule, resourceType string) (bool, error) {
+func (m *MockConsentStoreClient) ConsentAuth(context context.Context, consentRule pkg.PatientConsent, resourceType string) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConsentAuth", context, consentRule, resourceType)
 	ret0, _ := ret[0].(bool)
@@ -50,7 +50,7 @@ func (mr *MockConsentStoreClientMockRecorder) ConsentAuth(context, consentRule, 
 }
 
 // RecordConsent mocks base method
-func (m *MockConsentStoreClient) RecordConsent(context context.Context, consent []pkg.ConsentRule) error {
+func (m *MockConsentStoreClient) RecordConsent(context context.Context, consent []pkg.PatientConsent) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RecordConsent", context, consent)
 	ret0, _ := ret[0].(error)
@@ -64,10 +64,10 @@ func (mr *MockConsentStoreClientMockRecorder) RecordConsent(context, consent int
 }
 
 // QueryConsentForActor mocks base method
-func (m *MockConsentStoreClient) QueryConsentForActor(context context.Context, actor, query string) ([]pkg.ConsentRule, error) {
+func (m *MockConsentStoreClient) QueryConsentForActor(context context.Context, actor, query string) ([]pkg.PatientConsent, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "QueryConsentForActor", context, actor, query)
-	ret0, _ := ret[0].([]pkg.ConsentRule)
+	ret0, _ := ret[0].([]pkg.PatientConsent)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -79,10 +79,10 @@ func (mr *MockConsentStoreClientMockRecorder) QueryConsentForActor(context, acto
 }
 
 // QueryConsentForActorAndSubject mocks base method
-func (m *MockConsentStoreClient) QueryConsentForActorAndSubject(context context.Context, actor, subject string) ([]pkg.ConsentRule, error) {
+func (m *MockConsentStoreClient) QueryConsentForActorAndSubject(context context.Context, actor, subject string) ([]pkg.PatientConsent, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "QueryConsentForActorAndSubject", context, actor, subject)
-	ret0, _ := ret[0].([]pkg.ConsentRule)
+	ret0, _ := ret[0].([]pkg.PatientConsent)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

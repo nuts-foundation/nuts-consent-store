@@ -35,7 +35,7 @@ import (
 
 func TestDefaultConsentStore_CheckConsent(t *testing.T) {
 	client := defaultConsentStore()
-	client.Cs.RecordConsent(context.Background(), []pkg.ConsentRule{consentRuleForQuery()})
+	client.Cs.RecordConsent(context.Background(), []pkg.PatientConsent{consentRuleForQuery()})
 	defer client.Cs.Shutdown()
 
 	t.Run("API call returns 200 for no auth", func(t *testing.T) {
@@ -417,7 +417,7 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 
 func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 	client := defaultConsentStore()
-	if err := client.Cs.RecordConsent(context.Background(), []pkg.ConsentRule{consentRuleForQuery()}); err != nil {
+	if err := client.Cs.RecordConsent(context.Background(), []pkg.PatientConsent{consentRuleForQuery()}); err != nil {
 		t.Fatal(err)
 	}
 	defer client.Cs.Shutdown()
@@ -644,13 +644,17 @@ func defaultConsentStore() ApiWrapper {
 	return ApiWrapper{Cs: &client}
 }
 
-func consentRuleForQuery() pkg.ConsentRule {
-	return pkg.ConsentRule{
+func consentRuleForQuery() pkg.PatientConsent {
+	return pkg.PatientConsent{
 		Subject:   "urn:subject",
 		Custodian: "custodian",
 		Actor:     "actor",
-		Resources: []pkg.Resource{
-			{ResourceType: "resource"},
+		Records: []pkg.ConsentRecord{
+			{
+				Resources: []pkg.Resource{
+					{ResourceType: "resource"},
+				},
+			},
 		},
 	}
 }

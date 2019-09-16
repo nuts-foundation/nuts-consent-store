@@ -37,14 +37,19 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 
 	t.Run("Recorded consent can be authorized against", func(t *testing.T) {
 
-		rules := []ConsentRule{
+		rules := []PatientConsent{
 			{
 				Actor:     "actor",
 				Custodian: "custodian",
 				Subject:   "subject",
-				Resources: []Resource{
+
+				Records: []ConsentRecord{
 					{
-						ResourceType: "resource",
+						Resources: []Resource{
+							{
+								ResourceType: "resource",
+							},
+						},
 					},
 				},
 			},
@@ -69,13 +74,17 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 
 	t.Run("Authorize non-existing consent returns false", func(t *testing.T) {
 
-		rule := ConsentRule{
+		rule := PatientConsent{
 			Actor:     "actor2",
 			Custodian: "custodian",
 			Subject:   "subject",
-			Resources: []Resource{
+			Records: []ConsentRecord{
 				{
-					ResourceType: "resource",
+					Resources: []Resource{
+						{
+							ResourceType: "resource",
+						},
+					},
 				},
 			},
 		}
@@ -96,14 +105,19 @@ func TestConsentStore_QueryConsentForActor(t *testing.T) {
 	client := defaultConsentStore()
 	defer client.Shutdown()
 
-	rules := []ConsentRule{
+	rules := []PatientConsent{
 		{
 			Actor:     "actor",
 			Custodian: "custodian",
 			Subject:   "subject",
-			Resources: []Resource{
+			Records: []ConsentRecord{
 				{
-					ResourceType: "resource",
+					ProofHash: "3",
+					Resources: []Resource{
+						{
+							ResourceType: "resource",
+						},
+					},
 				},
 			},
 		},
@@ -111,9 +125,14 @@ func TestConsentStore_QueryConsentForActor(t *testing.T) {
 			Actor:     "actor2",
 			Custodian: "custodian2",
 			Subject:   "subject2",
-			Resources: []Resource{
+			Records: []ConsentRecord{
 				{
-					ResourceType: "resource2",
+					ProofHash: "4",
+					Resources: []Resource{
+						{
+							ResourceType: "resource2",
+						},
+					},
 				},
 			},
 		},
@@ -150,14 +169,19 @@ func TestConsentStore_QueryConsentForActorAndSubject(t *testing.T) {
 	client := defaultConsentStore()
 	defer client.Shutdown()
 
-	rules := []ConsentRule{
+	rules := []PatientConsent{
 		{
 			Actor:     "actor",
 			Custodian: "custodian",
 			Subject:   "subject",
-			Resources: []Resource{
+			Records: []ConsentRecord{
 				{
-					ResourceType: "resource",
+					ProofHash: "1",
+					Resources: []Resource{
+						{
+							ResourceType: "resource",
+						},
+					},
 				},
 			},
 		},
@@ -165,9 +189,14 @@ func TestConsentStore_QueryConsentForActorAndSubject(t *testing.T) {
 			Actor:     "actor2",
 			Custodian: "custodian2",
 			Subject:   "subject2",
-			Resources: []Resource{
+			Records: []ConsentRecord{
 				{
-					ResourceType: "resource2",
+					ProofHash: "2",
+					Resources: []Resource{
+						{
+							ResourceType: "resource2",
+						},
+					},
 				},
 			},
 		},
@@ -256,14 +285,19 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 	client := defaultConsentStore()
 	defer client.Shutdown()
 
-	rules := []ConsentRule{
+	rules := []PatientConsent{
 		{
 			Actor:     "actor",
 			Custodian: "custodian",
 			Subject:   "subject",
-			Resources: []Resource{
+			Records: []ConsentRecord{
 				{
-					ResourceType: "resource",
+					ProofHash: "5",
+					Resources: []Resource{
+						{
+							ResourceType: "resource",
+						},
+					},
 				},
 			},
 		},
@@ -271,9 +305,14 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 			Actor:     "actor2",
 			Custodian: "custodian2",
 			Subject:   "subject",
-			Resources: []Resource{
+			Records: []ConsentRecord{
 				{
-					ResourceType: "resource2",
+					ProofHash: "6",
+					Resources: []Resource{
+						{
+							ResourceType: "resource2",
+						},
+					},
 				},
 			},
 		},

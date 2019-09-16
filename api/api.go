@@ -57,7 +57,7 @@ func (w *ApiWrapper) CreateConsent(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "missing resources in createRequest")
 	}
 
-	err = w.Cs.RecordConsent(ctx.Request().Context(), createRequest.ToConsentRule())
+	err = w.Cs.RecordConsent(ctx.Request().Context(), createRequest.ToPatientConsent())
 
 	if err != nil {
 		return err
@@ -91,8 +91,8 @@ func (w *ApiWrapper) CheckConsent(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "missing resourceType in checkRequest")
 	}
 
-	cr := checkRequest.ToConsentRule()
-	cr.Resources = nil
+	cr := checkRequest.ToPatientConsent()
+	cr.Records = nil
 	auth, err := w.Cs.ConsentAuth(ctx.Request().Context(), cr, checkRequest.ResourceType)
 
 	if err != nil {
@@ -139,7 +139,7 @@ func (w *ApiWrapper) QueryConsent(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "missing query in queryRequest")
 	}
 
-	var rules []pkg.ConsentRule
+	var rules []pkg.PatientConsent
 
 	if actor == nil && custodian == nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "missing actor or custodian in queryRequest")

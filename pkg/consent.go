@@ -59,15 +59,15 @@ var oneEngine sync.Once
 // ConsentStoreClient defines all actions possible through a direct connection, command-line and REST api
 type ConsentStoreClient interface {
 	// ConsentAuth checks if a record exists in the Db for the given combination and returns a bool.
-	ConsentAuth(context context.Context, consentRule ConsentRule, resourceType string) (bool, error)
+	ConsentAuth(context context.Context, consentRule PatientConsent, resourceType string) (bool, error)
 	// RecordConsent records a record in the Db, this is not to be used to create a new distributed consent record. It's only valid for the local node.
 	// It should only be called by the consent logic component (or for development purposes)
-	RecordConsent(context context.Context, consent []ConsentRule) error
+	RecordConsent(context context.Context, consent []PatientConsent) error
 	// QueryConsentForActor can be used to perform full text searches on the backend. Scoped on actor only.
-	QueryConsentForActor(context context.Context, actor string, query string) ([]ConsentRule, error)
+	QueryConsentForActor(context context.Context, actor string, query string) ([]PatientConsent, error)
 	// QueryConsentForActorAndSubject can be used to list the custodians and resources for a given Actor and Subject.
-	QueryConsentForActorAndSubject(context context.Context, actor string, subject string) ([]ConsentRule, error)
-	QueryConsent(context context.Context, actor, custodian, subject *string) ([]ConsentRule, error)
+	QueryConsentForActorAndSubject(context context.Context, actor string, subject string) ([]PatientConsent, error)
+	QueryConsent(context context.Context, actor, custodian, subject *string) ([]PatientConsent, error)
 }
 
 func ConsentStoreInstance() *ConsentStore {
@@ -168,23 +168,23 @@ func (cs *ConsentStore) RunMigrations(db *sql.DB) error {
 	return nil
 }
 
-func (cs *ConsentStore) ConsentAuth(context context.Context, consentRule ConsentRule, resourceType string) (bool, error) {
-	target := &ConsentRule{}
-	copy := ConsentRule{
+func (cs *ConsentStore) ConsentAuth(context context.Context, consentRule PatientConsent, resourceType string) (bool, error) {
+	target := &PatientConsent{}
+	copy := PatientConsent{
 		Actor:     consentRule.Actor,
 		Custodian: consentRule.Custodian,
 		Subject:   consentRule.Subject,
 	}
 
 	// this will always fill target, but if a record does not exist, resources will be empty
-	if err := cs.Db.Table("consent_rule").Where(copy).Preload("Resources").FirstOrInit(&target).Error; err != nil {
+	if err := cs.Db.Debug().Preload("Records").Preload("Records.Resources").Table(consentRule.TableName()).Where(copy).FirstOrInit(&target).Error; err != nil {
 		return false, err
 	}
 
-	var resources []Resource
-	cs.Db.Find(&resources)
+	//var resources []Resource
+	//cs.Db.Find(&resources)
 
-	for _, n := range target.Resources {
+	for _, n := range target.Resources() {
 		if resourceType == n.ResourceType {
 			return true, nil
 		}
@@ -193,7 +193,7 @@ func (cs *ConsentStore) ConsentAuth(context context.Context, consentRule Consent
 	return false, nil
 }
 
-func (cs *ConsentStore) RecordConsent(context context.Context, consent []ConsentRule) error {
+func (cs *ConsentStore) RecordConsent(context context.Context, consent []PatientConsent) error {
 
 	// start transaction
 	tx := cs.Db.Begin()
@@ -208,50 +208,63 @@ func (cs *ConsentStore) RecordConsent(context context.Context, consent []Consent
 		return err
 	}
 
-	for _, cr := range consent {
-		tcr := ConsentRule{
-			Actor:     cr.Actor,
-			Custodian: cr.Custodian,
-			Subject:   cr.Subject,
+	for _, pr := range consent {
+		tpc := PatientConsent{
+			Actor:     pr.Actor,
+			Custodian: pr.Custodian,
+			Subject:   pr.Subject,
 		}
 
 		// first check if a consent record exists for subject, custodian and actor, if not create
-		if err := tx.Where(tcr).FirstOrCreate(&tcr).Error; err != nil {
+		if err := tx.Where(tpc).FirstOrCreate(&tpc).Error; err != nil {
 			tx.Rollback()
 			return err
 		}
 
-		tcr.Resources = cr.Resources
-		if err := tx.Save(&tcr).Error; err != nil {
-			tx.Rollback()
-			return err
+		for _, cr := range pr.Records {
+			tcr := ConsentRecord{
+				PatientConsentID: tpc.ID,
+				ProofHash: cr.ProofHash,
+			}
+
+			// find existing record
+			if err := tx.Where(tcr).FirstOrCreate(&tcr).Error; err != nil {
+				tx.Rollback()
+				return err
+			}
+
+			tcr.Resources = cr.Resources
+			if err := tx.Save(&tcr).Error; err != nil {
+				tx.Rollback()
+				return err
+			}
 		}
 	}
 
 	return tx.Commit().Error
 }
 
-func (cs *ConsentStore) QueryConsentForActor(context context.Context, actor string, query string) ([]ConsentRule, error) {
-	var rules []ConsentRule
+func (cs *ConsentStore) QueryConsentForActor(context context.Context, actor string, query string) ([]PatientConsent, error) {
+	var rules []PatientConsent
 
-	if err := cs.Db.Debug().Where("Actor = ?", actor).Preload("Resources").Find(&rules).Error; err != nil {
+	if err := cs.Db.Debug().Where("Actor = ?", actor).Preload("Records").Preload("Records.Resources").Find(&rules).Error; err != nil {
 		return nil, err
 	}
 
 	return rules, nil
 }
 
-func (cs *ConsentStore) QueryConsentForActorAndSubject(context context.Context, actor string, subject string) ([]ConsentRule, error) {
-	var rules []ConsentRule
+func (cs *ConsentStore) QueryConsentForActorAndSubject(context context.Context, actor string, subject string) ([]PatientConsent, error) {
+	var rules []PatientConsent
 
-	if err := cs.Db.Debug().Where("Actor = ? AND Subject = ?", actor, subject).Preload("Resources").Find(&rules).Error; err != nil {
+	if err := cs.Db.Debug().Where("Actor = ? AND Subject = ?", actor, subject).Preload("Records").Preload("Records.Resources").Find(&rules).Error; err != nil {
 		return nil, err
 	}
 
 	return rules, nil
 }
-func (cs *ConsentStore) QueryConsent(context context.Context, _actor, _custodian, _subject *string) ([]ConsentRule, error) {
-	var rules []ConsentRule
+func (cs *ConsentStore) QueryConsent(context context.Context, _actor, _custodian, _subject *string) ([]PatientConsent, error) {
+	var rules []PatientConsent
 	var (
 		actor, custodian, subject string
 	)
@@ -268,7 +281,7 @@ func (cs *ConsentStore) QueryConsent(context context.Context, _actor, _custodian
 		subject = *_subject
 	}
 
-	if err := cs.Db.Debug().Where("Actor LIKE ? AND Subject LIKE ? AND Custodian LIKE ?", actor, subject, custodian).Preload("Resources").Find(&rules).Error; err != nil {
+	if err := cs.Db.Debug().Where("Actor LIKE ? AND Subject LIKE ? AND Custodian LIKE ?", actor, subject, custodian).Preload("Records").Preload("Records.Resources").Find(&rules).Error; err != nil {
 		return nil, err
 	}
 
