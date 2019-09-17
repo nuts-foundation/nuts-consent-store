@@ -33,10 +33,12 @@ type PatientConsent struct {
 	Subject    string `gorm:"not null"`
 }
 
+// TableName returns the SQL table for this type
 func (PatientConsent) TableName() string {
 	return "patient_consent"
 }
 
+// Resources combines all resources from all records
 func (pc PatientConsent) Resources() []Resource {
 	var resources []Resource
 	for _, r := range pc.Records {
@@ -55,6 +57,7 @@ type ConsentRecord struct {
 	Resources        []Resource
 }
 
+// TableName returns the SQL table for this type
 func (ConsentRecord) TableName() string {
 	return "consent_record"
 }
@@ -65,17 +68,18 @@ type Resource struct {
 	ResourceType    string `gorm:"not null"`
 }
 
+// TableName returns the SQL table for this type
 func (Resource) TableName() string {
 	return "resource"
 }
 
-func (se *PatientConsent) String() string {
-	return fmt.Sprintf("%s@%s for %s", se.Subject, se.Custodian, se.Actor)
+func (pc *PatientConsent) String() string {
+	return fmt.Sprintf("%s@%s for %s", pc.Subject, pc.Custodian, pc.Actor)
 }
 
 // SameTriple compares this PatientConsent with another one on just Actor, Custiodian and Subject
-func (se *PatientConsent) SameTriple(other *PatientConsent) bool {
-	return se.Subject == other.Subject && se.Custodian == other.Custodian && se.Actor == other.Actor
+func (pc *PatientConsent) SameTriple(other *PatientConsent) bool {
+	return pc.Subject == other.Subject && pc.Custodian == other.Custodian && pc.Actor == other.Actor
 }
 
 func (r *Resource) String() string {
