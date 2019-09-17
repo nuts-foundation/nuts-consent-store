@@ -19,6 +19,7 @@
 package api
 
 import (
+	"github.com/labstack/gommon/random"
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
 	"testing"
 )
@@ -68,6 +69,93 @@ func TestFromSimplifiedConsentRule(t *testing.T) {
 		}
 
 		expected := "Can not convert consent rules with multiple actors"
+		if err.Error() != expected {
+			t.Errorf("Expected error [%s], got [%v]", expected, err.Error())
+		}
+	})
+}
+
+func TestSimplifiedConsent_ToPatientConsent(t *testing.T) {
+	hash := random.String(8)
+	sc := SimplifiedConsent{
+		Actor:     "actor",
+		Custodian: "custodian",
+		ProofHash: &hash,
+		Resources: []string{"resource"},
+		Subject:   "subject",
+		ValidFrom: "2019-01-01",
+		ValidTo:   "2020-01-01",
+	}
+
+	t.Run("correct transform", func(t *testing.T) {
+		pc, _ := sc.ToPatientConsent()
+
+		if pc.Subject != string(sc.Subject) {
+			t.Error("Expected Subject to match")
+			return
+		}
+
+		if pc.Custodian != string(sc.Custodian) {
+			t.Error("Expected Custodian to match")
+			return
+		}
+
+		if pc.Actor != string(sc.Actor) {
+			t.Error("Expected Actor to match")
+			return
+		}
+
+		if len(pc.Records) != 1 {
+			t.Error("Expected 1 record in PatientConsent")
+			return
+		}
+
+		if pc.Records[0].ProofHash != *sc.ProofHash {
+			t.Error("Expected ProofHash to match")
+			return
+		}
+
+		if pc.Resources()[0].ResourceType != sc.Resources[0] {
+			t.Error("Expected Resources to match")
+			return
+		}
+
+		if pc.Records[0].ValidFrom.Format("2006-01-02") != string(sc.ValidFrom) {
+			t.Error("Expected ValidFrom to match")
+			return
+		}
+
+		if pc.Records[0].ValidTo.Format("2006-01-02") != string(sc.ValidTo) {
+			t.Error("Expected ValidTo to match")
+			return
+		}
+	})
+
+	t.Run("Incorrect validTo returns error", func(t *testing.T) {
+		sc.ValidTo= "202-01-01"
+		_, err := sc.ToPatientConsent()
+
+		if err == nil {
+			t.Error("Expected error, got nothing")
+			return
+		}
+
+		expected := "parsing time \"202-01-01\" as \"2006-01-02\": cannot parse \"01-01\" as \"2006\""
+		if err.Error() != expected {
+			t.Errorf("Expected error [%s], got [%v]", expected, err.Error())
+		}
+	})
+
+	t.Run("Incorrect validFrom returns error", func(t *testing.T) {
+		sc.ValidFrom= "202-01-01"
+		_, err := sc.ToPatientConsent()
+
+		if err == nil {
+			t.Error("Expected error, got nothing")
+			return
+		}
+
+		expected := "parsing time \"202-01-01\" as \"2006-01-02\": cannot parse \"01-01\" as \"2006\""
 		if err.Error() != expected {
 			t.Errorf("Expected error [%s], got [%v]", expected, err.Error())
 		}

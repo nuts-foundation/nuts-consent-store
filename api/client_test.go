@@ -27,6 +27,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"testing"
+	"time"
 )
 
 // RoundTripFunc
@@ -102,6 +103,43 @@ func TestHttpClient_RecordConsent(t *testing.T) {
 	})
 }
 
+func TestHttpClient_DeleteConsentRecordByHash(t *testing.T) {
+	t.Run("202", func(t *testing.T) {
+		client := testClient(202, []byte{})
+
+		res, err := client.DeleteConsentRecordByHash(context.TODO(), "hash")
+
+		if err != nil {
+			t.Errorf("Expected no error, got [%s]", err.Error())
+			return
+		}
+
+		if !res {
+			t.Errorf("Expected auth to be true, got false")
+		}
+	})
+
+	t.Run("500", func(t *testing.T) {
+		client := testClient(500, []byte("some error"))
+
+		res, err := client.DeleteConsentRecordByHash(context.TODO(), "hash")
+
+		if err == nil {
+			t.Errorf("Expected error, got nothing")
+			return
+		}
+
+		if res {
+			t.Errorf("Expected delete to be false, got true")
+		}
+
+		expected := "consent store returned 500, reason: some error"
+		if err.Error() != expected {
+			t.Errorf("Expected error [%s], got [%v]", expected, err.Error())
+		}
+	})
+}
+
 func TestHttpClient_ConsentAuth(t *testing.T) {
 	t.Run("200", func(t *testing.T) {
 		tr := "true"
@@ -109,6 +147,23 @@ func TestHttpClient_ConsentAuth(t *testing.T) {
 		client := testClient(200, resp)
 
 		res, err := client.ConsentAuth(context.TODO(), "", "", "", "test", nil)
+
+		if err != nil {
+			t.Errorf("Expected no error, got [%s]", err.Error())
+		}
+
+		if !res {
+			t.Errorf("Expected auth to be true, got false")
+		}
+	})
+
+	t.Run("200 with checkpoint", func(t *testing.T) {
+		tr := "true"
+		resp, _ := json.Marshal(ConsentCheckResponse{ConsentGiven: &tr})
+		client := testClient(200, resp)
+
+		now := time.Now()
+		res, err := client.ConsentAuth(context.TODO(), "", "", "", "test", &now)
 
 		if err != nil {
 			t.Errorf("Expected no error, got [%s]", err.Error())

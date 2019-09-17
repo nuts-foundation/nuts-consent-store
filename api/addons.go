@@ -27,17 +27,17 @@ import (
 // ToPatientConsent converts the SimplifiedConsent object to an internal PatientConsent
 func (sc SimplifiedConsent) ToPatientConsent() (pkg.PatientConsent, error) {
 
-	var resources = make([]pkg.Resource, len(sc.Resources))
+	var resources []pkg.Resource
 
 	for _, a := range sc.Resources {
 		resources = append(resources, pkg.Resource{ResourceType: a})
 	}
 
-	validFrom, err := time.Parse("2020-01-01", string(sc.ValidFrom))
+	validFrom, err := time.Parse("2006-01-02", string(sc.ValidFrom))
 	if err != nil {
 		return pkg.PatientConsent{}, err
 	}
-	validTo, err := time.Parse("2020-01-01", string(sc.ValidTo))
+	validTo, err := time.Parse("2006-01-02", string(sc.ValidTo))
 	if err != nil {
 		return pkg.PatientConsent{}, err
 	}
@@ -83,8 +83,8 @@ func FromSimplifiedConsentRule(patientConsent []pkg.PatientConsent) ([]Simplifie
 				Custodian: Identifier(c.Custodian),
 				Actor:    Identifier(c.Actor),
 				Resources: resources,
-				ValidFrom: ValidFrom(r.ValidFrom.Format("2020-01-01")),
-				ValidTo: ValidTo(r.ValidTo.Format("2020-01-01")),
+				ValidFrom: ValidFrom(r.ValidFrom.Format("2006-01-02")),
+				ValidTo: ValidTo(r.ValidTo.Format("2006-01-02")),
 			})
 		}
 	}

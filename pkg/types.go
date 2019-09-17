@@ -37,7 +37,7 @@ func (PatientConsent) TableName() string {
 }
 
 func (pc PatientConsent) Resources() []Resource {
-	resources := []Resource{}
+	var resources []Resource
 	for _, r := range  pc.Records {
 		resources = append(resources, r.Resources...)
 	}

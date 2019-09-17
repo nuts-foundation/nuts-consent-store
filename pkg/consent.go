@@ -195,9 +195,6 @@ func (cs *ConsentStore) ConsentAuth(context context.Context, custodian string, s
 		return false, err
 	}
 
-	//var resources []Resource
-	//cs.Db.Find(&resources)
-
 	for _, n := range target.Resources() {
 		if resourceType == n.ResourceType {
 			return true, nil

@@ -103,7 +103,7 @@ func (w *ApiWrapper) CheckConsent(ctx echo.Context) error {
 
 	var checkpoint *time.Time
 	if checkRequest.ValidAt != nil {
-		cp, err := time.Parse("2020-01-01", *checkRequest.ValidAt)
+		cp, err := time.Parse("2006-01-02", *checkRequest.ValidAt)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid value for validAt: %s", *checkRequest.ValidAt))
 		}
@@ -140,7 +140,7 @@ func (w *ApiWrapper) DeleteConsent(ctx echo.Context, proofHash string) error {
 	}
 
 	// delete record, if it doesn't exist an error is returned
-	if f, err := w.Cs.DeleteConsentRecordByHash(ctx.Request().Context(), proofHash); err != nil {
+	if f, err := w.Cs.DeleteConsentRecordByHash(ctx.Request().Context(), proofHash); err != nil || !f {
 		if !f {
 			return echo.NewHTTPError(http.StatusNotFound, "no ConsentRecord found for given hash")
 		}

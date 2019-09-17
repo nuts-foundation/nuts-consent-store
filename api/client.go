@@ -44,9 +44,15 @@ func (hb HttpClient) QueryConsent(context context.Context, actor *string, custod
 
 func (hb HttpClient) DeleteConsentRecordByHash(context context.Context, proofHash string) (bool, error) {
 	// delete record, if it doesn't exist an error is returned
-	if _, err := hb.client().DeleteConsent(context, proofHash); err != nil {
+	result, err := hb.client().DeleteConsent(context, proofHash)
+	if err != nil {
 		err := fmt.Errorf("error while deleting consent in consent-store: %v", err)
 		hb.Logger.Error(err)
+		return false, err
+	}
+
+	_, err = hb.checkResponse(result)
+	if err != nil {
 		return false, err
 	}
 
@@ -62,7 +68,7 @@ func (hb HttpClient) ConsentAuth(ctx context.Context, custodian string, subject 
 	}
 
 	if checkpoint != nil {
-		s := checkpoint.Format("2020-01-01")
+		s := checkpoint.Format("2006-01-02")
 		req.ValidAt = &s
 	}
 

@@ -88,6 +88,32 @@ func TestDefaultConsentStore_CheckConsent(t *testing.T) {
 		}
 	})
 
+	t.Run("API call returns 200 for auth with ValidAt", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		echo := mock.NewMockContext(ctrl)
+
+		ccr := consentCheckRequest()
+		validAt := time.Now().Format("2006-01-02")
+		ccr.ValidAt = &validAt
+		json, _ := json.Marshal(ccr)
+		request := &http.Request{
+			Body: ioutil.NopCloser(bytes.NewReader(json)),
+		}
+
+		authValue := "true"
+		echo.EXPECT().Request().Return(request).AnyTimes()
+		echo.EXPECT().JSON(200, ConsentCheckResponse{
+			ConsentGiven: &authValue,
+		})
+
+		err := client.CheckConsent(echo)
+
+		if err != nil {
+			t.Errorf("Expected no error, got [%v]", err)
+		}
+	})
+
 	t.Run("Missing body gives 400", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -105,6 +131,34 @@ func TestDefaultConsentStore_CheckConsent(t *testing.T) {
 		}
 
 		expected := "code=400, message=missing body in request"
+		if !strings.Contains(err.Error(), expected) {
+			t.Errorf("Expected error [%s], got: [%s]", expected, err.Error())
+		}
+	})
+
+	t.Run("Invalid ValidAt gives 400", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		echo := mock.NewMockContext(ctrl)
+
+		ccr := consentCheckRequest()
+		validAt := "202-01-01"
+		ccr.ValidAt = &validAt
+		json, _ := json.Marshal(ccr)
+		request := &http.Request{
+			Body: ioutil.NopCloser(bytes.NewReader(json)),
+		}
+
+		echo.EXPECT().Request().Return(request).AnyTimes()
+
+		err := client.CheckConsent(echo)
+
+		if err == nil {
+			t.Error("Expected error got nothing")
+			return
+		}
+
+		expected := "code=400, message=invalid value for validAt: 202-01-01"
 		if !strings.Contains(err.Error(), expected) {
 			t.Errorf("Expected error [%s], got: [%s]", expected, err.Error())
 		}
@@ -365,6 +419,33 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 		}
 	})
 
+	t.Run("API call returns 400 for missing proofHash", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		echo := mock.NewMockContext(ctrl)
+
+		consent := testConsent()
+		consent.ProofHash = nil
+
+		json, _ := json.Marshal(consent)
+		request := &http.Request{
+			Body: ioutil.NopCloser(bytes.NewReader(json)),
+		}
+
+		echo.EXPECT().Request().Return(request).AnyTimes()
+
+		err := client.CreateConsent(echo)
+
+		if err == nil {
+			t.Error("Expected error got nothing")
+		}
+
+		expected := "code=400, message=missing proofHash in createRequest"
+		if !strings.Contains(err.Error(), expected) {
+			t.Errorf("Expected error %s, got: [%s]", expected, err.Error())
+		}
+	})
+
 	t.Run("API call returns 400 for missing subject", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -503,8 +584,8 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 					Resources: []string{
 						"resource",
 					},
-					ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format("2020-01-01")),
-					ValidTo: ValidTo(time.Now().Add(time.Hour * 24).Format("2020-01-01")),
+					ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format("2006-01-02")),
+					ValidTo: ValidTo(time.Now().Add(time.Hour * 24).Format("2006-01-02")),
 				},
 			},
 			Page: PageDefinition{},
@@ -540,8 +621,8 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 					Resources: []string{
 						"resource",
 					},
-					ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format("2020-01-01")),
-					ValidTo: ValidTo(time.Now().Add(time.Hour * 24).Format("2020-01-01")),
+					ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format("2006-01-02")),
+					ValidTo: ValidTo(time.Now().Add(time.Hour * 24).Format("2006-01-02")),
 				},
 			},
 			Page: PageDefinition{},
@@ -632,6 +713,72 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 	})
 }
 
+func TestDefaultConsentStore_DeleteConsent(t *testing.T) {
+	client := defaultConsentStore()
+	crq := consentRuleForQuery()
+	client.Cs.RecordConsent(context.Background(), []pkg.PatientConsent{crq})
+	defer client.Cs.Shutdown()
+
+	t.Run("missing proofHash returns 400", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		echo := mock.NewMockContext(ctrl)
+
+		request := &http.Request{}
+
+		echo.EXPECT().Request().Return(request).AnyTimes()
+
+		err := client.DeleteConsent(echo, "")
+
+		if err == nil {
+			t.Error("Expected error, got nothing", err)
+		}
+
+		expected := "code=400, message=missing proofHash"
+		if !strings.Contains(err.Error(), expected) {
+			t.Errorf("Expected error [%s], got: [%s]", expected, err.Error())
+		}
+	})
+
+	t.Run("Unknown proofHash returns 404", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		echo := mock.NewMockContext(ctrl)
+
+		request := &http.Request{}
+
+		echo.EXPECT().Request().Return(request).AnyTimes()
+
+		err := client.DeleteConsent(echo, "a")
+
+		if err == nil {
+			t.Error("Expected error, got nothing", err)
+		}
+
+		expected := "code=404, message=no ConsentRecord found for given hash"
+		if !strings.Contains(err.Error(), expected) {
+			t.Errorf("Expected error [%s], got: [%s]", expected, err.Error())
+		}
+	})
+
+	t.Run("Correct delete", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		echo := mock.NewMockContext(ctrl)
+
+		request := &http.Request{}
+
+		echo.EXPECT().Request().Return(request).AnyTimes()
+		echo.EXPECT().NoContent(202)
+
+		err := client.DeleteConsent(echo, crq.Records[0].ProofHash)
+
+		if err != nil {
+			t.Errorf("Expected no error, got [%v]", err)
+		}
+	})
+}
+
 func testConsent() SimplifiedConsent {
 	hash := random.String(8)
 	return SimplifiedConsent{
@@ -690,6 +837,7 @@ func consentRuleForQuery() pkg.PatientConsent {
 				Resources: []pkg.Resource{
 					{ResourceType: "resource"},
 				},
+				ProofHash: random.String(8),
 			},
 		},
 	}
