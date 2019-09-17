@@ -24,12 +24,13 @@ import (
 )
 
 // PatientConsent defines struct for patient_consent table.
+// ID refers to the HMAC id for a custodian(subject-actor)
 type PatientConsent struct {
-	ID        uint   `gorm:"AUTO_INCREMENT"`
-	Actor     string `gorm:"not null"`
-	Custodian string `gorm:"not null"`
-	Records   []ConsentRecord
-	Subject   string `gorm:"not null"`
+	ID         string `gorm:"primary_key"`
+	Actor      string `gorm:"not null"`
+	Custodian  string `gorm:"not null"`
+	Records    []ConsentRecord
+	Subject    string `gorm:"not null"`
 }
 
 func (PatientConsent) TableName() string {
@@ -47,10 +48,10 @@ func (pc PatientConsent) Resources() []Resource {
 // ConsentRecord represents the individual records/attachments for a PatientConsent
 type ConsentRecord struct {
 	ID               uint `gorm:"AUTO_INCREMENT"`
-	PatientConsentID uint
+	PatientConsentID string
 	ValidFrom        time.Time `gorm:"not null"`
 	ValidTo          time.Time `gorm:"not null"`
-	ProofHash        string    `gorm:"not null"`
+	Hash       		 string    `gorm:"not null"`
 	Resources        []Resource
 }
 

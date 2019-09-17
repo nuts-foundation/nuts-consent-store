@@ -50,7 +50,7 @@ func (sc SimplifiedConsent) ToPatientConsent() (pkg.PatientConsent, error) {
 			{
 				ValidFrom: validFrom,
 				ValidTo:   validTo,
-				ProofHash: *sc.ProofHash,
+				Hash: *sc.RecordHash,
 				Resources: resources,
 			},
 		},

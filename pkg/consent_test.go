@@ -41,6 +41,7 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 
 		rules := []PatientConsent{
 			{
+				ID: 		random.String(8),
 				Actor:     "actor",
 				Custodian: "custodian",
 				Subject:   "subject",
@@ -49,7 +50,7 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 					{
 						ValidFrom: time.Now().Add(time.Hour * -24),
 						ValidTo:   time.Now().Add(time.Hour * +12),
-						ProofHash: "234caef",
+						Hash: "234caef",
 						Resources: []Resource{
 							{
 								ResourceType: "resource",
@@ -100,7 +101,7 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 
 				Records: []ConsentRecord{
 					{
-						ProofHash: random.String(8),
+						Hash: random.String(8),
 						ValidFrom: time.Now().Add(time.Hour * -24),
 						ValidTo:   time.Now().Add(time.Hour * -12),
 						Resources: []Resource{
@@ -140,7 +141,7 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 
 				Records: []ConsentRecord{
 					{
-						ProofHash: random.String(8),
+						Hash: random.String(8),
 						ValidFrom: time.Now().Add(time.Hour * -24),
 						ValidTo:   time.Now().Add(time.Hour * 12),
 						Resources: []Resource{
@@ -185,7 +186,7 @@ func TestConsentStore_QueryConsentForActor(t *testing.T) {
 				{
 					ValidFrom: time.Now().Add(time.Hour * -24),
 					ValidTo:   time.Now().Add(time.Hour * 12),
-					ProofHash: random.String(8),
+					Hash: random.String(8),
 					Resources: []Resource{
 						{
 							ResourceType: "resource",
@@ -202,7 +203,7 @@ func TestConsentStore_QueryConsentForActor(t *testing.T) {
 				{
 					ValidFrom: time.Now().Add(time.Hour * -24),
 					ValidTo:   time.Now().Add(time.Hour * 12),
-					ProofHash: random.String(8),
+					Hash: random.String(8),
 					Resources: []Resource{
 						{
 							ResourceType: "resource2",
@@ -253,7 +254,7 @@ func TestConsentStore_QueryConsentForActorAndSubject(t *testing.T) {
 				{
 					ValidFrom: time.Now().Add(time.Hour * -24),
 					ValidTo:   time.Now().Add(time.Hour * 12),
-					ProofHash: "1",
+					Hash: "1",
 					Resources: []Resource{
 						{
 							ResourceType: "resource",
@@ -270,7 +271,7 @@ func TestConsentStore_QueryConsentForActorAndSubject(t *testing.T) {
 				{
 					ValidFrom: time.Now().Add(time.Hour * -24),
 					ValidTo:   time.Now().Add(time.Hour * 12),
-					ProofHash: "2",
+					Hash: "2",
 					Resources: []Resource{
 						{
 							ResourceType: "resource2",
@@ -373,7 +374,7 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 				{
 					ValidFrom: time.Now().Add(time.Hour * -24),
 					ValidTo:   time.Now().Add(time.Hour * 12),
-					ProofHash: random.String(8),
+					Hash: random.String(8),
 					Resources: []Resource{
 						{
 							ResourceType: "resource",
@@ -390,7 +391,7 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 				{
 					ValidFrom: time.Now().Add(time.Hour * -24),
 					ValidTo:   time.Now().Add(time.Hour * 12),
-					ProofHash: random.String(8),
+					Hash: random.String(8),
 					Resources: []Resource{
 						{
 							ResourceType: "resource2",
@@ -452,7 +453,7 @@ func TestConsentStore_DeleteConsentRecordByHash(t *testing.T) {
 				{
 					ValidFrom: time.Now().Add(time.Hour * -24),
 					ValidTo:   time.Now().Add(time.Hour * 12),
-					ProofHash: hash,
+					Hash: hash,
 					Resources: []Resource{
 						{
 							ResourceType: "resource",

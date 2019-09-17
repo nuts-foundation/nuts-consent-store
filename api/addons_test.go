@@ -80,7 +80,7 @@ func TestSimplifiedConsent_ToPatientConsent(t *testing.T) {
 	sc := SimplifiedConsent{
 		Actor:     "actor",
 		Custodian: "custodian",
-		ProofHash: &hash,
+		RecordHash: &hash,
 		Resources: []string{"resource"},
 		Subject:   "subject",
 		ValidFrom: "2019-01-01",
@@ -110,8 +110,8 @@ func TestSimplifiedConsent_ToPatientConsent(t *testing.T) {
 			return
 		}
 
-		if pc.Records[0].ProofHash != *sc.ProofHash {
-			t.Error("Expected ProofHash to match")
+		if pc.Records[0].Hash != *sc.RecordHash {
+			t.Error("Expected Hash to match")
 			return
 		}
 

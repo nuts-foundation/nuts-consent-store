@@ -221,6 +221,7 @@ func (cs *ConsentStore) RecordConsent(context context.Context, consent []Patient
 
 	for _, pr := range consent {
 		tpc := PatientConsent{
+			ID:		   pr.ID,
 			Actor:     pr.Actor,
 			Custodian: pr.Custodian,
 			Subject:   pr.Subject,
@@ -235,7 +236,7 @@ func (cs *ConsentStore) RecordConsent(context context.Context, consent []Patient
 		for _, cr := range pr.Records {
 			tcr := ConsentRecord{
 				PatientConsentID: tpc.ID,
-				ProofHash:        cr.ProofHash,
+				Hash:        	  cr.Hash,
 				ValidFrom:        cr.ValidFrom,
 				ValidTo:          cr.ValidTo,
 			}
@@ -309,7 +310,7 @@ func (cs *ConsentStore) QueryConsent(context context.Context, _actor *string, _c
 func (cs *ConsentStore) DeleteConsentRecordByHash(context context.Context, proofHash string) (bool, error) {
 	record := ConsentRecord{}
 
-	if err := cs.Db.Debug().Where("proof_hash = ?", proofHash).First(&record).Error; err != nil {
+	if err := cs.Db.Debug().Where("hash = ?", proofHash).First(&record).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return false, nil
 		}

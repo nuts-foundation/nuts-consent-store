@@ -59,13 +59,14 @@ type PageDefinition struct {
 
 // SimplifiedConsent defines model for SimplifiedConsent.
 type SimplifiedConsent struct {
-	Actor     Identifier `json:"actor"`
-	Custodian Identifier `json:"custodian"`
-	ProofHash *string    `json:"proofHash,omitempty"`
-	Resources []string   `json:"resources"`
-	Subject   Identifier `json:"subject"`
-	ValidFrom ValidFrom  `json:"validFrom"`
-	ValidTo   ValidTo    `json:"validTo"`
+	Actor      Identifier `json:"actor"`
+	Custodian  Identifier `json:"custodian"`
+	Id         string     `json:"id"`
+	RecordHash *string    `json:"recordHash,omitempty"`
+	Resources  []string   `json:"resources"`
+	Subject    Identifier `json:"subject"`
+	ValidFrom  ValidFrom  `json:"validFrom"`
+	ValidTo    ValidTo    `json:"validTo"`
 }
 
 // SubjectQuery defines model for SubjectQuery.
@@ -670,3 +671,4 @@ func RegisterHandlers(router runtime.EchoRouter, si ServerInterface) {
 	router.DELETE("/consent/:proofHash", wrapper.DeleteConsent)
 
 }
+

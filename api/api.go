@@ -42,6 +42,10 @@ func (w *ApiWrapper) CreateConsent(ctx echo.Context) error {
 	var createRequest = &SimplifiedConsent{}
 	err = json.Unmarshal(buf, createRequest)
 
+	if len(createRequest.Id) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "missing ID in createRequest")
+	}
+
 	if len(createRequest.Subject) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "missing subject in createRequest")
 	}
@@ -58,12 +62,12 @@ func (w *ApiWrapper) CreateConsent(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "missing resources in createRequest")
 	}
 
-	if createRequest.ProofHash == nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "missing proofHash in createRequest")
+	if createRequest.RecordHash == nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "missing recordHash in createRequest")
 	}
 
 	c, err := createRequest.ToPatientConsent()
-	if createRequest.ProofHash == nil {
+	if createRequest.RecordHash == nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error transforming record: %v", err))
 	}
 
