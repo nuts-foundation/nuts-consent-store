@@ -34,7 +34,7 @@ import (
 type HttpClient struct {
 	ServerAddress string
 	Timeout       time.Duration
-	Logger 		  *logrus.Entry
+	Logger        *logrus.Entry
 	customClient  *http.Client
 }
 

@@ -51,8 +51,6 @@ func (t *testServer) QueryConsent(ctx echo.Context) error {
 	return t.err
 }
 
-
-
 func TestServerInterfaceWrapper_CheckConsent(t *testing.T) {
 	for _, siw := range siws {
 		t.Run("CheckConsent call returns expected error", func(t *testing.T) {

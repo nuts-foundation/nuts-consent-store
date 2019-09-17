@@ -49,7 +49,7 @@ func (sc SimplifiedConsent) ToPatientConsent() (pkg.PatientConsent, error) {
 		Records: []pkg.ConsentRecord{
 			{
 				ValidFrom: validFrom,
-				ValidTo: validTo,
+				ValidTo:   validTo,
 				ProofHash: *sc.ProofHash,
 				Resources: resources,
 			},
@@ -81,10 +81,10 @@ func FromSimplifiedConsentRule(patientConsent []pkg.PatientConsent) ([]Simplifie
 			consent = append(consent, SimplifiedConsent{
 				Subject:   Identifier(c.Subject),
 				Custodian: Identifier(c.Custodian),
-				Actor:    Identifier(c.Actor),
+				Actor:     Identifier(c.Actor),
 				Resources: resources,
 				ValidFrom: ValidFrom(r.ValidFrom.Format("2006-01-02")),
-				ValidTo: ValidTo(r.ValidTo.Format("2006-01-02")),
+				ValidTo:   ValidTo(r.ValidTo.Format("2006-01-02")),
 			})
 		}
 	}

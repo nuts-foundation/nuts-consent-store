@@ -221,7 +221,7 @@ func TestHttpClient_QueryConsentForActor(t *testing.T) {
 		resp, _ := json.Marshal(ConsentQueryResponse{Results: []SimplifiedConsent{
 			{
 				Resources: []string{"test"},
-				Actor:    Identifier("actor"),
+				Actor:     Identifier("actor"),
 				Subject:   Identifier("subject"),
 				Custodian: Identifier("custodian"),
 			},
@@ -245,7 +245,7 @@ func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
 		resp, _ := json.Marshal(ConsentQueryResponse{Results: []SimplifiedConsent{
 			{
 				Resources: []string{"test"},
-				Actor:    Identifier("actor"),
+				Actor:     Identifier("actor"),
 				Subject:   Identifier("subject"),
 				Custodian: Identifier("custodian"),
 			},

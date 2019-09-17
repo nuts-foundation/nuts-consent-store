@@ -670,4 +670,3 @@ func RegisterHandlers(router runtime.EchoRouter, si ServerInterface) {
 	router.DELETE("/consent/:proofHash", wrapper.DeleteConsent)
 
 }
-

@@ -28,7 +28,7 @@ type PatientConsent struct {
 	ID        uint   `gorm:"AUTO_INCREMENT"`
 	Actor     string `gorm:"not null"`
 	Custodian string `gorm:"not null"`
-	Records []ConsentRecord
+	Records   []ConsentRecord
 	Subject   string `gorm:"not null"`
 }
 
@@ -38,7 +38,7 @@ func (PatientConsent) TableName() string {
 
 func (pc PatientConsent) Resources() []Resource {
 	var resources []Resource
-	for _, r := range  pc.Records {
+	for _, r := range pc.Records {
 		resources = append(resources, r.Resources...)
 	}
 	return resources
@@ -46,12 +46,12 @@ func (pc PatientConsent) Resources() []Resource {
 
 // ConsentRecord represents the individual records/attachments for a PatientConsent
 type ConsentRecord struct {
-	ID         		 uint   	`gorm:"AUTO_INCREMENT"`
+	ID               uint `gorm:"AUTO_INCREMENT"`
 	PatientConsentID uint
-	ValidFrom  		 time.Time	`gorm:"not null"`
-	ValidTo    		 time.Time	`gorm:"not null"`
-	ProofHash  		 string		`gorm:"not null"`
-	Resources 		 []Resource
+	ValidFrom        time.Time `gorm:"not null"`
+	ValidTo          time.Time `gorm:"not null"`
+	ProofHash        string    `gorm:"not null"`
+	Resources        []Resource
 }
 
 func (ConsentRecord) TableName() string {
@@ -61,7 +61,7 @@ func (ConsentRecord) TableName() string {
 // Resource defines struct for resource table
 type Resource struct {
 	ConsentRecordID uint
-	ResourceType  string `gorm:"not null"`
+	ResourceType    string `gorm:"not null"`
 }
 
 func (Resource) TableName() string {

@@ -49,8 +49,8 @@ const ConfigConnectionStringDefault = ":memory:"
 type ConsentStore struct {
 	Db *gorm.DB
 
-	ConfigOnce       sync.Once
-	Config           ConsentStoreConfig
+	ConfigOnce sync.Once
+	Config     ConsentStoreConfig
 	//NutsEventOctopus pkg.EventOctopusClient
 	//EventPublisher   pkg.IEventPublisher
 }
@@ -61,7 +61,7 @@ var oneEngine sync.Once
 // ConsentStoreClient defines all actions possible through a direct connection, command-line and REST api
 type ConsentStoreClient interface {
 	// ConsentAuth checks if a record exists in the Db for the given combination and returns a bool. Checkpoint is optional and default to time.Now()
-	ConsentAuth(context context.Context, custodian string ,subject string, actor string, resourceType string, checkpoint *time.Time) (bool, error)
+	ConsentAuth(context context.Context, custodian string, subject string, actor string, resourceType string, checkpoint *time.Time) (bool, error)
 	// RecordConsent records a record in the Db, this is not to be used to create a new distributed consent record. It's only valid for the local node.
 	// It should only be called by the consent logic component (or for development purposes)
 	RecordConsent(context context.Context, consent []PatientConsent) error
@@ -235,9 +235,9 @@ func (cs *ConsentStore) RecordConsent(context context.Context, consent []Patient
 		for _, cr := range pr.Records {
 			tcr := ConsentRecord{
 				PatientConsentID: tpc.ID,
-				ProofHash: cr.ProofHash,
-				ValidFrom: cr.ValidFrom,
-				ValidTo: cr.ValidTo,
+				ProofHash:        cr.ProofHash,
+				ValidFrom:        cr.ValidFrom,
+				ValidTo:          cr.ValidTo,
 			}
 
 			if !tcr.ValidTo.After(tcr.ValidFrom) {

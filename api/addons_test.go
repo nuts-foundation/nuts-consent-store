@@ -132,7 +132,7 @@ func TestSimplifiedConsent_ToPatientConsent(t *testing.T) {
 	})
 
 	t.Run("Incorrect validTo returns error", func(t *testing.T) {
-		sc.ValidTo= "202-01-01"
+		sc.ValidTo = "202-01-01"
 		_, err := sc.ToPatientConsent()
 
 		if err == nil {
@@ -147,7 +147,7 @@ func TestSimplifiedConsent_ToPatientConsent(t *testing.T) {
 	})
 
 	t.Run("Incorrect validFrom returns error", func(t *testing.T) {
-		sc.ValidFrom= "202-01-01"
+		sc.ValidFrom = "202-01-01"
 		_, err := sc.ToPatientConsent()
 
 		if err == nil {

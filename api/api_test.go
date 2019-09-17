@@ -580,12 +580,12 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 				{
 					Subject:   Identifier("urn:subject"),
 					Custodian: Identifier("custodian"),
-					Actor: Identifier("actor"),
+					Actor:     Identifier("actor"),
 					Resources: []string{
 						"resource",
 					},
 					ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format("2006-01-02")),
-					ValidTo: ValidTo(time.Now().Add(time.Hour * 24).Format("2006-01-02")),
+					ValidTo:   ValidTo(time.Now().Add(time.Hour * 24).Format("2006-01-02")),
 				},
 			},
 			Page: PageDefinition{},
@@ -617,12 +617,12 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 				{
 					Subject:   Identifier("urn:subject"),
 					Custodian: Identifier("custodian"),
-					Actor: Identifier("actor"),
+					Actor:     Identifier("actor"),
 					Resources: []string{
 						"resource",
 					},
 					ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format("2006-01-02")),
-					ValidTo: ValidTo(time.Now().Add(time.Hour * 24).Format("2006-01-02")),
+					ValidTo:   ValidTo(time.Now().Add(time.Hour * 24).Format("2006-01-02")),
 				},
 			},
 			Page: PageDefinition{},
@@ -782,13 +782,13 @@ func TestDefaultConsentStore_DeleteConsent(t *testing.T) {
 func testConsent() SimplifiedConsent {
 	hash := random.String(8)
 	return SimplifiedConsent{
-		Actor: Identifier("actor"),
+		Actor:     Identifier("actor"),
 		Custodian: Identifier("custodian"),
 		Subject:   Identifier("urn:subject"),
 		ProofHash: &hash,
 		Resources: []string{"resource"},
 		ValidFrom: ValidFrom("2019-01-01"),
-		ValidTo: ValidTo("2030-01-01"),
+		ValidTo:   ValidTo("2030-01-01"),
 	}
 }
 
@@ -833,7 +833,7 @@ func consentRuleForQuery() pkg.PatientConsent {
 		Records: []pkg.ConsentRecord{
 			{
 				ValidFrom: time.Now().Add(time.Hour * -24),
-				ValidTo: time.Now().Add(time.Hour * 24),
+				ValidTo:   time.Now().Add(time.Hour * 24),
 				Resources: []pkg.Resource{
 					{ResourceType: "resource"},
 				},

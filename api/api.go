@@ -163,7 +163,7 @@ func (w *ApiWrapper) QueryConsent(ctx echo.Context) error {
 		actor, custodian *string
 	)
 
-	if checkRequest.Actor != nil  && len(*checkRequest.Actor) > 0 {
+	if checkRequest.Actor != nil && len(*checkRequest.Actor) > 0 {
 		actorString := string(*checkRequest.Actor)
 		actor = &actorString
 	}

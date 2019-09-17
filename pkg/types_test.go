@@ -96,7 +96,7 @@ func testConsent() *PatientConsent {
 		Records: []ConsentRecord{
 			{
 				ValidFrom: time.Now(),
-				ValidTo: time.Now().Add(time.Hour * 24 * 365),
+				ValidTo:   time.Now().Add(time.Hour * 24 * 365),
 				Resources: []Resource{{ResourceType: "resource"}},
 			},
 		},

@@ -48,7 +48,7 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 				Records: []ConsentRecord{
 					{
 						ValidFrom: time.Now().Add(time.Hour * -24),
-						ValidTo: time.Now().Add(time.Hour * +12),
+						ValidTo:   time.Now().Add(time.Hour * +12),
 						ProofHash: "234caef",
 						Resources: []Resource{
 							{
@@ -102,7 +102,7 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 					{
 						ProofHash: random.String(8),
 						ValidFrom: time.Now().Add(time.Hour * -24),
-						ValidTo: time.Now().Add(time.Hour * -12),
+						ValidTo:   time.Now().Add(time.Hour * -12),
 						Resources: []Resource{
 							{
 								ResourceType: "resource",
@@ -142,7 +142,7 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 					{
 						ProofHash: random.String(8),
 						ValidFrom: time.Now().Add(time.Hour * -24),
-						ValidTo: time.Now().Add(time.Hour * 12),
+						ValidTo:   time.Now().Add(time.Hour * 12),
 						Resources: []Resource{
 							{
 								ResourceType: "resource",
@@ -161,7 +161,6 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 
 		cp := time.Now().Add(time.Hour * -36)
 		auth, err := client.ConsentAuth(context.TODO(), "custodian", "subject", "actor3", "resource", &cp)
-
 
 		if err != nil {
 			t.Errorf("Expected no error, got [%v]", err)
@@ -185,7 +184,7 @@ func TestConsentStore_QueryConsentForActor(t *testing.T) {
 			Records: []ConsentRecord{
 				{
 					ValidFrom: time.Now().Add(time.Hour * -24),
-					ValidTo: time.Now().Add(time.Hour * 12),
+					ValidTo:   time.Now().Add(time.Hour * 12),
 					ProofHash: random.String(8),
 					Resources: []Resource{
 						{
@@ -202,7 +201,7 @@ func TestConsentStore_QueryConsentForActor(t *testing.T) {
 			Records: []ConsentRecord{
 				{
 					ValidFrom: time.Now().Add(time.Hour * -24),
-					ValidTo: time.Now().Add(time.Hour * 12),
+					ValidTo:   time.Now().Add(time.Hour * 12),
 					ProofHash: random.String(8),
 					Resources: []Resource{
 						{
@@ -253,7 +252,7 @@ func TestConsentStore_QueryConsentForActorAndSubject(t *testing.T) {
 			Records: []ConsentRecord{
 				{
 					ValidFrom: time.Now().Add(time.Hour * -24),
-					ValidTo: time.Now().Add(time.Hour * 12),
+					ValidTo:   time.Now().Add(time.Hour * 12),
 					ProofHash: "1",
 					Resources: []Resource{
 						{
@@ -270,7 +269,7 @@ func TestConsentStore_QueryConsentForActorAndSubject(t *testing.T) {
 			Records: []ConsentRecord{
 				{
 					ValidFrom: time.Now().Add(time.Hour * -24),
-					ValidTo: time.Now().Add(time.Hour * 12),
+					ValidTo:   time.Now().Add(time.Hour * 12),
 					ProofHash: "2",
 					Resources: []Resource{
 						{
@@ -314,11 +313,11 @@ func TestConsentStore_Configure(t *testing.T) {
 		client := ConsentStore{
 			Config: ConsentStoreConfig{
 				Connectionstring: ":memory:",
-				Mode: "server",
+				Mode:             "server",
 			},
 		}
 
-		if err := client.Configure();err != nil {
+		if err := client.Configure(); err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 	})
@@ -327,7 +326,7 @@ func TestConsentStore_Configure(t *testing.T) {
 		client := ConsentStore{
 			Config: ConsentStoreConfig{
 				Connectionstring: "file:test.db?mode=ro",
-				Mode: "server",
+				Mode:             "server",
 			},
 		}
 
@@ -373,7 +372,7 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 			Records: []ConsentRecord{
 				{
 					ValidFrom: time.Now().Add(time.Hour * -24),
-					ValidTo: time.Now().Add(time.Hour * 12),
+					ValidTo:   time.Now().Add(time.Hour * 12),
 					ProofHash: random.String(8),
 					Resources: []Resource{
 						{
@@ -390,7 +389,7 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 			Records: []ConsentRecord{
 				{
 					ValidFrom: time.Now().Add(time.Hour * -24),
-					ValidTo: time.Now().Add(time.Hour * 12),
+					ValidTo:   time.Now().Add(time.Hour * 12),
 					ProofHash: random.String(8),
 					Resources: []Resource{
 						{
@@ -452,7 +451,7 @@ func TestConsentStore_DeleteConsentRecordByHash(t *testing.T) {
 			Records: []ConsentRecord{
 				{
 					ValidFrom: time.Now().Add(time.Hour * -24),
-					ValidTo: time.Now().Add(time.Hour * 12),
+					ValidTo:   time.Now().Add(time.Hour * 12),
 					ProofHash: hash,
 					Resources: []Resource{
 						{
