@@ -252,6 +252,13 @@ func (cs *ConsentStore) RecordConsent(context context.Context, consent []Patient
 				return err
 			}
 
+			// Delete resources if any. This is easier than creating a diff and deleting and inserting the changes
+			if err := tx.Delete(Resource{}, "consent_record_id = ?", tcr.ID).Error; err != nil {
+				tx.Rollback()
+				return err
+			}
+
+			// Save all current resources
 			tcr.Resources = cr.Resources
 			if err := tx.Save(&tcr).Error; err != nil {
 				tx.Rollback()

@@ -78,6 +78,40 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 		}
 	})
 
+	t.Run("Updating a existing consent", func(t *testing.T) {
+
+		rules := []PatientConsent{
+			{
+				ID: 		random.String(8),
+				Actor:     "actor333",
+				Custodian: "custodian",
+				Subject:   "subject",
+
+				Records: []ConsentRecord{
+					{
+						ValidFrom: time.Now().Add(time.Hour * -24),
+						ValidTo:   time.Now().Add(time.Hour * +12),
+						Hash: "234caefg",
+						Resources: []Resource{
+							{
+								ResourceType: "resource",
+							},
+						},
+					},
+				},
+			},
+		}
+		err := client.RecordConsent(context.TODO(), rules)
+		if err != nil {
+			t.Errorf("Expected no error, got [%v]", err)
+		}
+
+		err = client.RecordConsent(context.TODO(), rules)
+		if err != nil {
+			t.Errorf("Expected no error, got [%v]", err)
+		}
+	})
+
 	t.Run("Authorize non-existing consent returns false", func(t *testing.T) {
 
 		auth, err := client.ConsentAuth(context.TODO(), "custodian", "subject", "actor2", "resource", nil)
