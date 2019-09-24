@@ -173,6 +173,7 @@ func (cs *ConsentStore) RunMigrations(db *sql.DB) error {
 	return nil
 }
 
+// ConsentAuth checks if there is a consent for a given custodian, subject and actor for a certain resource at a given moment in time (checkpoint)
 func (cs *ConsentStore) ConsentAuth(context context.Context, custodian string, subject string, actor string, resourceType string, checkpoint *time.Time) (bool, error) {
 	target := &PatientConsent{}
 
@@ -204,6 +205,7 @@ func (cs *ConsentStore) ConsentAuth(context context.Context, custodian string, s
 	return false, nil
 }
 
+// RecordConsent records a list of PatientConsents, their records and their resources.
 func (cs *ConsentStore) RecordConsent(context context.Context, consent []PatientConsent) error {
 
 	// start transaction
@@ -270,6 +272,7 @@ func (cs *ConsentStore) RecordConsent(context context.Context, consent []Patient
 	return tx.Commit().Error
 }
 
+// QueryConsentForActor returns all PatientConsents for a given actor
 func (cs *ConsentStore) QueryConsentForActor(context context.Context, actor string, query string) ([]PatientConsent, error) {
 	var rules []PatientConsent
 
@@ -280,6 +283,7 @@ func (cs *ConsentStore) QueryConsentForActor(context context.Context, actor stri
 	return rules, nil
 }
 
+// QueryConsentForActorAndSubject  returns all PatientConsents for a given actor and subject
 func (cs *ConsentStore) QueryConsentForActorAndSubject(context context.Context, actor string, subject string) ([]PatientConsent, error) {
 	var rules []PatientConsent
 
@@ -289,6 +293,8 @@ func (cs *ConsentStore) QueryConsentForActorAndSubject(context context.Context, 
 
 	return rules, nil
 }
+
+// QueryConsent accepts actor, custodian and subject, if these are nil, it uses a wildcard to query.
 func (cs *ConsentStore) QueryConsent(context context.Context, _actor *string, _custodian *string, _subject *string) ([]PatientConsent, error) {
 	var rules []PatientConsent
 	var (
@@ -314,6 +320,7 @@ func (cs *ConsentStore) QueryConsent(context context.Context, _actor *string, _c
 	return rules, nil
 }
 
+// DeleteConsentRecordByHash deletes a consent record by its hash. Returns boolean to indicate the success of the operation
 func (cs *ConsentStore) DeleteConsentRecordByHash(context context.Context, proofHash string) (bool, error) {
 	record := ConsentRecord{}
 

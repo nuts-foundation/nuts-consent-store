@@ -138,6 +138,7 @@ func (w *ApiWrapper) CheckConsent(ctx echo.Context) error {
 	return ctx.JSON(200, checkResponse)
 }
 
+// DeleteConsent deletes the consentRecord for a given proofHash
 func (w *ApiWrapper) DeleteConsent(ctx echo.Context, proofHash string) error {
 	if len(proofHash) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "missing proofHash")
