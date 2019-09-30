@@ -223,7 +223,7 @@ func (cs *ConsentStore) RecordConsent(context context.Context, consent []Patient
 
 	for _, pr := range consent {
 		tpc := PatientConsent{
-			ID:		   pr.ID,
+			ID:        pr.ID,
 			Actor:     pr.Actor,
 			Custodian: pr.Custodian,
 			Subject:   pr.Subject,
@@ -238,7 +238,7 @@ func (cs *ConsentStore) RecordConsent(context context.Context, consent []Patient
 		for _, cr := range pr.Records {
 			tcr := ConsentRecord{
 				PatientConsentID: tpc.ID,
-				Hash:        	  cr.Hash,
+				Hash:             cr.Hash,
 				ValidFrom:        cr.ValidFrom,
 				ValidTo:          cr.ValidTo,
 			}
@@ -248,14 +248,13 @@ func (cs *ConsentStore) RecordConsent(context context.Context, consent []Patient
 				return errors.New("ConsentRecord validation failed: ValidTo must come after ValidFrom")
 			}
 
-			// find existing record
-			if err := tx.Where(tcr).FirstOrCreate(&tcr).Error; err != nil {
+			// Delete resources if any. This is easier than creating a diff and deleting and inserting the changes
+			if err := tx.Delete(Resource{}, "consent_record_id = ?", tcr.ID).Error; err != nil {
 				tx.Rollback()
 				return err
 			}
 
-			// Delete resources if any. This is easier than creating a diff and deleting and inserting the changes
-			if err := tx.Delete(Resource{}, "consent_record_id = ?", tcr.ID).Error; err != nil {
+			if err := tx.Delete(ConsentRecord{}, "patient_consent_id = ?", tcr.PatientConsentID).Error; err != nil {
 				tx.Rollback()
 				return err
 			}
