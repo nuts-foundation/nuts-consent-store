@@ -98,6 +98,16 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 							},
 						},
 					},
+					{
+						ValidFrom: time.Now().Add(time.Hour * -24),
+						ValidTo:   time.Now().Add(time.Hour * +12),
+						Hash:      "334caefg",
+						Resources: []Resource{
+							{
+								ResourceType: "resource",
+							},
+						},
+					},
 				},
 			},
 		}
@@ -119,11 +129,11 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 		if len(consent) != 1 {
 			t.Errorf("Expected 1 patientConsent, got [%d]", len(consent))
 		}
-		if len(consent[0].Records) != 1 {
-			t.Errorf("Expected only 1 record, got: [%d]", len(consent[0].Records))
+		if len(consent[0].Records) != 2 {
+			t.Errorf("Expected 2 records, got: [%d]", len(consent[0].Records))
 		}
 		if len(consent[0].Records[0].Resources) != 1 {
-			t.Errorf("Expected 1 rul, got: [%d]", len(consent[0].Records[0].Resources))
+			t.Errorf("Expected 1 rule, got: [%d]", len(consent[0].Records[0].Resources))
 		}
 	})
 

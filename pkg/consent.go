@@ -209,7 +209,7 @@ func (cs *ConsentStore) ConsentAuth(context context.Context, custodian string, s
 func (cs *ConsentStore) RecordConsent(context context.Context, consent []PatientConsent) error {
 
 	// start transaction
-	tx := cs.Db.Begin()
+	tx := cs.Db.Begin().Debug()
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
@@ -230,9 +230,17 @@ func (cs *ConsentStore) RecordConsent(context context.Context, consent []Patient
 		}
 
 		// first check if a consent record exists for subject, custodian and actor, if not create
-		if err := tx.Where(tpc).FirstOrCreate(&tpc).Error; err != nil {
+		if err := tx.Where(tpc).Preload("Records").FirstOrCreate(&tpc).Error; err != nil {
 			tx.Rollback()
 			return err
+		}
+
+		// Since we will store the new state, delete all records and their resources.
+		for _, record := range tpc.Records {
+			if err := tx.Delete(&record).Error; err!=nil {
+				tx.Rollback()
+				return err
+			}
 		}
 
 		for _, cr := range pr.Records {
@@ -246,17 +254,6 @@ func (cs *ConsentStore) RecordConsent(context context.Context, consent []Patient
 			if !tcr.ValidTo.After(tcr.ValidFrom) {
 				tx.Rollback()
 				return errors.New("ConsentRecord validation failed: ValidTo must come after ValidFrom")
-			}
-
-			// Delete resources if any. This is easier than creating a diff and deleting and inserting the changes
-			if err := tx.Delete(Resource{}, "consent_record_id = ?", tcr.ID).Error; err != nil {
-				tx.Rollback()
-				return err
-			}
-
-			if err := tx.Delete(ConsentRecord{}, "patient_consent_id = ?", tcr.PatientConsentID).Error; err != nil {
-				tx.Rollback()
-				return err
 			}
 
 			// Save all current resources

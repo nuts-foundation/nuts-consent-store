@@ -20,6 +20,7 @@ package pkg
 
 import (
 	"fmt"
+	"github.com/jinzhu/gorm"
 	"time"
 )
 
@@ -36,6 +37,10 @@ type PatientConsent struct {
 // TableName returns the SQL table for this type
 func (PatientConsent) TableName() string {
 	return "patient_consent"
+}
+
+func (pc *PatientConsent) BeforeDelete(tx *gorm.DB) (err error)  {
+	return tx.Delete(ConsentRecord{}, "patient_consent_id = ?", pc.ID).Error
 }
 
 // Resources combines all resources from all records
@@ -60,6 +65,10 @@ type ConsentRecord struct {
 // TableName returns the SQL table for this type
 func (ConsentRecord) TableName() string {
 	return "consent_record"
+}
+
+func (cr *ConsentRecord) BeforeDelete(tx *gorm.DB) (err error)  {
+	return tx.Delete(Resource{}, "consent_record_id = ?", cr.ID).Error
 }
 
 // Resource defines struct for resource table
