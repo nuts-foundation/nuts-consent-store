@@ -80,6 +80,7 @@ func FromSimplifiedConsentRule(patientConsent []pkg.PatientConsent) ([]Simplifie
 				resources = append(resources, r2.ResourceType)
 			}
 			consent = append(consent, SimplifiedConsent{
+				Id:        r.Hash,
 				Subject:   Identifier(c.Subject),
 				Custodian: Identifier(c.Custodian),
 				Actor:     Identifier(c.Actor),

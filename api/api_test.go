@@ -578,6 +578,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 			TotalResults: 1,
 			Results: []SimplifiedConsent{
 				{
+					Id:        "ejNYuhAQ",
 					Subject:   Identifier("urn:subject"),
 					Custodian: Identifier("custodian"),
 					Actor:     Identifier("actor"),
@@ -615,6 +616,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 			TotalResults: 1,
 			Results: []SimplifiedConsent{
 				{
+					Id:        "ejNYuhAQ",
 					Subject:   Identifier("urn:subject"),
 					Custodian: Identifier("custodian"),
 					Actor:     Identifier("actor"),
@@ -843,7 +845,7 @@ func consentRuleForQuery() pkg.PatientConsent {
 				Resources: []pkg.Resource{
 					{ResourceType: "resource"},
 				},
-				Hash: random.String(8),
+				Hash: "ejNYuhAQ",
 			},
 		},
 	}
