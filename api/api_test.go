@@ -782,14 +782,14 @@ func TestDefaultConsentStore_DeleteConsent(t *testing.T) {
 func testConsent() SimplifiedConsent {
 	hash := random.String(8)
 	return SimplifiedConsent{
-		Id:        random.String(8),
-		Actor:     Identifier("actor"),
-		Custodian: Identifier("custodian"),
-		Subject:   Identifier("urn:subject"),
+		Id:         random.String(8),
+		Actor:      Identifier("actor"),
+		Custodian:  Identifier("custodian"),
+		Subject:    Identifier("urn:subject"),
 		RecordHash: &hash,
-		Resources: []string{"resource"},
-		ValidFrom: ValidFrom("2019-01-01"),
-		ValidTo:   ValidTo("2030-01-01"),
+		Resources:  []string{"resource"},
+		ValidFrom:  ValidFrom("2019-01-01"),
+		ValidTo:    ValidTo("2030-01-01"),
 	}
 }
 
@@ -814,6 +814,7 @@ func defaultConsentStore() ApiWrapper {
 	client := pkg.ConsentStore{
 		Config: pkg.ConsentStoreConfig{
 			Connectionstring: ":memory:",
+			Mode:             "server",
 		},
 	}
 
@@ -828,7 +829,7 @@ func defaultConsentStore() ApiWrapper {
 
 func consentRuleForQuery() pkg.PatientConsent {
 	return pkg.PatientConsent{
-		ID: 		random.String(8),
+		ID:        random.String(8),
 		Subject:   "urn:subject",
 		Custodian: "custodian",
 		Actor:     "actor",

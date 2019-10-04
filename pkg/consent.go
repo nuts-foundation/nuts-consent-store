@@ -22,6 +22,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
@@ -47,12 +48,11 @@ const ConfigAddress = "address"
 const ConfigConnectionStringDefault = ":memory:"
 
 type ConsentStore struct {
-	Db *gorm.DB
+	Db    *gorm.DB
+	sqlDb *sql.DB
 
 	ConfigOnce sync.Once
 	Config     ConsentStoreConfig
-	//NutsEventOctopus pkg.EventOctopusClient
-	//EventPublisher   pkg.IEventPublisher
 }
 
 var instance *ConsentStore
@@ -94,25 +94,23 @@ func Logger() *logrus.Entry {
 func (cs *ConsentStore) Configure() error {
 	var (
 		err error
-		db  *sql.DB
 	)
 
 	cs.ConfigOnce.Do(func() {
 		if cs.Config.Mode == "server" {
-			db, err = sql.Open("sqlite3", cs.Config.Connectionstring)
+			cs.sqlDb, err = sql.Open("sqlite3", cs.Config.Connectionstring)
 			if err != nil {
 				return
 			}
-			defer db.Close()
 
 			// 1 ping
-			err = db.Ping()
+			err = cs.sqlDb.Ping()
 			if err != nil {
 				return
 			}
 
 			// migrate
-			err = cs.RunMigrations(db)
+			err = cs.RunMigrations(cs.sqlDb)
 			if err != nil {
 				return
 			}
@@ -133,7 +131,7 @@ func (cs *ConsentStore) Start() error {
 	var err error
 
 	// gorm db connection
-	cs.Db, err = gorm.Open("sqlite3", cs.Config.Connectionstring)
+	cs.Db, err = gorm.Open("sqlite3", cs.sqlDb)
 
 	// logging
 	cs.Db.SetLogger(logrus.StandardLogger())
@@ -222,6 +220,9 @@ func (cs *ConsentStore) RecordConsent(context context.Context, consent []Patient
 	}
 
 	for _, pr := range consent {
+		if pr.ID == "" {
+			return fmt.Errorf("id of patient consent cannot be empty")
+		}
 		tpc := PatientConsent{
 			ID:        pr.ID,
 			Actor:     pr.Actor,
@@ -237,7 +238,7 @@ func (cs *ConsentStore) RecordConsent(context context.Context, consent []Patient
 
 		// Since we will store the new state, delete all records and their resources.
 		for _, record := range tpc.Records {
-			if err := tx.Delete(&record).Error; err!=nil {
+			if err := tx.Delete(&record).Error; err != nil {
 				tx.Rollback()
 				return err
 			}
@@ -291,8 +292,7 @@ func (cs *ConsentStore) QueryConsentForActorAndSubject(context context.Context, 
 }
 
 // QueryConsent accepts actor, custodian and subject, if these are nil, it uses a wildcard to query.
-func (cs *ConsentStore) QueryConsent(context context.Context, _actor *string, _custodian *string, _subject *string) ([]PatientConsent, error) {
-	var rules []PatientConsent
+func (cs *ConsentStore) QueryConsent(context context.Context, _actor *string, _custodian *string, _subject *string) (rules []PatientConsent, err error) {
 	var (
 		actor, custodian, subject string
 	)
@@ -309,11 +309,9 @@ func (cs *ConsentStore) QueryConsent(context context.Context, _actor *string, _c
 		subject = *_subject
 	}
 
-	if err := cs.Db.Debug().Where("Actor LIKE ? AND Subject LIKE ? AND Custodian LIKE ?", actor, subject, custodian).Preload("Records").Preload("Records.Resources").Find(&rules).Error; err != nil {
-		return nil, err
-	}
+	err = cs.Db.Debug().Where("Actor LIKE ? AND Subject LIKE ? AND Custodian LIKE ?", actor, subject, custodian).Preload("Records").Preload("Records.Resources").Find(&rules).Error
 
-	return rules, nil
+	return
 }
 
 // DeleteConsentRecordByHash deletes a consent record by its hash. Returns boolean to indicate the success of the operation

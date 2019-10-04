@@ -154,6 +154,7 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 
 		rules := []PatientConsent{
 			{
+				ID:        random.String(8),
 				Actor:     "actor2",
 				Custodian: "custodian",
 				Subject:   "subject",
@@ -174,7 +175,6 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 		}
 
 		err := client.RecordConsent(context.TODO(), rules)
-
 		if err != nil {
 			t.Errorf("Expected no error, got [%v]", err)
 		}
@@ -194,6 +194,7 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 
 		rules := []PatientConsent{
 			{
+				ID:        random.String(8),
 				Actor:     "actor3",
 				Custodian: "custodian",
 				Subject:   "subject",
@@ -238,6 +239,7 @@ func TestConsentStore_QueryConsentForActor(t *testing.T) {
 
 	rules := []PatientConsent{
 		{
+			ID:        random.String(8),
 			Actor:     "actor",
 			Custodian: "custodian",
 			Subject:   "subject",
@@ -255,6 +257,7 @@ func TestConsentStore_QueryConsentForActor(t *testing.T) {
 			},
 		},
 		{
+			ID:        random.String(8),
 			Actor:     "actor2",
 			Custodian: "custodian2",
 			Subject:   "subject2",
@@ -306,6 +309,7 @@ func TestConsentStore_QueryConsentForActorAndSubject(t *testing.T) {
 
 	rules := []PatientConsent{
 		{
+			ID:        "123",
 			Actor:     "actor",
 			Custodian: "custodian",
 			Subject:   "subject",
@@ -323,6 +327,7 @@ func TestConsentStore_QueryConsentForActorAndSubject(t *testing.T) {
 			},
 		},
 		{
+			ID:        "223",
 			Actor:     "actor2",
 			Custodian: "custodian2",
 			Subject:   "subject2",
@@ -372,7 +377,8 @@ func TestConsentStore_Configure(t *testing.T) {
 	t.Run("works OK for in memory db", func(t *testing.T) {
 		client := ConsentStore{
 			Config: ConsentStoreConfig{
-				Connectionstring: ":memory:",
+				//Connectionstring: ":memory:",
+				Connectionstring: "file",
 				Mode:             "server",
 			},
 		}
@@ -408,14 +414,17 @@ func defaultConsentStore() ConsentStore {
 	client := ConsentStore{
 		Config: ConsentStoreConfig{
 			Connectionstring: ":memory:",
+			Mode:             "server",
 		},
+	}
+
+	if err := client.Configure(); err != nil {
+		panic(err)
 	}
 
 	if err := client.Start(); err != nil {
 		panic(err)
 	}
-
-	client.RunMigrations(client.Db.DB())
 
 	return client
 }
@@ -426,6 +435,7 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 
 	rules := []PatientConsent{
 		{
+			ID:        random.String(8),
 			Actor:     "actor",
 			Custodian: "custodian",
 			Subject:   "subject",
@@ -440,9 +450,20 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 						},
 					},
 				},
+				{
+					ValidFrom: time.Now().Add(time.Hour * -24),
+					ValidTo:   time.Now().Add(time.Hour * 12),
+					Hash:      random.String(8),
+					Resources: []Resource{
+						{
+							ResourceType: "resource",
+						},
+					},
+				},
 			},
 		},
 		{
+			ID:        random.String(8),
 			Actor:     "actor2",
 			Custodian: "custodian2",
 			Subject:   "subject",
@@ -475,8 +496,27 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 		}
 
 		if len(consent) != 2 {
-			t.Errorf("Expected 2 results, got [%d]", len(consent))
+			t.Fatalf("Expected 2 results, got [%d]", len(consent))
 		}
+
+		if len(consent[0].Records) != 2 {
+			t.Fatalf("expected 2 record got [%d]", len(consent[0].Records))
+		}
+
+		if len(consent[1].Records) != 1 {
+			t.Fatalf("expected 1 record got [%d]", len(consent[1].Records))
+		}
+
+		if len(consent[0].Records[0].Resources) != 1 {
+			t.Errorf("expected 1 resource got [%d]", len(consent[0].Records[0].Resources))
+		}
+		if len(consent[0].Records[1].Resources) != 1 {
+			t.Errorf("expected 1 resource got [%d]", len(consent[0].Records[1].Resources))
+		}
+		if len(consent[1].Records[0].Resources) != 1 {
+			t.Errorf("expected 1 resource got [%d]", len(consent[1].Records[0].Resources))
+		}
+
 	})
 
 	t.Run("Recorded consent can be found by custodian", func(t *testing.T) {
@@ -505,6 +545,7 @@ func TestConsentStore_DeleteConsentRecordByHash(t *testing.T) {
 
 	rules := []PatientConsent{
 		{
+			ID:        random.String(8),
 			Actor:     "actor",
 			Custodian: "custodian",
 			Subject:   "subject",
