@@ -73,8 +73,8 @@ func FromSimplifiedConsentRule(patientConsent []pkg.PatientConsent) ([]Simplifie
 				return nil, errors.New("Can not convert consent rules with multiple actors")
 			}
 		}
-		var resources []string
 		for _, r := range c.Records {
+			var resources []string
 			for _, r2 := range r.Resources {
 				resources = append(resources, r2.ResourceType)
 			}
