@@ -817,6 +817,9 @@ func defaultConsentStore() ApiWrapper {
 			Mode:             "server",
 		},
 	}
+	if err := client.Configure(); err != nil {
+		panic(err)
+	}
 
 	if err := client.Start(); err != nil {
 		panic(err)

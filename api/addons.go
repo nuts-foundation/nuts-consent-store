@@ -43,6 +43,7 @@ func (sc SimplifiedConsent) ToPatientConsent() (pkg.PatientConsent, error) {
 	}
 
 	return pkg.PatientConsent{
+		ID:        sc.Id,
 		Subject:   string(sc.Subject),
 		Custodian: string(sc.Custodian),
 		Actor:     string(sc.Actor),
@@ -50,7 +51,7 @@ func (sc SimplifiedConsent) ToPatientConsent() (pkg.PatientConsent, error) {
 			{
 				ValidFrom: validFrom,
 				ValidTo:   validTo,
-				Hash: *sc.RecordHash,
+				Hash:      *sc.RecordHash,
 				Resources: resources,
 			},
 		},
