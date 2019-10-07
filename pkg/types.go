@@ -39,6 +39,7 @@ func (PatientConsent) TableName() string {
 	return "patient_consent"
 }
 
+// BeforeDelete makes sure the ConsentRecords of a PatientConsent gets deleted too
 func (pc *PatientConsent) BeforeDelete(tx *gorm.DB) (err error)  {
 	return tx.Delete(ConsentRecord{}, "patient_consent_id = ?", pc.ID).Error
 }
@@ -67,6 +68,7 @@ func (ConsentRecord) TableName() string {
 	return "consent_record"
 }
 
+// BeforeDelete makes sure the Resources of a ConsentRecords gets deleted too
 func (cr *ConsentRecord) BeforeDelete(tx *gorm.DB) (err error)  {
 	return tx.Delete(Resource{}, "consent_record_id = ?", cr.ID).Error
 }
