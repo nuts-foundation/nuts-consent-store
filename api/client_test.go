@@ -27,6 +27,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"testing"
+	"time"
 )
 
 // RoundTripFunc
@@ -51,7 +52,7 @@ func TestHttpClient_RecordConsent(t *testing.T) {
 	t.Run("201", func(t *testing.T) {
 		client := testClient(201, []byte{})
 
-		c := []pkg.ConsentRule{{}}
+		c := []pkg.PatientConsent{{}}
 		err := client.RecordConsent(context.TODO(), c)
 
 		if err != nil {
@@ -62,7 +63,7 @@ func TestHttpClient_RecordConsent(t *testing.T) {
 	t.Run("too many rules returns error", func(t *testing.T) {
 		client := testClient(201, []byte{})
 
-		c := []pkg.ConsentRule{}
+		c := []pkg.PatientConsent{}
 		err := client.RecordConsent(context.TODO(), c)
 
 		if err == nil {
@@ -88,7 +89,7 @@ func TestHttpClient_RecordConsent(t *testing.T) {
 			}
 		})
 
-		err := client.RecordConsent(context.TODO(), []pkg.ConsentRule{consentRule()})
+		err := client.RecordConsent(context.TODO(), []pkg.PatientConsent{consentRule()})
 
 		if err == nil {
 			t.Error("Expected error, got nothing")
@@ -102,14 +103,67 @@ func TestHttpClient_RecordConsent(t *testing.T) {
 	})
 }
 
+func TestHttpClient_DeleteConsentRecordByHash(t *testing.T) {
+	t.Run("202", func(t *testing.T) {
+		client := testClient(202, []byte{})
+
+		res, err := client.DeleteConsentRecordByHash(context.TODO(), "hash")
+
+		if err != nil {
+			t.Errorf("Expected no error, got [%s]", err.Error())
+			return
+		}
+
+		if !res {
+			t.Errorf("Expected auth to be true, got false")
+		}
+	})
+
+	t.Run("500", func(t *testing.T) {
+		client := testClient(500, []byte("some error"))
+
+		res, err := client.DeleteConsentRecordByHash(context.TODO(), "hash")
+
+		if err == nil {
+			t.Errorf("Expected error, got nothing")
+			return
+		}
+
+		if res {
+			t.Errorf("Expected delete to be false, got true")
+		}
+
+		expected := "consent store returned 500, reason: some error"
+		if err.Error() != expected {
+			t.Errorf("Expected error [%s], got [%v]", expected, err.Error())
+		}
+	})
+}
+
 func TestHttpClient_ConsentAuth(t *testing.T) {
 	t.Run("200", func(t *testing.T) {
 		tr := "true"
 		resp, _ := json.Marshal(ConsentCheckResponse{ConsentGiven: &tr})
 		client := testClient(200, resp)
 
-		cr := pkg.ConsentRule{}
-		res, err := client.ConsentAuth(context.TODO(), cr, "test")
+		res, err := client.ConsentAuth(context.TODO(), "", "", "", "test", nil)
+
+		if err != nil {
+			t.Errorf("Expected no error, got [%s]", err.Error())
+		}
+
+		if !res {
+			t.Errorf("Expected auth to be true, got false")
+		}
+	})
+
+	t.Run("200 with checkpoint", func(t *testing.T) {
+		tr := "true"
+		resp, _ := json.Marshal(ConsentCheckResponse{ConsentGiven: &tr})
+		client := testClient(200, resp)
+
+		now := time.Now()
+		res, err := client.ConsentAuth(context.TODO(), "", "", "", "test", &now)
 
 		if err != nil {
 			t.Errorf("Expected no error, got [%s]", err.Error())
@@ -132,7 +186,7 @@ func TestHttpClient_ConsentAuth(t *testing.T) {
 			}
 		})
 
-		_, err := client.ConsentAuth(context.TODO(), consentRule(), "resource")
+		_, err := client.ConsentAuth(context.TODO(), "custodian", "subject", "actor", "resource", nil)
 
 		if err == nil {
 			t.Error("Expected error, got nothing")
@@ -148,7 +202,7 @@ func TestHttpClient_ConsentAuth(t *testing.T) {
 	t.Run("client returns invalid json gives error", func(t *testing.T) {
 		client := testClient(200, []byte("{"))
 
-		_, err := client.ConsentAuth(context.TODO(), consentRule(), "resource")
+		_, err := client.ConsentAuth(context.TODO(), "custodian", "subject", "actor", "resource", nil)
 
 		if err == nil {
 			t.Error("Expected error, got nothing")
@@ -167,7 +221,7 @@ func TestHttpClient_QueryConsentForActor(t *testing.T) {
 		resp, _ := json.Marshal(ConsentQueryResponse{Results: []SimplifiedConsent{
 			{
 				Resources: []string{"test"},
-				Actors:    []Identifier{"actor"},
+				Actor:     Identifier("actor"),
 				Subject:   Identifier("subject"),
 				Custodian: Identifier("custodian"),
 			},
@@ -191,7 +245,7 @@ func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
 		resp, _ := json.Marshal(ConsentQueryResponse{Results: []SimplifiedConsent{
 			{
 				Resources: []string{"test"},
-				Actors:    []Identifier{"actor"},
+				Actor:     Identifier("actor"),
 				Subject:   Identifier("subject"),
 				Custodian: Identifier("custodian"),
 			},

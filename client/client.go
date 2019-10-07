@@ -39,8 +39,8 @@ func NewConsentStoreClient() pkg.ConsentStoreClient {
 		return api.HttpClient{
 			ServerAddress: consentStore.Config.Address,
 			Timeout:       time.Second,
-			Logger:		   logrus.WithFields(logrus.Fields{
-				"engine": "consent-store",
+			Logger: logrus.WithFields(logrus.Fields{
+				"engine":    "consent-store",
 				"component": "API-client",
 			}),
 		}

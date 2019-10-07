@@ -20,7 +20,9 @@ package pkg
 
 import (
 	"context"
+	"github.com/labstack/gommon/random"
 	"testing"
+	"time"
 )
 
 func TestConsentStoreInstance(t *testing.T) {
@@ -37,14 +39,23 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 
 	t.Run("Recorded consent can be authorized against", func(t *testing.T) {
 
-		rules := []ConsentRule{
+		rules := []PatientConsent{
 			{
+				ID:        random.String(8),
 				Actor:     "actor",
 				Custodian: "custodian",
 				Subject:   "subject",
-				Resources: []Resource{
+
+				Records: []ConsentRecord{
 					{
-						ResourceType: "resource",
+						ValidFrom: time.Now().Add(time.Hour * -24),
+						ValidTo:   time.Now().Add(time.Hour * +12),
+						Hash:      "234caef",
+						Resources: []Resource{
+							{
+								ResourceType: "resource",
+							},
+						},
 					},
 				},
 			},
@@ -56,7 +67,7 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 			t.Errorf("Expected no error, got [%v]", err)
 		}
 
-		auth, err := client.ConsentAuth(context.TODO(), rules[0], "resource")
+		auth, err := client.ConsentAuth(context.TODO(), "custodian", "subject", "actor", "resource", nil)
 
 		if err != nil {
 			t.Errorf("Expected no error, got [%v]", err)
@@ -67,20 +78,150 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 		}
 	})
 
+	t.Run("Updating a existing consent", func(t *testing.T) {
+
+		rules := []PatientConsent{
+			{
+				ID:        random.String(8),
+				Actor:     "actor333",
+				Custodian: "custodian",
+				Subject:   "subject",
+
+				Records: []ConsentRecord{
+					{
+						ValidFrom: time.Now().Add(time.Hour * -24),
+						ValidTo:   time.Now().Add(time.Hour * +12),
+						Hash:      "234caefg",
+						Resources: []Resource{
+							{
+								ResourceType: "resource",
+							},
+						},
+					},
+					{
+						ValidFrom: time.Now().Add(time.Hour * -24),
+						ValidTo:   time.Now().Add(time.Hour * +12),
+						Hash:      "334caefg",
+						Resources: []Resource{
+							{
+								ResourceType: "resource",
+							},
+						},
+					},
+				},
+			},
+		}
+		err := client.RecordConsent(context.TODO(), rules)
+		if err != nil {
+			t.Errorf("Expected no error, got [%v]", err)
+		}
+
+		// Update the validTo of the record.
+		rules[0].Records[0].ValidTo = time.Now()
+		rules[0].Records[0].Hash = "234caefh"
+
+		err = client.RecordConsent(context.TODO(), rules)
+		if err != nil {
+			t.Errorf("Expected no error, got [%v]", err)
+		}
+
+		consent, err := client.QueryConsentForActor(context.TODO(), "actor333", "*")
+		if len(consent) != 1 {
+			t.Errorf("Expected 1 patientConsent, got [%d]", len(consent))
+		}
+		if len(consent[0].Records) != 2 {
+			t.Errorf("Expected 2 records, got: [%d]", len(consent[0].Records))
+		}
+		if len(consent[0].Records[0].Resources) != 1 {
+			t.Errorf("Expected 1 rule, got: [%d]", len(consent[0].Records[0].Resources))
+		}
+	})
+
 	t.Run("Authorize non-existing consent returns false", func(t *testing.T) {
 
-		rule := ConsentRule{
-			Actor:     "actor2",
-			Custodian: "custodian",
-			Subject:   "subject",
-			Resources: []Resource{
-				{
-					ResourceType: "resource",
+		auth, err := client.ConsentAuth(context.TODO(), "custodian", "subject", "actor2", "resource", nil)
+
+		if err != nil {
+			t.Errorf("Expected no error, got [%v]", err)
+		}
+
+		if auth {
+			t.Errorf("Expected false, got true")
+		}
+	})
+
+	t.Run("Authorize against expired consent returns false", func(t *testing.T) {
+
+		rules := []PatientConsent{
+			{
+				ID:        random.String(8),
+				Actor:     "actor2",
+				Custodian: "custodian",
+				Subject:   "subject",
+
+				Records: []ConsentRecord{
+					{
+						Hash:      random.String(8),
+						ValidFrom: time.Now().Add(time.Hour * -24),
+						ValidTo:   time.Now().Add(time.Hour * -12),
+						Resources: []Resource{
+							{
+								ResourceType: "resource",
+							},
+						},
+					},
 				},
 			},
 		}
 
-		auth, err := client.ConsentAuth(context.TODO(), rule, "resource")
+		err := client.RecordConsent(context.TODO(), rules)
+		if err != nil {
+			t.Errorf("Expected no error, got [%v]", err)
+		}
+
+		auth, err := client.ConsentAuth(context.TODO(), "custodian", "subject", "actor2", "resource", nil)
+
+		if err != nil {
+			t.Errorf("Expected no error, got [%v]", err)
+		}
+
+		if auth {
+			t.Errorf("Expected false, got true")
+		}
+	})
+
+	t.Run("Authorize against consent at a different point in time returns false", func(t *testing.T) {
+
+		rules := []PatientConsent{
+			{
+				ID:        random.String(8),
+				Actor:     "actor3",
+				Custodian: "custodian",
+				Subject:   "subject",
+
+				Records: []ConsentRecord{
+					{
+						Hash:      random.String(8),
+						ValidFrom: time.Now().Add(time.Hour * -24),
+						ValidTo:   time.Now().Add(time.Hour * 12),
+						Resources: []Resource{
+							{
+								ResourceType: "resource",
+							},
+						},
+					},
+				},
+			},
+		}
+
+		err := client.RecordConsent(context.TODO(), rules)
+
+		if err != nil {
+			t.Errorf("Expected no error, got [%v]", err)
+		}
+
+		cp := time.Now().Add(time.Hour * -36)
+		auth, err := client.ConsentAuth(context.TODO(), "custodian", "subject", "actor3", "resource", &cp)
 
 		if err != nil {
 			t.Errorf("Expected no error, got [%v]", err)
@@ -96,24 +237,40 @@ func TestConsentStore_QueryConsentForActor(t *testing.T) {
 	client := defaultConsentStore()
 	defer client.Shutdown()
 
-	rules := []ConsentRule{
+	rules := []PatientConsent{
 		{
+			ID:        random.String(8),
 			Actor:     "actor",
 			Custodian: "custodian",
 			Subject:   "subject",
-			Resources: []Resource{
+			Records: []ConsentRecord{
 				{
-					ResourceType: "resource",
+					ValidFrom: time.Now().Add(time.Hour * -24),
+					ValidTo:   time.Now().Add(time.Hour * 12),
+					Hash:      random.String(8),
+					Resources: []Resource{
+						{
+							ResourceType: "resource",
+						},
+					},
 				},
 			},
 		},
 		{
+			ID:        random.String(8),
 			Actor:     "actor2",
 			Custodian: "custodian2",
 			Subject:   "subject2",
-			Resources: []Resource{
+			Records: []ConsentRecord{
 				{
-					ResourceType: "resource2",
+					ValidFrom: time.Now().Add(time.Hour * -24),
+					ValidTo:   time.Now().Add(time.Hour * 12),
+					Hash:      random.String(8),
+					Resources: []Resource{
+						{
+							ResourceType: "resource2",
+						},
+					},
 				},
 			},
 		},
@@ -150,24 +307,40 @@ func TestConsentStore_QueryConsentForActorAndSubject(t *testing.T) {
 	client := defaultConsentStore()
 	defer client.Shutdown()
 
-	rules := []ConsentRule{
+	rules := []PatientConsent{
 		{
+			ID:        "123",
 			Actor:     "actor",
 			Custodian: "custodian",
 			Subject:   "subject",
-			Resources: []Resource{
+			Records: []ConsentRecord{
 				{
-					ResourceType: "resource",
+					ValidFrom: time.Now().Add(time.Hour * -24),
+					ValidTo:   time.Now().Add(time.Hour * 12),
+					Hash:      "1",
+					Resources: []Resource{
+						{
+							ResourceType: "resource",
+						},
+					},
 				},
 			},
 		},
 		{
+			ID:        "223",
 			Actor:     "actor2",
 			Custodian: "custodian2",
 			Subject:   "subject2",
-			Resources: []Resource{
+			Records: []ConsentRecord{
 				{
-					ResourceType: "resource2",
+					ValidFrom: time.Now().Add(time.Hour * -24),
+					ValidTo:   time.Now().Add(time.Hour * 12),
+					Hash:      "2",
+					Resources: []Resource{
+						{
+							ResourceType: "resource2",
+						},
+					},
 				},
 			},
 		},
@@ -204,12 +377,13 @@ func TestConsentStore_Configure(t *testing.T) {
 	t.Run("works OK for in memory db", func(t *testing.T) {
 		client := ConsentStore{
 			Config: ConsentStoreConfig{
-				Connectionstring: ":memory:",
-				Mode: "server",
+				//Connectionstring: ":memory:",
+				Connectionstring: "file",
+				Mode:             "server",
 			},
 		}
 
-		if err := client.Configure();err != nil {
+		if err := client.Configure(); err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 	})
@@ -218,7 +392,7 @@ func TestConsentStore_Configure(t *testing.T) {
 		client := ConsentStore{
 			Config: ConsentStoreConfig{
 				Connectionstring: "file:test.db?mode=ro",
-				Mode: "server",
+				Mode:             "server",
 			},
 		}
 
@@ -240,14 +414,17 @@ func defaultConsentStore() ConsentStore {
 	client := ConsentStore{
 		Config: ConsentStoreConfig{
 			Connectionstring: ":memory:",
+			Mode:             "server",
 		},
+	}
+
+	if err := client.Configure(); err != nil {
+		panic(err)
 	}
 
 	if err := client.Start(); err != nil {
 		panic(err)
 	}
-
-	client.RunMigrations(client.Db.DB())
 
 	return client
 }
@@ -256,24 +433,50 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 	client := defaultConsentStore()
 	defer client.Shutdown()
 
-	rules := []ConsentRule{
+	rules := []PatientConsent{
 		{
+			ID:        random.String(8),
 			Actor:     "actor",
 			Custodian: "custodian",
 			Subject:   "subject",
-			Resources: []Resource{
+			Records: []ConsentRecord{
 				{
-					ResourceType: "resource",
+					ValidFrom: time.Now().Add(time.Hour * -24),
+					ValidTo:   time.Now().Add(time.Hour * 12),
+					Hash:      random.String(8),
+					Resources: []Resource{
+						{
+							ResourceType: "resource",
+						},
+					},
+				},
+				{
+					ValidFrom: time.Now().Add(time.Hour * -24),
+					ValidTo:   time.Now().Add(time.Hour * 12),
+					Hash:      random.String(8),
+					Resources: []Resource{
+						{
+							ResourceType: "resource",
+						},
+					},
 				},
 			},
 		},
 		{
+			ID:        random.String(8),
 			Actor:     "actor2",
 			Custodian: "custodian2",
 			Subject:   "subject",
-			Resources: []Resource{
+			Records: []ConsentRecord{
 				{
-					ResourceType: "resource2",
+					ValidFrom: time.Now().Add(time.Hour * -24),
+					ValidTo:   time.Now().Add(time.Hour * 12),
+					Hash:      random.String(8),
+					Resources: []Resource{
+						{
+							ResourceType: "resource2",
+						},
+					},
 				},
 			},
 		},
@@ -293,8 +496,27 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 		}
 
 		if len(consent) != 2 {
-			t.Errorf("Expected 2 results, got [%d]", len(consent))
+			t.Fatalf("Expected 2 results, got [%d]", len(consent))
 		}
+
+		if len(consent[0].Records) != 2 {
+			t.Fatalf("expected 2 record got [%d]", len(consent[0].Records))
+		}
+
+		if len(consent[1].Records) != 1 {
+			t.Fatalf("expected 1 record got [%d]", len(consent[1].Records))
+		}
+
+		if len(consent[0].Records[0].Resources) != 1 {
+			t.Errorf("expected 1 resource got [%d]", len(consent[0].Records[0].Resources))
+		}
+		if len(consent[0].Records[1].Resources) != 1 {
+			t.Errorf("expected 1 resource got [%d]", len(consent[0].Records[1].Resources))
+		}
+		if len(consent[1].Records[0].Resources) != 1 {
+			t.Errorf("expected 1 resource got [%d]", len(consent[1].Records[0].Resources))
+		}
+
 	})
 
 	t.Run("Recorded consent can be found by custodian", func(t *testing.T) {
@@ -314,5 +536,53 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 			t.Errorf("Expected custodian to be [%s] got [%s]", custodian, consent[0].Custodian)
 		}
 	})
+}
 
+func TestConsentStore_DeleteConsentRecordByHash(t *testing.T) {
+	client := defaultConsentStore()
+	defer client.Shutdown()
+	hash := random.String(8)
+
+	rules := []PatientConsent{
+		{
+			ID:        random.String(8),
+			Actor:     "actor",
+			Custodian: "custodian",
+			Subject:   "subject",
+			Records: []ConsentRecord{
+				{
+					ValidFrom: time.Now().Add(time.Hour * -24),
+					ValidTo:   time.Now().Add(time.Hour * 12),
+					Hash:      hash,
+					Resources: []Resource{
+						{
+							ResourceType: "resource",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if err := client.RecordConsent(context.TODO(), rules); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("Not found returns false", func(t *testing.T) {
+		val, _ := client.DeleteConsentRecordByHash(context.TODO(), "unknown")
+
+		if val {
+			t.Error("Expected record to not be deleted")
+		}
+	})
+
+	t.Run("Record is deleted", func(t *testing.T) {
+		val, _ := client.DeleteConsentRecordByHash(context.TODO(), hash)
+
+		if !val {
+			t.Error("Expected record to be deleted")
+		}
+
+		client.ConsentAuth(context.TODO(), "custodian", "subject", "actor", "resource", nil)
+	})
 }

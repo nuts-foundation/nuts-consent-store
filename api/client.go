@@ -34,20 +34,43 @@ import (
 type HttpClient struct {
 	ServerAddress string
 	Timeout       time.Duration
-	Logger 		  *logrus.Entry
+	Logger        *logrus.Entry
 	customClient  *http.Client
 }
 
-func (hb HttpClient) QueryConsent(context context.Context, actor, custodian, subject *string) ([]pkg.ConsentRule, error) {
+func (hb HttpClient) QueryConsent(context context.Context, actor *string, custodian *string, subject *string) ([]pkg.PatientConsent, error) {
 	panic("implement me")
 }
 
-func (hb HttpClient) ConsentAuth(ctx context.Context, consentRule pkg.ConsentRule, resourceType string) (bool, error) {
+func (hb HttpClient) DeleteConsentRecordByHash(context context.Context, proofHash string) (bool, error) {
+	// delete record, if it doesn't exist an error is returned
+	result, err := hb.client().DeleteConsent(context, proofHash)
+	if err != nil {
+		err := fmt.Errorf("error while deleting consent in consent-store: %v", err)
+		hb.Logger.Error(err)
+		return false, err
+	}
+
+	_, err = hb.checkResponse(result)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+// ConsentAuth checks if there is an active consent for a given custodian, subject, actor, resourceType and an optional moment in time (checkpoint)
+func (hb HttpClient) ConsentAuth(ctx context.Context, custodian string, subject string, actor string, resourceType string, checkpoint *time.Time) (bool, error) {
 	req := CheckConsentJSONRequestBody{
-		Actor:        Identifier(consentRule.Actor),
-		Custodian:    Identifier(consentRule.Custodian),
-		Subject:      Identifier(consentRule.Subject),
+		Actor:        Identifier(actor),
+		Custodian:    Identifier(custodian),
+		Subject:      Identifier(subject),
 		ResourceType: resourceType,
+	}
+
+	if checkpoint != nil {
+		s := checkpoint.Format("2006-01-02")
+		req.ValidAt = &s
 	}
 
 	result, err := hb.client().CheckConsent(ctx, req)
@@ -72,7 +95,7 @@ func (hb HttpClient) ConsentAuth(ctx context.Context, consentRule pkg.ConsentRul
 }
 
 // RecordConsent currently only supports the creation of a single record
-func (hb HttpClient) RecordConsent(ctx context.Context, consent []pkg.ConsentRule) error {
+func (hb HttpClient) RecordConsent(ctx context.Context, consent []pkg.PatientConsent) error {
 	var req CreateConsentJSONRequestBody
 
 	if len(consent) != 1 {
@@ -81,11 +104,11 @@ func (hb HttpClient) RecordConsent(ctx context.Context, consent []pkg.ConsentRul
 		return err
 	}
 
-	req.Actors = []Identifier{Identifier(consent[0].Actor)}
+	req.Actor = Identifier(consent[0].Actor)
 	req.Custodian = Identifier(consent[0].Custodian)
 	req.Subject = Identifier(consent[0].Subject)
 
-	for _, r := range consent[0].Resources {
+	for _, r := range consent[0].Resources() {
 		req.Resources = append(req.Resources, r.ResourceType)
 	}
 
@@ -104,8 +127,9 @@ func (hb HttpClient) RecordConsent(ctx context.Context, consent []pkg.ConsentRul
 	return nil
 }
 
-func (hb HttpClient) QueryConsentForActor(ctx context.Context, actor string, query string) ([]pkg.ConsentRule, error) {
-	var rules []pkg.ConsentRule
+// QueryConsentForActor returns all the patientConsents for a given actor
+func (hb HttpClient) QueryConsentForActor(ctx context.Context, actor string, query string) ([]pkg.PatientConsent, error) {
+	var rules []pkg.PatientConsent
 	actorIdentifier := Identifier(actor)
 
 	req := QueryConsentJSONRequestBody{
@@ -133,24 +157,30 @@ func (hb HttpClient) QueryConsentForActor(ctx context.Context, actor string, que
 	}
 
 	for _, sr := range cqr.Results {
-		rule := pkg.ConsentRule{
+		patientConsent := pkg.PatientConsent{
 			Actor:     actor,
 			Subject:   string(sr.Subject),
 			Custodian: string(sr.Custodian),
+			Records: []pkg.ConsentRecord{
+				{
+					Hash: "unknown",
+					Resources: []pkg.Resource{},
+				},
+			},
 		}
 
 		for _, r := range sr.Resources {
-			rule.Resources = append(rule.Resources, pkg.Resource{ResourceType: r})
+			patientConsent.Records[0].Resources = append(patientConsent.Records[0].Resources, pkg.Resource{ResourceType: r})
 		}
 
-		rules = append(rules, rule)
+		rules = append(rules, patientConsent)
 	}
 
 	return rules, nil
 }
 
 // QueryConsentForActorAndSubject does the same as QueryConsentForActor, the backend just checks if the query starts with urn:
-func (hb HttpClient) QueryConsentForActorAndSubject(ctx context.Context, actor string, subject string) ([]pkg.ConsentRule, error) {
+func (hb HttpClient) QueryConsentForActorAndSubject(ctx context.Context, actor string, subject string) ([]pkg.PatientConsent, error) {
 	return hb.QueryConsentForActor(ctx, actor, subject)
 }
 

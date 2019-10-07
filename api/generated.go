@@ -14,6 +14,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 )
 
 // ConsentCheckRequest defines model for ConsentCheckRequest.
@@ -22,6 +23,7 @@ type ConsentCheckRequest struct {
 	Custodian    Identifier `json:"custodian"`
 	ResourceType string     `json:"resourceType"`
 	Subject      Identifier `json:"subject"`
+	ValidAt      *string    `json:"validAt,omitempty"`
 }
 
 // ConsentCheckResponse defines model for ConsentCheckResponse.
@@ -36,6 +38,7 @@ type ConsentQueryRequest struct {
 	Custodian *Identifier     `json:"custodian,omitempty"`
 	Page      *PageDefinition `json:"page,omitempty"`
 	Query     interface{}     `json:"query"`
+	ValidAt   *time.Time      `json:"validAt,omitempty"`
 }
 
 // ConsentQueryResponse defines model for ConsentQueryResponse.
@@ -56,14 +59,24 @@ type PageDefinition struct {
 
 // SimplifiedConsent defines model for SimplifiedConsent.
 type SimplifiedConsent struct {
-	Actors    []Identifier `json:"actors"`
-	Custodian Identifier   `json:"custodian"`
-	Resources []string     `json:"resources"`
-	Subject   Identifier   `json:"subject"`
+	Actor      Identifier `json:"actor"`
+	Custodian  Identifier `json:"custodian"`
+	Id         string     `json:"id"`
+	RecordHash *string    `json:"recordHash,omitempty"`
+	Resources  []string   `json:"resources"`
+	Subject    Identifier `json:"subject"`
+	ValidFrom  ValidFrom  `json:"validFrom"`
+	ValidTo    ValidTo    `json:"validTo"`
 }
 
 // SubjectQuery defines model for SubjectQuery.
 type SubjectQuery string
+
+// ValidFrom defines model for ValidFrom.
+type ValidFrom string
+
+// ValidTo defines model for ValidTo.
+type ValidTo string
 
 // createConsentJSONBody defines parameters for CreateConsent.
 type createConsentJSONBody SimplifiedConsent
@@ -116,6 +129,9 @@ type ClientInterface interface {
 	QueryConsentWithBody(ctx context.Context, contentType string, body io.Reader) (*http.Response, error)
 
 	QueryConsent(ctx context.Context, body QueryConsentJSONRequestBody) (*http.Response, error)
+
+	// DeleteConsent request
+	DeleteConsent(ctx context.Context, proofHash string) (*http.Response, error)
 }
 
 func (c *Client) CreateConsentWithBody(ctx context.Context, contentType string, body io.Reader) (*http.Response, error) {
@@ -208,6 +224,21 @@ func (c *Client) QueryConsent(ctx context.Context, body QueryConsentJSONRequestB
 	return c.Client.Do(req)
 }
 
+func (c *Client) DeleteConsent(ctx context.Context, proofHash string) (*http.Response, error) {
+	req, err := NewDeleteConsentRequest(c.Server, proofHash)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if c.RequestEditor != nil {
+		err = c.RequestEditor(req, ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return c.Client.Do(req)
+}
+
 // NewCreateConsentRequest calls the generic CreateConsent builder with application/json body
 func NewCreateConsentRequest(server string, body CreateConsentJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -283,6 +314,27 @@ func NewQueryConsentRequestWithBody(server string, contentType string, body io.R
 	}
 
 	req.Header.Add("Content-Type", contentType)
+	return req, nil
+}
+
+// NewDeleteConsentRequest generates requests for DeleteConsent
+func NewDeleteConsentRequest(server string, proofHash string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParam("simple", false, "proofHash", proofHash)
+	if err != nil {
+		return nil, err
+	}
+
+	queryUrl := fmt.Sprintf("%s/consent/%s", server, pathParam0)
+
+	req, err := http.NewRequest("DELETE", queryUrl, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	return req, nil
 }
 
@@ -377,6 +429,27 @@ func (r queryConsentResponse) StatusCode() int {
 	return 0
 }
 
+type deleteConsentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r deleteConsentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r deleteConsentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // CreateConsentWithBodyWithResponse request with arbitrary body returning *CreateConsentResponse
 func (c *ClientWithResponses) CreateConsentWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader) (*createConsentResponse, error) {
 	rsp, err := c.CreateConsentWithBody(ctx, contentType, body)
@@ -428,6 +501,15 @@ func (c *ClientWithResponses) QueryConsentWithResponse(ctx context.Context, body
 	return ParsequeryConsentResponse(rsp)
 }
 
+// DeleteConsentWithResponse request returning *DeleteConsentResponse
+func (c *ClientWithResponses) DeleteConsentWithResponse(ctx context.Context, proofHash string) (*deleteConsentResponse, error) {
+	rsp, err := c.DeleteConsent(ctx, proofHash)
+	if err != nil {
+		return nil, err
+	}
+	return ParsedeleteConsentResponse(rsp)
+}
+
 // ParsecreateConsentResponse parses an HTTP response from a CreateConsentWithResponse call
 func ParsecreateConsentResponse(rsp *http.Response) (*createConsentResponse, error) {
 	bodyBytes, err := ioutil.ReadAll(rsp.Body)
@@ -442,10 +524,6 @@ func ParsecreateConsentResponse(rsp *http.Response) (*createConsentResponse, err
 	}
 
 	switch {
-	case rsp.StatusCode == 201:
-		break // No content-type
-	case rsp.StatusCode == 400:
-		// Content-type (text/plain) unsupported
 	}
 
 	return response, nil
@@ -470,8 +548,7 @@ func ParsecheckConsentResponse(rsp *http.Response) (*checkConsentResponse, error
 		if err := json.Unmarshal(bodyBytes, response.JSON200); err != nil {
 			return nil, err
 		}
-	case rsp.StatusCode == 400:
-		// Content-type (text/plain) unsupported
+
 	}
 
 	return response, nil
@@ -496,8 +573,26 @@ func ParsequeryConsentResponse(rsp *http.Response) (*queryConsentResponse, error
 		if err := json.Unmarshal(bodyBytes, response.JSON200); err != nil {
 			return nil, err
 		}
-	case rsp.StatusCode == 400:
-		// Content-type (text/plain) unsupported
+
+	}
+
+	return response, nil
+}
+
+// ParsedeleteConsentResponse parses an HTTP response from a DeleteConsentWithResponse call
+func ParsedeleteConsentResponse(rsp *http.Response) (*deleteConsentResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer rsp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &deleteConsentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
 	}
 
 	return response, nil
@@ -505,12 +600,14 @@ func ParsequeryConsentResponse(rsp *http.Response) (*queryConsentResponse, error
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// Create a new consent record// (POST /consent)
+	// Create a new consent record for a C-S-A combination.// (POST /consent)
 	CreateConsent(ctx echo.Context) error
 	// Send a request for checking if the given combination exists// (POST /consent/check)
 	CheckConsent(ctx echo.Context) error
 	// Do a query for available consent// (POST /consent/query)
 	QueryConsent(ctx echo.Context) error
+	// Remove a consent record for a C-S-A combination.// (DELETE /consent/{proofHash})
+	DeleteConsent(ctx echo.Context, proofHash string) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -545,6 +642,22 @@ func (w *ServerInterfaceWrapper) QueryConsent(ctx echo.Context) error {
 	return err
 }
 
+// DeleteConsent converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteConsent(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "proofHash" -------------
+	var proofHash string
+
+	err = runtime.BindStyledParameter("simple", false, "proofHash", ctx.Param("proofHash"), &proofHash)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter proofHash: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.DeleteConsent(ctx, proofHash)
+	return err
+}
+
 // RegisterHandlers adds each server route to the EchoRouter.
 func RegisterHandlers(router runtime.EchoRouter, si ServerInterface) {
 
@@ -555,6 +668,7 @@ func RegisterHandlers(router runtime.EchoRouter, si ServerInterface) {
 	router.POST("/consent", wrapper.CreateConsent)
 	router.POST("/consent/check", wrapper.CheckConsent)
 	router.POST("/consent/query", wrapper.QueryConsent)
+	router.DELETE("/consent/:proofHash", wrapper.DeleteConsent)
 
 }
 
