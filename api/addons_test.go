@@ -78,13 +78,13 @@ func TestFromSimplifiedConsentRule(t *testing.T) {
 func TestSimplifiedConsent_ToPatientConsent(t *testing.T) {
 	hash := random.String(8)
 	sc := SimplifiedConsent{
-		Actor:     "actor",
-		Custodian: "custodian",
+		Actor:      "actor",
+		Custodian:  "custodian",
 		RecordHash: &hash,
-		Resources: []string{"resource"},
-		Subject:   "subject",
-		ValidFrom: "2019-01-01",
-		ValidTo:   "2020-01-01",
+		Resources:  []string{"resource"},
+		Subject:    "subject",
+		ValidFrom:  "2019-01-01",
+		ValidTo:    "2020-01-01",
 	}
 
 	t.Run("correct transform", func(t *testing.T) {

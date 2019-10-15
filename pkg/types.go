@@ -27,11 +27,11 @@ import (
 // PatientConsent defines struct for patient_consent table.
 // ID refers to the HMAC id for a custodian(subject-actor)
 type PatientConsent struct {
-	ID         string `gorm:"primary_key"`
-	Actor      string `gorm:"not null"`
-	Custodian  string `gorm:"not null"`
-	Records    []ConsentRecord
-	Subject    string `gorm:"not null"`
+	ID        string `gorm:"primary_key"`
+	Actor     string `gorm:"not null"`
+	Custodian string `gorm:"not null"`
+	Records   []ConsentRecord
+	Subject   string `gorm:"not null"`
 }
 
 // TableName returns the SQL table for this type
@@ -40,7 +40,7 @@ func (PatientConsent) TableName() string {
 }
 
 // BeforeDelete makes sure the ConsentRecords of a PatientConsent gets deleted too
-func (pc *PatientConsent) BeforeDelete(tx *gorm.DB) (err error)  {
+func (pc *PatientConsent) BeforeDelete(tx *gorm.DB) (err error) {
 	return tx.Delete(ConsentRecord{}, "patient_consent_id = ?", pc.ID).Error
 }
 
@@ -59,7 +59,7 @@ type ConsentRecord struct {
 	PatientConsentID string
 	ValidFrom        time.Time `gorm:"not null"`
 	ValidTo          time.Time `gorm:"not null"`
-	Hash       		 string    `gorm:"not null"`
+	Hash             string    `gorm:"not null"`
 	Resources        []Resource
 }
 
@@ -69,7 +69,7 @@ func (ConsentRecord) TableName() string {
 }
 
 // BeforeDelete makes sure the Resources of a ConsentRecords gets deleted too
-func (cr *ConsentRecord) BeforeDelete(tx *gorm.DB) (err error)  {
+func (cr *ConsentRecord) BeforeDelete(tx *gorm.DB) (err error) {
 	return tx.Delete(Resource{}, "consent_record_id = ?", cr.ID).Error
 }
 
