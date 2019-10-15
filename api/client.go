@@ -163,7 +163,7 @@ func (hb HttpClient) QueryConsentForActor(ctx context.Context, actor string, que
 			Custodian: string(sr.Custodian),
 			Records: []pkg.ConsentRecord{
 				{
-					Hash: "unknown",
+					Hash:      "unknown",
 					Resources: []pkg.Resource{},
 				},
 			},
