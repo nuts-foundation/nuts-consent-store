@@ -37,7 +37,7 @@ type ConsentQueryRequest struct {
 	Actor     *Identifier     `json:"actor,omitempty"`
 	Custodian *Identifier     `json:"custodian,omitempty"`
 	Page      *PageDefinition `json:"page,omitempty"`
-	Query     interface{}     `json:"query"`
+	Query     string          `json:"query"`
 	ValidAt   *time.Time      `json:"validAt,omitempty"`
 }
 
@@ -68,9 +68,6 @@ type SimplifiedConsent struct {
 	ValidFrom  ValidFrom  `json:"validFrom"`
 	ValidTo    ValidTo    `json:"validTo"`
 }
-
-// SubjectQuery defines model for SubjectQuery.
-type SubjectQuery string
 
 // ValidFrom defines model for ValidFrom.
 type ValidFrom string
@@ -671,3 +668,4 @@ func RegisterHandlers(router runtime.EchoRouter, si ServerInterface) {
 	router.DELETE("/consent/:proofHash", wrapper.DeleteConsent)
 
 }
+

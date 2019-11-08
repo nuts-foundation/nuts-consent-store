@@ -178,9 +178,7 @@ func (w *ApiWrapper) QueryConsent(ctx echo.Context) error {
 		custodian = &custodianString
 	}
 
-	query := checkRequest.Query.(string)
-
-	if len(query) == 0 {
+	if len(checkRequest.Query) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "missing query in queryRequest")
 	}
 
@@ -190,7 +188,7 @@ func (w *ApiWrapper) QueryConsent(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "missing actor or custodian in queryRequest")
 	}
 
-	rules, err = w.Cs.QueryConsent(ctx.Request().Context(), actor, custodian, &query)
+	rules, err = w.Cs.QueryConsent(ctx.Request().Context(), actor, custodian, &checkRequest.Query)
 
 	if err != nil {
 		return err

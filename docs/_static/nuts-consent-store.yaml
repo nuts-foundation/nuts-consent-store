@@ -163,9 +163,13 @@ components:
           format: date
           description: "Date at which consent has to be valid. Optional, when empty, Now() is used"
         query:
-          oneOf:
-            - $ref: "#/components/schemas/SubjectQuery"
-            - $ref: "#/components/schemas/Identifier"
+          type: string
+          description: >
+            Free text search for finding subjects
+            or
+            Generic identifier used for representing BSN, agbcode, etc.
+            It's always constructed as an URN followed by a double colon (:) and then the identifying value of the given URN
+          example: "urn:oid:2.16.840.1.113883.2.4.6.1:00000007, Mr Janse%"
     ConsentQueryResponse:
       required:
         - page
@@ -222,10 +226,6 @@ components:
           type: integer
         limit:
           type: integer
-    SubjectQuery:
-      type: string
-      description: "Free text search for finding subjects"
-      example: "Mr Janse%"
     Identifier:
       type: string
       description: >
