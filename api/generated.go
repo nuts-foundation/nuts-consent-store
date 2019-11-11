@@ -48,6 +48,25 @@ type ConsentQueryResponse struct {
 	TotalResults int                 `json:"totalResults"`
 }
 
+// ConsentRecord defines model for ConsentRecord.
+type ConsentRecord struct {
+	RecordHash *string   `json:"recordHash,omitempty"`
+	Resources  []string  `json:"resources"`
+	Uuid       string    `json:"uuid"`
+	ValidFrom  ValidFrom `json:"validFrom"`
+	ValidTo    ValidTo   `json:"validTo"`
+	Version    int       `json:"version"`
+}
+
+// CreateConsentRequest defines model for CreateConsentRequest.
+type CreateConsentRequest struct {
+	Actor     Identifier      `json:"actor"`
+	Custodian Identifier      `json:"custodian"`
+	Id        string          `json:"id"`
+	Records   []ConsentRecord `json:"records"`
+	Subject   Identifier      `json:"subject"`
+}
+
 // Identifier defines model for Identifier.
 type Identifier string
 
@@ -67,6 +86,7 @@ type SimplifiedConsent struct {
 	Subject    Identifier `json:"subject"`
 	ValidFrom  ValidFrom  `json:"validFrom"`
 	ValidTo    ValidTo    `json:"validTo"`
+	Version    int        `json:"version"`
 }
 
 // ValidFrom defines model for ValidFrom.
@@ -76,7 +96,7 @@ type ValidFrom string
 type ValidTo string
 
 // createConsentJSONBody defines parameters for CreateConsent.
-type createConsentJSONBody SimplifiedConsent
+type createConsentJSONBody CreateConsentRequest
 
 // checkConsentJSONBody defines parameters for CheckConsent.
 type checkConsentJSONBody ConsentCheckRequest

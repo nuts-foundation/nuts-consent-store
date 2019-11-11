@@ -25,21 +25,15 @@ import (
 )
 
 // ToPatientConsent converts the SimplifiedConsent object to an internal PatientConsent
-func (sc SimplifiedConsent) ToPatientConsent() (pkg.PatientConsent, error) {
+func (sc CreateConsentRequest) ToPatientConsent() (pkg.PatientConsent, error) {
+	var records []pkg.ConsentRecord
 
-	var resources []pkg.Resource
-
-	for _, a := range sc.Resources {
-		resources = append(resources, pkg.Resource{ResourceType: a})
-	}
-
-	validFrom, err := time.Parse("2006-01-02", string(sc.ValidFrom))
-	if err != nil {
-		return pkg.PatientConsent{}, err
-	}
-	validTo, err := time.Parse("2006-01-02", string(sc.ValidTo))
-	if err != nil {
-		return pkg.PatientConsent{}, err
+	for _, r := range sc.Records {
+		cr, err := r.ToConsentRecord()
+		if err != nil {
+			return pkg.PatientConsent{}, err
+		}
+		records = append(records, cr)
 	}
 
 	return pkg.PatientConsent{
@@ -47,20 +41,38 @@ func (sc SimplifiedConsent) ToPatientConsent() (pkg.PatientConsent, error) {
 		Subject:   string(sc.Subject),
 		Custodian: string(sc.Custodian),
 		Actor:     string(sc.Actor),
-		Records: []pkg.ConsentRecord{
-			{
-				ValidFrom: validFrom,
-				ValidTo:   validTo,
-				Hash:      *sc.RecordHash,
-				Resources: resources,
-			},
-		},
+		Records: records,
 	}, nil
 }
 
-// FromSimplifiedConsentRule converts a slice of pkg.PatientConsent to a slice of SimplifiedConsent
+// ToConsentRecord converts the API consent record object to the internal DB object
+func (cr ConsentRecord) ToConsentRecord() (pkg.ConsentRecord, error) {
+	var resources []pkg.Resource
+
+	for _, a := range cr.Resources {
+		resources = append(resources, pkg.Resource{ResourceType: a})
+	}
+
+	validFrom, err := time.Parse("2006-01-02", string(cr.ValidFrom))
+	if err != nil {
+		return pkg.ConsentRecord{}, err
+	}
+	validTo, err := time.Parse("2006-01-02", string(cr.ValidTo))
+	if err != nil {
+		return pkg.ConsentRecord{}, err
+	}
+
+	return pkg.ConsentRecord{
+		ValidFrom: validFrom,
+		ValidTo:   validTo,
+		Hash:      *cr.RecordHash,
+		Resources: resources,
+	}, nil
+}
+
+// FromPatientConsent converts a slice of pkg.PatientConsent to a slice of SimplifiedConsent
 // it cannot convert when multiple actors are involved
-func FromSimplifiedConsentRule(patientConsent []pkg.PatientConsent) ([]SimplifiedConsent, error) {
+func FromPatientConsent(patientConsent []pkg.PatientConsent) ([]SimplifiedConsent, error) {
 	var (
 		firstActor string
 		consent    []SimplifiedConsent

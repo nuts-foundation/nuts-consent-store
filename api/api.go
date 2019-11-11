@@ -39,7 +39,7 @@ func (w *ApiWrapper) CreateConsent(ctx echo.Context) error {
 		return err
 	}
 
-	var createRequest = &SimplifiedConsent{}
+	var createRequest = &CreateConsentRequest{}
 	err = json.Unmarshal(buf, createRequest)
 
 	if len(createRequest.Id) == 0 {
@@ -58,18 +58,23 @@ func (w *ApiWrapper) CreateConsent(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "missing actor in createRequest")
 	}
 
-	if len(createRequest.Resources) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "missing resources in createRequest")
+	if len(createRequest.Records) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "missing records in createRequest")
 	}
 
-	if createRequest.RecordHash == nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "missing recordHash in createRequest")
+	for _, r := range createRequest.Records {
+		if len(r.Resources) == 0 {
+			return echo.NewHTTPError(http.StatusBadRequest, "missing resources in one or more records within createRequest")
+		}
+
+		if r.RecordHash == nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "missing recordHash in one or more records within createRequest")
+		}
 	}
+
+
 
 	c, err := createRequest.ToPatientConsent()
-	if createRequest.RecordHash == nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error transforming record: %v", err))
-	}
 
 	err = w.Cs.RecordConsent(ctx.Request().Context(), []pkg.PatientConsent{c})
 
@@ -196,7 +201,7 @@ func (w *ApiWrapper) QueryConsent(ctx echo.Context) error {
 
 	logrus.Debugf("Found %d results", len(rules))
 
-	results, err := FromSimplifiedConsentRule(rules)
+	results, err := FromPatientConsent(rules)
 
 	if err != nil {
 		return err

@@ -108,8 +108,18 @@ func (hb HttpClient) RecordConsent(ctx context.Context, consent []pkg.PatientCon
 	req.Custodian = Identifier(consent[0].Custodian)
 	req.Subject = Identifier(consent[0].Subject)
 
-	for _, r := range consent[0].Resources() {
-		req.Resources = append(req.Resources, r.ResourceType)
+	for _, r := range consent[0].Records {
+		cr := ConsentRecord{
+			RecordHash: &r.Hash,
+			Uuid:       r.UUID,
+			ValidFrom:  ValidFrom(r.ValidFrom.Format(time.RFC3339)),
+			ValidTo:    ValidTo(r.ValidTo.Format(time.RFC3339)),
+			Version:    int(r.Version),
+		}
+		for _, sr := range r.Resources {
+			cr.Resources = append(cr.Resources, sr.ResourceType)
+		}
+		req.Records = append(req.Records, cr)
 	}
 
 	result, err := hb.client().CreateConsent(ctx, req)

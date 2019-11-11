@@ -236,20 +236,14 @@ func (cs *ConsentStore) RecordConsent(context context.Context, consent []Patient
 			return err
 		}
 
-		// Since we will store the new state, delete all records and their resources.
-		for _, record := range tpc.Records {
-			if err := tx.Delete(&record).Error; err != nil {
-				tx.Rollback()
-				return err
-			}
-		}
-
 		for _, cr := range pr.Records {
 			tcr := ConsentRecord{
 				PatientConsentID: tpc.ID,
 				Hash:             cr.Hash,
 				ValidFrom:        cr.ValidFrom,
 				ValidTo:          cr.ValidTo,
+				UUID: 			  cr.UUID,
+				Version:          cr.Version,
 			}
 
 			if !tcr.ValidTo.After(tcr.ValidFrom) {
@@ -269,30 +263,111 @@ func (cs *ConsentStore) RecordConsent(context context.Context, consent []Patient
 	return tx.Commit().Error
 }
 
+
+
+
 // QueryConsentForActor returns all PatientConsents for a given actor
 func (cs *ConsentStore) QueryConsentForActor(context context.Context, actor string, query string) ([]PatientConsent, error) {
-	var rules []PatientConsent
+	var records []uint
 
-	if err := cs.Db.Debug().Where("Actor = ?", actor).Preload("Records").Preload("Records.Resources").Find(&rules).Error; err != nil {
+	rows, err := cs.Db.Debug().Where("actor = ?", actor).
+		Table("patient_consent").
+		//Preload("Records").Preload("Records.Resources").
+		Select("consent_record.id").
+		Joins("left join consent_record on consent_record.patient_consent_id = patient_consent.id").
+		Group("consent_record.uuid").Having("max(consent_record.version)").
+		Rows()
+
+	defer rows.Close()
+
+	if err != nil {
 		return nil, err
 	}
 
-	return rules, nil
+	for rows.Next() {
+		var rId uint
+
+		err = rows.Scan(&rId)
+		if err != nil {
+			return nil, err
+		}
+
+		records = append(records, rId)
+	}
+
+	// new queries can only be done after rows has been closed....
+	rows.Close()
+
+	return cs.patientConsentByConsentRecord(context, records)
+}
+
+func (cs *ConsentStore) patientConsentByConsentRecord(context context.Context, records []uint) ([]PatientConsent, error) {
+	var consentMap = make(map[string]*PatientConsent)
+
+	for _, ri := range records {
+		var cr ConsentRecord
+		if err := cs.Db.Debug().Where("id = ?", ri).Preload("Resources").Find(&cr).Error; err != nil {
+			return nil, err
+		}
+
+		cpc := consentMap[cr.PatientConsentID]
+		if cpc == nil {
+			var pc PatientConsent
+			if err := cs.Db.Debug().Where("id = ?", cr.PatientConsentID).Find(&pc).Error; err != nil {
+				return nil, err
+			}
+			cpc = &pc
+			consentMap[cr.PatientConsentID] = &pc
+		}
+		cpc.Records = append(cpc.Records, cr)
+	}
+
+	var consentList []PatientConsent
+
+	for _, v := range consentMap {
+		consentList = append(consentList, *v)
+	}
+
+	return consentList, nil
 }
 
 // QueryConsentForActorAndSubject  returns all PatientConsents for a given actor and subject
 func (cs *ConsentStore) QueryConsentForActorAndSubject(context context.Context, actor string, subject string) ([]PatientConsent, error) {
-	var rules []PatientConsent
+	var records []uint
 
-	if err := cs.Db.Debug().Where("Actor = ? AND Subject = ?", actor, subject).Preload("Records").Preload("Records.Resources").Find(&rules).Error; err != nil {
+	rows, err := cs.Db.Debug().Where("actor = ? AND subject = ?", actor, subject).
+		Table("patient_consent").
+		//Preload("Records").Preload("Records.Resources").
+		Select("consent_record.id").
+		Joins("left join consent_record on consent_record.patient_consent_id = patient_consent.id").
+		Group("consent_record.uuid").Having("max(consent_record.version)").
+		Rows()
+
+	defer rows.Close()
+
+	if err != nil {
 		return nil, err
 	}
 
-	return rules, nil
+	for rows.Next() {
+		var rId uint
+
+		err = rows.Scan(&rId)
+		if err != nil {
+			return nil, err
+		}
+
+		records = append(records, rId)
+	}
+
+	// new queries can only be done after rows has been closed....
+	rows.Close()
+
+	return cs.patientConsentByConsentRecord(context, records)
 }
 
 // QueryConsent accepts actor, custodian and subject, if these are nil, it uses a wildcard to query.
-func (cs *ConsentStore) QueryConsent(context context.Context, _actor *string, _custodian *string, _subject *string) (rules []PatientConsent, err error) {
+func (cs *ConsentStore) QueryConsent(context context.Context, _actor *string, _custodian *string, _subject *string) ([]PatientConsent, error) {
 	var (
 		actor, custodian, subject string
 	)
@@ -309,9 +384,37 @@ func (cs *ConsentStore) QueryConsent(context context.Context, _actor *string, _c
 		subject = *_subject
 	}
 
-	err = cs.Db.Debug().Where("Actor LIKE ? AND Subject LIKE ? AND Custodian LIKE ?", actor, subject, custodian).Preload("Records").Preload("Records.Resources").Find(&rules).Error
+	var records []uint
 
-	return
+	rows, err := cs.Db.Debug().Where("actor LIKE ? AND subject LIKE ? AND custodian LIKE ?", actor, subject, custodian).
+		Table("patient_consent").
+		//Preload("Records").Preload("Records.Resources").
+		Select("consent_record.id").
+		Joins("left join consent_record on consent_record.patient_consent_id = patient_consent.id").
+		Group("consent_record.uuid").Having("max(consent_record.version)").
+		Rows()
+
+	defer rows.Close()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var rId uint
+
+		err = rows.Scan(&rId)
+		if err != nil {
+			return nil, err
+		}
+
+		records = append(records, rId)
+	}
+
+	// new queries can only be done after rows has been closed....
+	rows.Close()
+
+	return cs.patientConsentByConsentRecord(context, records)
 }
 
 // DeleteConsentRecordByHash deletes a consent record by its hash. Returns boolean to indicate the success of the operation

@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/labstack/gommon/random"
+	uuid "github.com/satori/go.uuid"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -425,7 +426,7 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 		echo := mock.NewMockContext(ctrl)
 
 		consent := testConsent()
-		consent.RecordHash = nil
+		consent.Records[0].RecordHash = nil
 
 		json, _ := json.Marshal(consent)
 		request := &http.Request{
@@ -440,7 +441,7 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 			t.Error("Expected error got nothing")
 		}
 
-		expected := "code=400, message=missing recordHash in createRequest"
+		expected := "code=400, message=missing recordHash in one or more records within createRequest"
 		if !strings.Contains(err.Error(), expected) {
 			t.Errorf("Expected error %s, got: [%s]", expected, err.Error())
 		}
@@ -506,7 +507,7 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 		echo := mock.NewMockContext(ctrl)
 
 		consent := testConsent()
-		consent.Resources = []string{}
+		consent.Records[0].Resources = []string{}
 
 		json, _ := json.Marshal(consent)
 		request := &http.Request{
@@ -521,7 +522,7 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 			t.Error("Expected error got nothing")
 		}
 
-		expected := "code=400, message=missing resources in createRequest"
+		expected := "code=400, message=missing resources in one or more records within createRequest"
 		if !strings.Contains(err.Error(), expected) {
 			t.Errorf("Expected error [%s], got: [%v]", expected, err)
 		}
@@ -781,17 +782,23 @@ func TestDefaultConsentStore_DeleteConsent(t *testing.T) {
 	})
 }
 
-func testConsent() SimplifiedConsent {
+func testConsent() CreateConsentRequest {
 	hash := random.String(8)
-	return SimplifiedConsent{
+	return CreateConsentRequest{
 		Id:         random.String(8),
 		Actor:      Identifier("actor"),
 		Custodian:  Identifier("custodian"),
 		Subject:    Identifier("urn:subject"),
-		RecordHash: &hash,
-		Resources:  []string{"resource"},
-		ValidFrom:  ValidFrom("2019-01-01"),
-		ValidTo:    ValidTo("2030-01-01"),
+		Records: []ConsentRecord{
+			{
+				RecordHash: &hash,
+				Resources:  []string{"resource"},
+				ValidFrom:  ValidFrom("2019-01-01"),
+				ValidTo:    ValidTo("2030-01-01"),
+				Uuid: uuid.NewV4().String(),
+				Version: 1,
+			},
+		},
 	}
 }
 

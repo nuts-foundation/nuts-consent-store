@@ -21,6 +21,8 @@ package pkg
 import (
 	"context"
 	"github.com/labstack/gommon/random"
+	uuid "github.com/satori/go.uuid"
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
@@ -29,6 +31,47 @@ func TestConsentStoreInstance(t *testing.T) {
 	t.Run("returns same instance every time", func(t *testing.T) {
 		if ConsentStoreInstance() != ConsentStoreInstance() {
 			t.Error("Expected instance to be the same")
+		}
+	})
+}
+
+func TestConsentStore_RecordConsent(t *testing.T) {
+	client := defaultConsentStore()
+	defer client.Shutdown()
+
+	t.Run("It sets the version number to 1", func(t *testing.T) {
+
+		rules := []PatientConsent{
+			{
+				ID:        random.String(8),
+				Actor:     "actor",
+				Custodian: "custodian",
+				Subject:   "subject",
+
+				Records: []ConsentRecord{
+					{
+						ValidFrom: time.Now().Add(time.Hour * -24),
+						ValidTo:   time.Now().Add(time.Hour * +12),
+						Hash:      "234caef",
+						Resources: []Resource{
+							{
+								ResourceType: "resource",
+							},
+						},
+						UUID: uuid.NewV4().String(),
+					},
+				},
+			},
+		}
+
+		err := client.RecordConsent(context.TODO(), rules)
+
+		if assert.NoError(t, err) {
+			pcs, err := client.QueryConsentForActorAndSubject(context.TODO(), "actor", "subject")
+
+			if assert.NoError(t, err) {
+				assert.Equal(t, uint(1), pcs[0].Records[0].Version)
+			}
 		}
 	})
 }
@@ -56,6 +99,7 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 								ResourceType: "resource",
 							},
 						},
+						UUID: uuid.NewV4().String(),
 					},
 				},
 			},
@@ -78,7 +122,7 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 		}
 	})
 
-	t.Run("Updating a existing consent", func(t *testing.T) {
+	t.Run("Updating an existing consent", func(t *testing.T) {
 
 		rules := []PatientConsent{
 			{
@@ -97,16 +141,8 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 								ResourceType: "resource",
 							},
 						},
-					},
-					{
-						ValidFrom: time.Now().Add(time.Hour * -24),
-						ValidTo:   time.Now().Add(time.Hour * +12),
-						Hash:      "334caefg",
-						Resources: []Resource{
-							{
-								ResourceType: "resource",
-							},
-						},
+						UUID: uuid.NewV4().String(),
+						Version: 1,
 					},
 				},
 			},
@@ -119,21 +155,19 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 		// Update the validTo of the record.
 		rules[0].Records[0].ValidTo = time.Now()
 		rules[0].Records[0].Hash = "234caefh"
+		rules[0].Records[0].Version = 2
 
 		err = client.RecordConsent(context.TODO(), rules)
-		if err != nil {
-			t.Errorf("Expected no error, got [%v]", err)
-		}
+		if assert.NoError(t, err) {
 
-		consent, err := client.QueryConsentForActor(context.TODO(), "actor333", "*")
-		if len(consent) != 1 {
-			t.Errorf("Expected 1 patientConsent, got [%d]", len(consent))
-		}
-		if len(consent[0].Records) != 2 {
-			t.Errorf("Expected 2 records, got: [%d]", len(consent[0].Records))
-		}
-		if len(consent[0].Records[0].Resources) != 1 {
-			t.Errorf("Expected 1 rule, got: [%d]", len(consent[0].Records[0].Resources))
+			consent, err := client.QueryConsentForActor(context.TODO(), "actor333", "*")
+			if assert.NoError(t, err) {
+
+				assert.Len(t, consent, 1)
+				assert.Len(t, consent[0].Records, 1)
+				assert.Len(t, consent[0].Records[0].Resources, 1)
+				assert.Equal(t, uint(2), consent[0].Records[0].Version)
+			}
 		}
 	})
 
@@ -444,6 +478,7 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 					ValidFrom: time.Now().Add(time.Hour * -24),
 					ValidTo:   time.Now().Add(time.Hour * 12),
 					Hash:      random.String(8),
+					UUID:      "1",
 					Resources: []Resource{
 						{
 							ResourceType: "resource",
@@ -454,6 +489,7 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 					ValidFrom: time.Now().Add(time.Hour * -24),
 					ValidTo:   time.Now().Add(time.Hour * 12),
 					Hash:      random.String(8),
+					UUID:      "2",
 					Resources: []Resource{
 						{
 							ResourceType: "resource",
@@ -472,6 +508,7 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 					ValidFrom: time.Now().Add(time.Hour * -24),
 					ValidTo:   time.Now().Add(time.Hour * 12),
 					Hash:      random.String(8),
+					UUID:      "3",
 					Resources: []Resource{
 						{
 							ResourceType: "resource2",
@@ -491,30 +528,10 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 
 		consent, err := client.QueryConsent(context.TODO(), nil, nil, &subject)
 
-		if err != nil {
-			t.Errorf("Expected no error, got [%v]", err)
-		}
-
-		if len(consent) != 2 {
-			t.Fatalf("Expected 2 results, got [%d]", len(consent))
-		}
-
-		if len(consent[0].Records) != 2 {
-			t.Fatalf("expected 2 record got [%d]", len(consent[0].Records))
-		}
-
-		if len(consent[1].Records) != 1 {
-			t.Fatalf("expected 1 record got [%d]", len(consent[1].Records))
-		}
-
-		if len(consent[0].Records[0].Resources) != 1 {
-			t.Errorf("expected 1 resource got [%d]", len(consent[0].Records[0].Resources))
-		}
-		if len(consent[0].Records[1].Resources) != 1 {
-			t.Errorf("expected 1 resource got [%d]", len(consent[0].Records[1].Resources))
-		}
-		if len(consent[1].Records[0].Resources) != 1 {
-			t.Errorf("expected 1 resource got [%d]", len(consent[1].Records[0].Resources))
+		if assert.NoError(t, err) {
+			assert.Len(t, consent, 2)
+			assert.Equal(t, 3, len(consent[0].Records) + len(consent[1].Records))
+			assert.Len(t, consent[0].Records[0].Resources, 1)
 		}
 
 	})

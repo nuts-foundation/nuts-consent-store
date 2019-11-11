@@ -16,8 +16,10 @@ require (
 	github.com/mattn/go-sqlite3 v1.11.0
 	github.com/nuts-foundation/nuts-go-core v0.0.0-20191028170600-66675906a53a
 	github.com/pelletier/go-toml v1.5.0 // indirect
+	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.5
+	github.com/stretchr/testify v1.4.0
 	google.golang.org/appengine v1.6.5 // indirect
 )

@@ -26,7 +26,7 @@ import (
 
 func TestFromSimplifiedConsentRule(t *testing.T) {
 	t.Run("single consentRule converted", func(t *testing.T) {
-		scs, _ := FromSimplifiedConsentRule([]pkg.PatientConsent{consentRule()})
+		scs, _ := FromPatientConsent([]pkg.PatientConsent{consentRule()})
 
 		if len(scs) != 1 {
 			t.Error("Expected rules to have 1 item")
@@ -61,7 +61,7 @@ func TestFromSimplifiedConsentRule(t *testing.T) {
 		crs := []pkg.PatientConsent{consentRule(), consentRule()}
 		crs[1].Actor = "actor2"
 
-		_, err := FromSimplifiedConsentRule(crs)
+		_, err := FromPatientConsent(crs)
 
 		if err == nil {
 			t.Error("Expected error, got nothing")
@@ -75,16 +75,22 @@ func TestFromSimplifiedConsentRule(t *testing.T) {
 	})
 }
 
-func TestSimplifiedConsent_ToPatientConsent(t *testing.T) {
+func TestCreateConsentRequest_ToPatientConsent(t *testing.T) {
 	hash := random.String(8)
-	sc := SimplifiedConsent{
+	sc := CreateConsentRequest{
 		Actor:      "actor",
 		Custodian:  "custodian",
-		RecordHash: &hash,
-		Resources:  []string{"resource"},
 		Subject:    "subject",
-		ValidFrom:  "2019-01-01",
-		ValidTo:    "2020-01-01",
+		Records: []ConsentRecord {
+			{
+				RecordHash: &hash,
+				Resources:  []string{"resource"},
+				ValidFrom:  "2019-01-01",
+				ValidTo:    "2020-01-01",
+				Version: 1,
+				Uuid: "uuid",
+			},
+		},
 	}
 
 	t.Run("correct transform", func(t *testing.T) {
@@ -110,29 +116,29 @@ func TestSimplifiedConsent_ToPatientConsent(t *testing.T) {
 			return
 		}
 
-		if pc.Records[0].Hash != *sc.RecordHash {
+		if pc.Records[0].Hash != *sc.Records[0].RecordHash {
 			t.Error("Expected Hash to match")
 			return
 		}
 
-		if pc.Resources()[0].ResourceType != sc.Resources[0] {
+		if pc.Resources()[0].ResourceType != sc.Records[0].Resources[0] {
 			t.Error("Expected Resources to match")
 			return
 		}
 
-		if pc.Records[0].ValidFrom.Format("2006-01-02") != string(sc.ValidFrom) {
+		if pc.Records[0].ValidFrom.Format("2006-01-02") != string(sc.Records[0].ValidFrom) {
 			t.Error("Expected ValidFrom to match")
 			return
 		}
 
-		if pc.Records[0].ValidTo.Format("2006-01-02") != string(sc.ValidTo) {
+		if pc.Records[0].ValidTo.Format("2006-01-02") != string(sc.Records[0].ValidTo) {
 			t.Error("Expected ValidTo to match")
 			return
 		}
 	})
 
 	t.Run("Incorrect validTo returns error", func(t *testing.T) {
-		sc.ValidTo = "202-01-01"
+		sc.Records[0].ValidTo = "202-01-01"
 		_, err := sc.ToPatientConsent()
 
 		if err == nil {
@@ -147,7 +153,7 @@ func TestSimplifiedConsent_ToPatientConsent(t *testing.T) {
 	})
 
 	t.Run("Incorrect validFrom returns error", func(t *testing.T) {
-		sc.ValidFrom = "202-01-01"
+		sc.Records[0].ValidFrom = "202-01-01"
 		_, err := sc.ToPatientConsent()
 
 		if err == nil {

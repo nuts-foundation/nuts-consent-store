@@ -60,6 +60,8 @@ type ConsentRecord struct {
 	ValidFrom        time.Time `gorm:"not null"`
 	ValidTo          time.Time `gorm:"not null"`
 	Hash             string    `gorm:"not null"`
+	Version 		 uint	   `gorm:"DEFAULT:1"`
+	UUID 			 string    `gorm:"column:uuid"`
 	Resources        []Resource
 }
 
