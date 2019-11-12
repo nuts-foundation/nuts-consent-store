@@ -30,11 +30,13 @@ import (
 	"time"
 )
 
-type ApiWrapper struct {
+// Wrapper implements the ServerInterface for the base ConsentStore
+type Wrapper struct {
 	Cs *pkg.ConsentStore
 }
 
-func (w *ApiWrapper) CreateConsent(ctx echo.Context) error {
+// CreateConsent creates or updates a PatientConsent in the consent store
+func (w *Wrapper) CreateConsent(ctx echo.Context) error {
 	buf, err := readBody(ctx)
 	if err != nil {
 		return err
@@ -84,7 +86,8 @@ func (w *ApiWrapper) CreateConsent(ctx echo.Context) error {
 	return ctx.NoContent(201)
 }
 
-func (w *ApiWrapper) CheckConsent(ctx echo.Context) error {
+// CheckConsent checks if a given resource is allowed for a given actor, subject, custodian triple
+func (w *Wrapper) CheckConsent(ctx echo.Context) error {
 	buf, err := readBody(ctx)
 	if err != nil {
 		return err
@@ -142,10 +145,11 @@ func (w *ApiWrapper) CheckConsent(ctx echo.Context) error {
 	return ctx.JSON(200, checkResponse)
 }
 
+// ErrorMissingHash is returned when the proofHash parameter is missing
 var ErrorMissingHash = errors.New("missing proofHash")
 
 // DeleteConsent deletes the consentRecord for a given proofHash
-func (w *ApiWrapper) DeleteConsent(ctx echo.Context, proofHash string) error {
+func (w *Wrapper) DeleteConsent(ctx echo.Context, proofHash string) error {
 	if len(proofHash) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, ErrorMissingHash)
 	}
@@ -162,7 +166,8 @@ func (w *ApiWrapper) DeleteConsent(ctx echo.Context, proofHash string) error {
 	return ctx.NoContent(202)
 }
 
-func (w *ApiWrapper) FindConsentRecord(ctx echo.Context, proofHash string, params FindConsentRecordParams) error {
+// FindConsentRecord returns a ConsentRecord based on a hash. A latest flag can be added to indicate a record may only be returned if it's the latest in the chain.
+func (w *Wrapper) FindConsentRecord(ctx echo.Context, proofHash string, params FindConsentRecordParams) error {
 	if len(proofHash) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, ErrorMissingHash)
 	}
@@ -188,7 +193,8 @@ func (w *ApiWrapper) FindConsentRecord(ctx echo.Context, proofHash string, param
 	return ctx.JSON(200, FromConsentRecord(record))
 }
 
-func (w *ApiWrapper) QueryConsent(ctx echo.Context) error {
+// QueryConsent finds given consent for a combination of actor, subject and/or custodian
+func (w *Wrapper) QueryConsent(ctx echo.Context) error {
 	buf, err := readBody(ctx)
 	if err != nil {
 		return err

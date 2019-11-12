@@ -56,7 +56,7 @@ func Execute() {
 
 			// start webserver
 			e := echo.New()
-			api.RegisterHandlers(e, &api.ApiWrapper{Cs: pkg.ConsentStoreInstance()})
+			api.RegisterHandlers(e, &api.Wrapper{Cs: pkg.ConsentStoreInstance()})
 			logrus.Fatal(e.Start(":1323"))
 		},
 	})

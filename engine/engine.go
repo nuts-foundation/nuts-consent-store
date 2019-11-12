@@ -46,7 +46,7 @@ func NewConsentStoreEngine() *engine.Engine {
 		ConfigKey: "cstore",
 		FlagSet:   flagSet(),
 		Routes: func(router runtime.EchoRouter) {
-			api.RegisterHandlers(router, &api.ApiWrapper{Cs: cs})
+			api.RegisterHandlers(router, &api.Wrapper{Cs: cs})
 		},
 		Start:    cs.Start,
 		Shutdown: cs.Shutdown,

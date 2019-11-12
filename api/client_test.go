@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -230,12 +231,20 @@ func TestHttpClient_QueryConsentForActor(t *testing.T) {
 		a := "actor"
 		res, err := client.QueryConsent(context.TODO(), &a, nil, nil)
 
-		if err != nil {
-			t.Errorf("Expected no error, got [%s]", err.Error())
+		if assert.NoError(t, err) {
+			assert.Len(t, res, 1)
 		}
+	})
+}
 
-		if len(res) != 1 {
-			t.Errorf("Expected 1 patientConsent, got %d", len(res))
+func TestHttpClient_FindConsentRecordByHash(t *testing.T) {
+	t.Run("200", func(t *testing.T) {
+		resp, _ := json.Marshal(FromConsentRecord(consentRecord()))
+		client := testClient(200, resp)
+		res, err := client.FindConsentRecordByHash(context.TODO(),"hash", false)
+
+		if assert.NoError(t, err) {
+			assert.Equal(t, "Hash", res.Hash)
 		}
 	})
 }

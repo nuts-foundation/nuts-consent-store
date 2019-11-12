@@ -66,6 +66,7 @@ func (cr ConsentRecord) ToConsentRecord() (pkg.ConsentRecord, error) {
 		ValidFrom: validFrom,
 		ValidTo:   validTo,
 		Hash:      cr.RecordHash,
+		PreviousHash: cr.PreviousRecordHash,
 		Resources: resources,
 	}, nil
 }

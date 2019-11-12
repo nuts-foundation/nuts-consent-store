@@ -858,7 +858,7 @@ func consentQuery() QueryConsentJSONRequestBody {
 	}
 }
 
-func defaultConsentStore() ApiWrapper {
+func defaultConsentStore() Wrapper {
 	client := pkg.ConsentStore{
 		Config: pkg.ConsentStoreConfig{
 			Connectionstring: ":memory:",
@@ -875,7 +875,7 @@ func defaultConsentStore() ApiWrapper {
 
 	client.RunMigrations(client.Db.DB())
 
-	return ApiWrapper{Cs: &client}
+	return Wrapper{Cs: &client}
 }
 
 func consentRuleForQuery() pkg.PatientConsent {

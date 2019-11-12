@@ -25,10 +25,11 @@ import (
 	"fmt"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
-	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
 	bindata "github.com/golang-migrate/migrate/v4/source/go_bindata"
 	"github.com/jinzhu/gorm"
+	// import needed to enable the sqlite dialect for gorm
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	// sqlite driver
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/nuts-foundation/nuts-consent-store/migrations"
 	uuid "github.com/satori/go.uuid"
@@ -37,17 +38,23 @@ import (
 	"time"
 )
 
+// ConsentStoreConfig holds the config for the consent store
 type ConsentStoreConfig struct {
 	Connectionstring string
 	Mode             string
 	Address          string
 }
 
+// ConfigConnectionString is the config name for the connection string
 const ConfigConnectionString = "connectionstring"
+// ConfigMode is the config name for the mode of the store (server, client)
 const ConfigMode = "mode"
+// ConfigAddress is the config name for the api address when running in client mode
 const ConfigAddress = "address"
+// ConfigConnectionStringDefault is the default db connection string
 const ConfigConnectionStringDefault = ":memory:"
 
+// ConsentStore is the main data struct holding the config and references to the DB
 type ConsentStore struct {
 	Db    *gorm.DB
 	sqlDb *sql.DB
@@ -70,10 +77,11 @@ type ConsentStoreClient interface {
 	QueryConsent(context context.Context, actor *string, custodian *string, subject *string) ([]PatientConsent, error)
 	// DeleteConsentRecordByHash removes a ConsentRecord from the db. Returns true if the record was found and deleted.
 	DeleteConsentRecordByHash(context context.Context, proofHash string) (bool, error)
-	// FindConsentRecordByHash find a consent record given its hash, the latest flag indicates the requirement if the record is the latest in the chain
+	// FindConsentRecordByHash find a consent record given its hash, the latest flag indicates the requirement if the record is the latest in the chain.
 	FindConsentRecordByHash(context context.Context, proofHash string, latest bool) (ConsentRecord, error)
 }
 
+// ConsentStoreInstance returns a singleton consent store
 func ConsentStoreInstance() *ConsentStore {
 	oneEngine.Do(func() {
 		instance = &ConsentStore{
@@ -86,10 +94,12 @@ func ConsentStoreInstance() *ConsentStore {
 	return instance
 }
 
+// Logger returns the standard logger with a module field
 func Logger() *logrus.Entry {
 	return logrus.StandardLogger().WithField("module", "consent-store")
 }
 
+// Configure opens a DB connection and runs migrations
 func (cs *ConsentStore) Configure() error {
 	var (
 		err error
@@ -344,14 +354,14 @@ func (cs *ConsentStore) QueryConsent(context context.Context, _actor *string, _c
 	}
 
 	for rows.Next() {
-		var rId uint
+		var rID uint
 
-		err = rows.Scan(&rId)
+		err = rows.Scan(&rID)
 		if err != nil {
 			return nil, err
 		}
 
-		records = append(records, rId)
+		records = append(records, rID)
 	}
 
 	// new queries can only be done after rows has been closed....
@@ -378,6 +388,7 @@ func (cs *ConsentStore) DeleteConsentRecordByHash(context context.Context, proof
 	return true, nil
 }
 
+// FindConsentRecordByHash find a consent record given its hash, the latest flag indicates the requirement if the record is the latest in the chain.
 func (cs *ConsentStore) FindConsentRecordByHash(context context.Context, proofHash string, latest bool) (ConsentRecord, error) {
 	var (
 		record ConsentRecord

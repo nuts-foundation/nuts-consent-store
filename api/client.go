@@ -38,10 +38,38 @@ type HttpClient struct {
 	customClient  *http.Client
 }
 
+// FindConsentRecordByHash returns a ConsentRecord based on a hash. A latest flag can be added to indicate a record may only be returned if it's the latest in the chain.
 func (hb HttpClient) FindConsentRecordByHash(context context.Context, proofHash string, latest bool) (pkg.ConsentRecord, error) {
-	panic("implement me")
+
+	var consentRecord pkg.ConsentRecord
+
+	if len(proofHash) == 0 {
+		return consentRecord, ErrorMissingHash
+	}
+
+	result, err := hb.client().FindConsentRecord(context, proofHash, &FindConsentRecordParams{Latest: &latest})
+	if err != nil {
+		err = fmt.Errorf("error while finding consent record in consent-store: %w", err)
+		hb.Logger.Error(err)
+		return consentRecord, err
+	}
+
+	body, err := hb.checkResponse(result)
+	if err != nil {
+		return consentRecord, err
+	}
+
+	var cr ConsentRecord
+	if err := json.Unmarshal(body, &cr); err != nil {
+		err = fmt.Errorf("could not unmarshal response body, reason: %w", err)
+		hb.Logger.Error(err)
+		return consentRecord, err
+	}
+
+	return cr.ToConsentRecord()
 }
 
+// QueryConsent returns PatientConsent records based on a combination of actor, custodian and subject. The only constraint is that either actor or custodian must not be empty.
 func (hb HttpClient) QueryConsent(context context.Context, actor *string, custodian *string, subject *string) ([]pkg.PatientConsent, error) {
 	var (
 		rules []pkg.PatientConsent
