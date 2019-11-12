@@ -103,6 +103,24 @@ func TestConsentStore_FindConsentRecord(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 1, int(cr.Version))
 	})
+
+	t.Run("not found", func(t *testing.T) {
+
+		_, err := client.FindConsentRecordByHash(context.TODO(), "unknown", false)
+
+		if assert.Error(t, err) {
+			assert.True(t, errors.Is(err, ErrorNotFound))
+		}
+	})
+
+	t.Run("not found with latest", func(t *testing.T) {
+
+		_, err := client.FindConsentRecordByHash(context.TODO(), "unknown", true)
+
+		if assert.Error(t, err) {
+			assert.True(t, errors.Is(err, ErrorNotFound))
+		}
+	})
 }
 
 func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
