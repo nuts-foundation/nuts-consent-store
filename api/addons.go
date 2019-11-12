@@ -92,7 +92,7 @@ func FromPatientConsent(patientConsent []pkg.PatientConsent) ([]SimplifiedConsen
 				resources = append(resources, r2.ResourceType)
 			}
 			consent = append(consent, SimplifiedConsent{
-				Id:        r.Hash,
+				Id:        c.ID,
 				Subject:   Identifier(c.Subject),
 				Custodian: Identifier(c.Custodian),
 				Actor:     Identifier(c.Actor),

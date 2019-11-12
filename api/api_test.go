@@ -531,7 +531,8 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 
 func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 	client := defaultConsentStore()
-	if err := client.Cs.RecordConsent(context.Background(), []pkg.PatientConsent{consentRuleForQuery()}); err != nil {
+	crq := consentRuleForQuery()
+	if err := client.Cs.RecordConsent(context.Background(), []pkg.PatientConsent{crq}); err != nil {
 		t.Fatal(err)
 	}
 	defer client.Cs.Shutdown()
@@ -578,7 +579,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 			TotalResults: 1,
 			Results: []SimplifiedConsent{
 				{
-					Id:        "ejNYuhAQ",
+					Id:        crq.ID,
 					Subject:   Identifier("subject"),
 					Custodian: Identifier("custodian"),
 					Actor:     Identifier("actor"),
@@ -615,7 +616,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 			TotalResults: 1,
 			Results: []SimplifiedConsent{
 				{
-					Id:        "ejNYuhAQ",
+					Id:        crq.ID,
 					Subject:   Identifier("subject"),
 					Custodian: Identifier("custodian"),
 					Actor:     Identifier("actor"),
@@ -631,9 +632,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 
 		err := client.QueryConsent(echo)
 
-		if err != nil {
-			t.Errorf("Expected no error, got [%v]", err)
-		}
+		assert.NoError(t, err)
 	})
 
 	t.Run("Missing body gives 400", func(t *testing.T) {
@@ -704,13 +703,9 @@ func TestDefaultConsentStore_DeleteConsent(t *testing.T) {
 
 		err := client.DeleteConsent(echo, "")
 
-		if err == nil {
-			t.Error("Expected error, got nothing", err)
-		}
-
-		expected := "code=400, message=missing proofHash"
-		if !strings.Contains(err.Error(), expected) {
-			t.Errorf("Expected error [%s], got: [%s]", expected, err.Error())
+		if assert.Error(t, err) {
+			expected := "code=400, message=missing proofHash"
+			assert.Contains(t, err.Error(), expected)
 		}
 	})
 
@@ -726,10 +721,7 @@ func TestDefaultConsentStore_DeleteConsent(t *testing.T) {
 		err := client.DeleteConsent(echo, "a")
 
 		if assert.Error(t, err) {
-			expected := "code=404, message=record not found"
-			if !strings.Contains(err.Error(), expected) {
-				t.Errorf("Expected error [%s], got: [%s]", expected, err.Error())
-			}
+			assert.Contains(t, err.Error(), pkg.ErrorNotFound.Error())
 		}
 	})
 
@@ -747,6 +739,86 @@ func TestDefaultConsentStore_DeleteConsent(t *testing.T) {
 
 		if err != nil {
 			t.Errorf("Expected no error, got [%v]", err)
+		}
+	})
+}
+
+func TestDefaultConsentStore_FindConsentRecord(t *testing.T) {
+	client := defaultConsentStore()
+	crq := consentRuleForQuery()
+	client.Cs.RecordConsent(context.Background(), []pkg.PatientConsent{crq})
+	defer client.Cs.Shutdown()
+
+	t.Run("missing proofHash returns 400", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		echo := mock.NewMockContext(ctrl)
+
+		request := &http.Request{}
+
+		echo.EXPECT().Request().Return(request).AnyTimes()
+
+		err := client.FindConsentRecord(echo, "", FindConsentRecordParams{})
+
+		if assert.Error(t, err) {
+			expected := "code=400, message=missing proofHash"
+			assert.Contains(t, err.Error(), expected)
+		}
+	})
+
+	t.Run("Unknown proofHash returns 404", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		echo := mock.NewMockContext(ctrl)
+
+		request := &http.Request{}
+
+		echo.EXPECT().Request().Return(request).AnyTimes()
+
+		err := client.FindConsentRecord(echo, "a", FindConsentRecordParams{})
+
+		if assert.Error(t, err) {
+			assert.Contains(t, err.Error(), pkg.ErrorNotFound.Error())
+		}
+	})
+
+	t.Run("Correct find", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		echo := mock.NewMockContext(ctrl)
+
+		request := &http.Request{}
+
+		echo.EXPECT().Request().Return(request).AnyTimes()
+		echo.EXPECT().JSON(200, gomock.Any())
+
+		tt := true
+		err := client.FindConsentRecord(echo, crq.Records[0].Hash, FindConsentRecordParams{Latest: &tt})
+
+		assert.NoError(t, err)
+	})
+
+	t.Run("find previous with latest flag", func(t *testing.T) {
+		crq2 := consentRuleForQuery()
+		crq2.ID = crq.ID
+		crq2.Records[0].PreviousHash = &crq.Records[0].Hash
+		if err := client.Cs.RecordConsent(context.Background(), []pkg.PatientConsent{crq2}); err != nil {
+			assert.Fail(t, err.Error())
+		}
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		echo := mock.NewMockContext(ctrl)
+
+		request := &http.Request{}
+
+		echo.EXPECT().Request().Return(request).AnyTimes()
+
+		tt := true
+		err := client.FindConsentRecord(echo, crq.Records[0].Hash, FindConsentRecordParams{Latest: &tt})
+
+		if assert.Error(t, err) {
+			assert.Contains(t, err.Error(), pkg.ErrorConsentRecordNotLatest.Error())
 		}
 	})
 }
@@ -819,7 +891,7 @@ func consentRuleForQuery() pkg.PatientConsent {
 				Resources: []pkg.Resource{
 					{ResourceType: "resource"},
 				},
-				Hash: "ejNYuhAQ",
+				Hash: random.String(8),
 			},
 		},
 	}

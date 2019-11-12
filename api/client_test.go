@@ -89,7 +89,7 @@ func TestHttpClient_RecordConsent(t *testing.T) {
 			}
 		})
 
-		err := client.RecordConsent(context.TODO(), []pkg.PatientConsent{consentRule()})
+		err := client.RecordConsent(context.TODO(), []pkg.PatientConsent{patientConsent()})
 
 		if err == nil {
 			t.Error("Expected error, got nothing")
@@ -235,7 +235,7 @@ func TestHttpClient_QueryConsentForActor(t *testing.T) {
 		}
 
 		if len(res) != 1 {
-			t.Errorf("Expected 1 consentRule, got %d", len(res))
+			t.Errorf("Expected 1 patientConsent, got %d", len(res))
 		}
 	})
 }
@@ -261,14 +261,14 @@ func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
 		}
 
 		if len(res) != 1 {
-			t.Errorf("Expected 1 consentRule, got %d", len(res))
+			t.Errorf("Expected 1 patientConsent, got %d", len(res))
 		}
 	})
 
 	t.Run("client returns error", func(t *testing.T) {
 		client := testClient(500, []byte("error"))
 
-		_, err := client.QueryConsent(context.TODO(),  &a, nil, &s)
+		_, err := client.QueryConsent(context.TODO(), &a, nil, &s)
 
 		if err == nil {
 			t.Error("Expected error, got nothing")
@@ -284,7 +284,7 @@ func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
 	t.Run("client returns invalid json", func(t *testing.T) {
 		client := testClient(200, []byte("{"))
 
-		_, err := client.QueryConsent(context.TODO(),  &a, nil, &s)
+		_, err := client.QueryConsent(context.TODO(), &a, nil, &s)
 
 		if err == nil {
 			t.Error("Expected error, got nothing")

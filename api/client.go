@@ -44,8 +44,8 @@ func (hb HttpClient) FindConsentRecordByHash(context context.Context, proofHash 
 
 func (hb HttpClient) QueryConsent(context context.Context, actor *string, custodian *string, subject *string) ([]pkg.PatientConsent, error) {
 	var (
-		rules      []pkg.PatientConsent
-		req 	   QueryConsentJSONRequestBody
+		rules []pkg.PatientConsent
+		req   QueryConsentJSONRequestBody
 	)
 
 	if actor != nil {

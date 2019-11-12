@@ -401,7 +401,7 @@ func (cs *ConsentStore) FindConsentRecordByHash(context context.Context, proofHa
 }
 
 // ErrorConsentRecordNotLatest is returned when the latest consent record for a chain is requested but given hash is not the latest
-var ErrorConsentRecordNotLatest = errors.New("consent record for given hash nis not the latest in the chain")
+var ErrorConsentRecordNotLatest = errors.New("consent record for given hash is not the latest in the chain")
 
 // ErrorNotFound is the same as Gorm.IsRecordNotFound
 var ErrorNotFound = errors.New("record not found")
@@ -409,17 +409,23 @@ var ErrorNotFound = errors.New("record not found")
 func (cs *ConsentStore) findConsentRecordByHashGrouped(context context.Context, proofHash string, record *ConsentRecord) error {
 	var id uint
 
-	rows, err := cs.Db.Debug().Where("uuid = ?", cs.Db.Table("consent_record").Select("uuid").Where("hash = ?", proofHash)).
+	// sub query broken
+	var cr ConsentRecord
+	if err := cs.Db.Debug().Where("hash = ?", proofHash).First(&cr).Error; err != nil {
+		return err
+	}
+
+	rows, err := cs.Db.Debug().Where("uuid = ?", cr.UUID).
 		Table("consent_record").
 		Select("id, hash").
 		Group("uuid").Having("max(version)").
 		Rows()
 
-	defer rows.Close()
-
 	if err != nil {
 		return err
 	}
+
+	defer rows.Close()
 
 	for rows.Next() {
 		var h string

@@ -21,12 +21,14 @@ package api
 import (
 	"github.com/labstack/gommon/random"
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
+	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 )
 
 func TestFromSimplifiedConsentRule(t *testing.T) {
-	t.Run("single consentRule converted", func(t *testing.T) {
-		scs, _ := FromPatientConsent([]pkg.PatientConsent{consentRule()})
+	t.Run("single patientConsent converted", func(t *testing.T) {
+		scs, _ := FromPatientConsent([]pkg.PatientConsent{patientConsent()})
 
 		if len(scs) != 1 {
 			t.Error("Expected rules to have 1 item")
@@ -35,30 +37,16 @@ func TestFromSimplifiedConsentRule(t *testing.T) {
 
 		sc := scs[0]
 
-		if sc.Subject != "subject" {
-			t.Error("Expected Subject to equal [subject]")
-		}
-
-		if sc.Custodian != "custodian" {
-			t.Error("Expected Custodian to equal [custodian]")
-		}
-
-		if sc.Actor != "actor" {
-			t.Error("Expected Actor to equal actor")
-		}
-
-		if len(sc.Resources) != 1 {
-			t.Error("Expected resources to have 1 item")
-			return
-		}
-
-		if sc.Resources[0] != "resource" {
-			t.Error("Expected Resource to equal [resource]")
-		}
+		assert.Equal(t, "patientConsentId", sc.Id)
+		assert.Equal(t, Identifier("subject"), sc.Subject)
+		assert.Equal(t, Identifier("custodian"), sc.Custodian)
+		assert.Equal(t, Identifier("actor"), sc.Actor)
+		assert.Len(t, sc.Resources, 1)
+		assert.Equal(t, "resource", sc.Resources[0])
 	})
 
 	t.Run("multiple actors gives error", func(t *testing.T) {
-		crs := []pkg.PatientConsent{consentRule(), consentRule()}
+		crs := []pkg.PatientConsent{patientConsent(), patientConsent()}
 		crs[1].Actor = "actor2"
 
 		_, err := FromPatientConsent(crs)
@@ -167,8 +155,21 @@ func TestCreateConsentRequest_ToPatientConsent(t *testing.T) {
 	})
 }
 
-func consentRule() pkg.PatientConsent {
+func TestFromConsentRecord(t *testing.T) {
+	t.Run("correct transform", func(t *testing.T) {
+		pc := FromConsentRecord(consentRecord())
+
+		assert.Equal(t, "PreviousHash", *pc.PreviousRecordHash)
+		assert.Equal(t, "Hash", pc.RecordHash)
+		assert.Equal(t, 2, *pc.Version)
+		assert.Equal(t, ValidTo("2001-09-12"), pc.ValidTo)
+		assert.Equal(t, ValidFrom("2001-09-11"), pc.ValidFrom)
+	})
+}
+
+func patientConsent() pkg.PatientConsent {
 	return pkg.PatientConsent{
+		ID:        "patientConsentId",
 		Subject:   "subject",
 		Custodian: "custodian",
 		Actor:     "actor",
@@ -178,6 +179,27 @@ func consentRule() pkg.PatientConsent {
 					{ResourceType: "resource"},
 				},
 			},
+		},
+	}
+}
+
+func consentRecord() pkg.ConsentRecord {
+	t1, _ := time.Parse("2006-01-02", "2001-09-11")
+	t2, _ := time.Parse("2006-01-02", "2001-09-12")
+
+	prevH := "PreviousHash"
+
+	return pkg.ConsentRecord{
+		ID:               1,
+		PatientConsentID: "PatientConsentID",
+		ValidFrom:        t1,
+		ValidTo:          t2,
+		Hash:             "Hash",
+		PreviousHash:     &prevH,
+		Version:          2,
+		UUID:             "UUID",
+		Resources: []pkg.Resource{
+			{ResourceType: "resource"},
 		},
 	}
 }

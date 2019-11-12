@@ -80,6 +80,31 @@ func TestConsentStore_RecordConsent(t *testing.T) {
 	})
 }
 
+func TestConsentStore_FindConsentRecord(t *testing.T) {
+	client := defaultConsentStore()
+	pc := patientConsent()
+	if err := client.RecordConsent(context.TODO(), pc); err != nil {
+		t.Fatal(err)
+	}
+	defer client.Shutdown()
+
+	t.Run("without latest flag", func(t *testing.T) {
+
+		cr, err := client.FindConsentRecordByHash(context.TODO(), pc[0].Records[0].Hash, false)
+
+		assert.NoError(t, err)
+		assert.Equal(t, 1, int(cr.Version))
+	})
+
+	t.Run("with latest flag", func(t *testing.T) {
+
+		cr, err := client.FindConsentRecordByHash(context.TODO(), pc[0].Records[0].Hash, true)
+
+		assert.NoError(t, err)
+		assert.Equal(t, 1, int(cr.Version))
+	})
+}
+
 func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 	client := defaultConsentStore()
 	defer client.Shutdown()
@@ -684,4 +709,29 @@ func TestConsentStore_DeleteConsentRecordByHash(t *testing.T) {
 
 		client.ConsentAuth(context.TODO(), "custodian", "subject", "actor", "resource", nil)
 	})
+}
+
+func patientConsent() []PatientConsent {
+	return []PatientConsent{
+		{
+			ID:        random.String(8),
+			Actor:     "actor",
+			Custodian: "custodian",
+			Subject:   "subject",
+
+			Records: []ConsentRecord{
+				{
+					ValidFrom: time.Now().Add(time.Hour * -24),
+					ValidTo:   time.Now().Add(time.Hour * +12),
+					Hash:      random.String(8),
+					Resources: []Resource{
+						{
+							ResourceType: "resource",
+						},
+					},
+					UUID: uuid.NewV4().String(),
+				},
+			},
+		},
+	}
 }
