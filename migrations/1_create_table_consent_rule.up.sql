@@ -5,7 +5,8 @@ CREATE TABLE patient_consent (
     actor VARCHAR(255) NOT NULL
 );
 
-CREATE UNIQUE INDEX uniq_patient_consent ON patient_consent(subject, custodian, actor);
+CREATE UNIQUE INDEX uniq_patient_consent ON patient_consent(actor, subject, custodian);
+CREATE INDEX idx_patient_consent_custodian ON patient_consent(custodian);
 
 CREATE TABLE consent_record (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

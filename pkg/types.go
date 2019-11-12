@@ -54,14 +54,17 @@ func (pc PatientConsent) Resources() []Resource {
 }
 
 // ConsentRecord represents the individual records/attachments for a PatientConsent
+// Changes to ConsentRecords are chained by PreviousHash pointing to Hash. All member of the chain can be found by the UUID
+// The UUID remains internal
 type ConsentRecord struct {
 	ID               uint `gorm:"AUTO_INCREMENT"`
 	PatientConsentID string
 	ValidFrom        time.Time `gorm:"not null"`
 	ValidTo          time.Time `gorm:"not null"`
 	Hash             string    `gorm:"not null"`
-	Version 		 uint	   `gorm:"DEFAULT:1"`
-	UUID 			 string    `gorm:"column:uuid"`
+	PreviousHash     *string
+	Version          uint   `gorm:"DEFAULT:1"`
+	UUID             string `gorm:"column:uuid;not null"`
 	Resources        []Resource
 }
 

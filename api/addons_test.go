@@ -76,19 +76,18 @@ func TestFromSimplifiedConsentRule(t *testing.T) {
 }
 
 func TestCreateConsentRequest_ToPatientConsent(t *testing.T) {
-	hash := random.String(8)
+	version := 1
 	sc := CreateConsentRequest{
-		Actor:      "actor",
-		Custodian:  "custodian",
-		Subject:    "subject",
-		Records: []ConsentRecord {
+		Actor:     "actor",
+		Custodian: "custodian",
+		Subject:   "subject",
+		Records: []ConsentRecord{
 			{
-				RecordHash: &hash,
+				RecordHash: random.String(8),
 				Resources:  []string{"resource"},
 				ValidFrom:  "2019-01-01",
 				ValidTo:    "2020-01-01",
-				Version: 1,
-				Uuid: "uuid",
+				Version:    &version,
 			},
 		},
 	}
@@ -116,7 +115,7 @@ func TestCreateConsentRequest_ToPatientConsent(t *testing.T) {
 			return
 		}
 
-		if pc.Records[0].Hash != *sc.Records[0].RecordHash {
+		if pc.Records[0].Hash != sc.Records[0].RecordHash {
 			t.Error("Expected Hash to match")
 			return
 		}

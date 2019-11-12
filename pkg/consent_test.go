@@ -20,6 +20,8 @@ package pkg
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/labstack/gommon/random"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
@@ -67,7 +69,9 @@ func TestConsentStore_RecordConsent(t *testing.T) {
 		err := client.RecordConsent(context.TODO(), rules)
 
 		if assert.NoError(t, err) {
-			pcs, err := client.QueryConsentForActorAndSubject(context.TODO(), "actor", "subject")
+			a := "actor"
+			s := "subject"
+			pcs, err := client.QueryConsent(context.TODO(), &a, nil, &s)
 
 			if assert.NoError(t, err) {
 				assert.Equal(t, uint(1), pcs[0].Records[0].Version)
@@ -141,8 +145,6 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 								ResourceType: "resource",
 							},
 						},
-						UUID: uuid.NewV4().String(),
-						Version: 1,
 					},
 				},
 			},
@@ -154,13 +156,14 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 
 		// Update the validTo of the record.
 		rules[0].Records[0].ValidTo = time.Now()
-		rules[0].Records[0].Hash = "234caefh"
-		rules[0].Records[0].Version = 2
+		hcp := rules[0].Records[0].Hash
+		rules[0].Records[0].PreviousHash = &hcp
+		rules[0].Records[0].Hash = "234caefh_2"
 
 		err = client.RecordConsent(context.TODO(), rules)
 		if assert.NoError(t, err) {
-
-			consent, err := client.QueryConsentForActor(context.TODO(), "actor333", "*")
+			a := "actor333"
+			consent, err := client.QueryConsent(context.TODO(), &a, nil, nil)
 			if assert.NoError(t, err) {
 
 				assert.Len(t, consent, 1)
@@ -168,6 +171,79 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 				assert.Len(t, consent[0].Records[0].Resources, 1)
 				assert.Equal(t, uint(2), consent[0].Records[0].Version)
 			}
+		}
+	})
+
+	t.Run("Updating consent record not latest in chain", func(t *testing.T) {
+		r := random.String(8)
+		rules := []PatientConsent{
+			{
+				ID:        random.String(8),
+				Actor:     "actor3333",
+				Custodian: "custodian",
+				Subject:   "subject",
+
+				Records: []ConsentRecord{
+					{
+						ValidFrom: time.Now().Add(time.Hour * -24),
+						ValidTo:   time.Now().Add(time.Hour * +12),
+						Hash:      r,
+						Resources: []Resource{
+							{
+								ResourceType: "resource",
+							},
+						},
+					},
+				},
+			},
+		}
+		err := client.RecordConsent(context.TODO(), rules)
+		if err != nil {
+			t.Errorf("Expected no error, got [%v]", err)
+		}
+
+		// Update the validTo of the record.
+		rules[0].Records[0].ValidTo = time.Now()
+		rules[0].Records[0].PreviousHash = &r
+		rules[0].Records[0].Hash = fmt.Sprintf("%s_2", r)
+
+		err = client.RecordConsent(context.TODO(), rules)
+		if assert.NoError(t, err) {
+			// update again
+			err = client.RecordConsent(context.TODO(), rules)
+			assert.Error(t, err) // unique constraint violation
+		}
+	})
+
+	t.Run("Updating unknown consent", func(t *testing.T) {
+		r := random.String(8)
+
+		rules := []PatientConsent{
+			{
+				ID:        random.String(8),
+				Actor:     "actor123",
+				Custodian: "custodian",
+				Subject:   "subject",
+
+				Records: []ConsentRecord{
+					{
+						ValidFrom:    time.Now().Add(time.Hour * -24),
+						ValidTo:      time.Now().Add(time.Hour * +12),
+						Hash:         r,
+						PreviousHash: &r,
+						Resources: []Resource{
+							{
+								ResourceType: "resource",
+							},
+						},
+					},
+				},
+			},
+		}
+		err := client.RecordConsent(context.TODO(), rules)
+
+		if assert.Error(t, err) {
+			assert.True(t, errors.Is(err, ErrorNotFound))
 		}
 	})
 
@@ -313,7 +389,8 @@ func TestConsentStore_QueryConsentForActor(t *testing.T) {
 	client.RecordConsent(context.TODO(), rules)
 
 	t.Run("Recorded consent can be found", func(t *testing.T) {
-		consent, err := client.QueryConsentForActor(context.TODO(), "actor", "*")
+		a := "actor"
+		consent, err := client.QueryConsent(context.TODO(), &a, nil, nil)
 
 		if err != nil {
 			t.Errorf("Expected no error, got [%v]", err)
@@ -325,7 +402,8 @@ func TestConsentStore_QueryConsentForActor(t *testing.T) {
 	})
 
 	t.Run("Non-recorded is not found", func(t *testing.T) {
-		consent, err := client.QueryConsentForActor(context.TODO(), "actor3", "*")
+		a := "actor3"
+		consent, err := client.QueryConsent(context.TODO(), &a, nil, nil)
 
 		if err != nil {
 			t.Errorf("Expected no error, got [%v]", err)
@@ -383,7 +461,9 @@ func TestConsentStore_QueryConsentForActorAndSubject(t *testing.T) {
 	client.RecordConsent(context.TODO(), rules)
 
 	t.Run("Recorded consent can be found", func(t *testing.T) {
-		consent, err := client.QueryConsentForActorAndSubject(context.TODO(), "actor", "subject")
+		a := "actor"
+		s := "subject"
+		consent, err := client.QueryConsent(context.TODO(), &a, nil, &s)
 
 		if err != nil {
 			t.Errorf("Expected no error, got [%v]", err)
@@ -395,7 +475,9 @@ func TestConsentStore_QueryConsentForActorAndSubject(t *testing.T) {
 	})
 
 	t.Run("Non-recorded is not found", func(t *testing.T) {
-		consent, err := client.QueryConsentForActorAndSubject(context.TODO(), "actor", "subject2")
+		a := "actor"
+		s := "subject2"
+		consent, err := client.QueryConsent(context.TODO(), &a, nil, &s)
 
 		if err != nil {
 			t.Errorf("Expected no error, got [%v]", err)
@@ -530,7 +612,7 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 
 		if assert.NoError(t, err) {
 			assert.Len(t, consent, 2)
-			assert.Equal(t, 3, len(consent[0].Records) + len(consent[1].Records))
+			assert.Equal(t, 3, len(consent[0].Records)+len(consent[1].Records))
 			assert.Len(t, consent[0].Records[0].Resources, 1)
 		}
 

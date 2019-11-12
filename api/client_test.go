@@ -227,8 +227,8 @@ func TestHttpClient_QueryConsentForActor(t *testing.T) {
 			},
 		}})
 		client := testClient(200, resp)
-
-		res, err := client.QueryConsentForActor(context.TODO(), "actor", "test")
+		a := "actor"
+		res, err := client.QueryConsent(context.TODO(), &a, nil, nil)
 
 		if err != nil {
 			t.Errorf("Expected no error, got [%s]", err.Error())
@@ -241,6 +241,9 @@ func TestHttpClient_QueryConsentForActor(t *testing.T) {
 }
 
 func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
+	a := "actor"
+	s := "urn:subject"
+
 	t.Run("200", func(t *testing.T) {
 		resp, _ := json.Marshal(ConsentQueryResponse{Results: []SimplifiedConsent{
 			{
@@ -251,8 +254,7 @@ func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
 			},
 		}})
 		client := testClient(200, resp)
-
-		res, err := client.QueryConsentForActorAndSubject(context.TODO(), "actor", "urn:subject")
+		res, err := client.QueryConsent(context.TODO(), &a, nil, &s)
 
 		if err != nil {
 			t.Errorf("Expected no error, got [%s]", err.Error())
@@ -266,7 +268,7 @@ func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
 	t.Run("client returns error", func(t *testing.T) {
 		client := testClient(500, []byte("error"))
 
-		_, err := client.QueryConsentForActorAndSubject(context.TODO(), "actor", "urn:subject")
+		_, err := client.QueryConsent(context.TODO(),  &a, nil, &s)
 
 		if err == nil {
 			t.Error("Expected error, got nothing")
@@ -282,7 +284,7 @@ func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
 	t.Run("client returns invalid json", func(t *testing.T) {
 		client := testClient(200, []byte("{"))
 
-		_, err := client.QueryConsentForActorAndSubject(context.TODO(), "actor", "urn:subject")
+		_, err := client.QueryConsent(context.TODO(),  &a, nil, &s)
 
 		if err == nil {
 			t.Error("Expected error, got nothing")
@@ -307,7 +309,7 @@ func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
 			}
 		})
 
-		_, err := client.QueryConsentForActorAndSubject(context.TODO(), "actor", "urn:subject")
+		_, err := client.QueryConsent(context.TODO(), &a, nil, &s)
 
 		if err == nil {
 			t.Error("Expected error, got nothing")

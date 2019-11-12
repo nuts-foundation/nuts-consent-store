@@ -41,7 +41,7 @@ func (sc CreateConsentRequest) ToPatientConsent() (pkg.PatientConsent, error) {
 		Subject:   string(sc.Subject),
 		Custodian: string(sc.Custodian),
 		Actor:     string(sc.Actor),
-		Records: records,
+		Records:   records,
 	}, nil
 }
 
@@ -65,7 +65,7 @@ func (cr ConsentRecord) ToConsentRecord() (pkg.ConsentRecord, error) {
 	return pkg.ConsentRecord{
 		ValidFrom: validFrom,
 		ValidTo:   validTo,
-		Hash:      *cr.RecordHash,
+		Hash:      cr.RecordHash,
 		Resources: resources,
 	}, nil
 }
@@ -104,4 +104,23 @@ func FromPatientConsent(patientConsent []pkg.PatientConsent) ([]SimplifiedConsen
 	}
 
 	return consent, nil
+}
+
+// FromConsentRecord converts the DB type to api type
+func FromConsentRecord(consentRecord pkg.ConsentRecord) ConsentRecord {
+	var resources []string
+	for _, r2 := range consentRecord.Resources {
+		resources = append(resources, r2.ResourceType)
+	}
+
+	version := int(consentRecord.Version)
+
+	return ConsentRecord{
+		PreviousRecordHash: consentRecord.PreviousHash,
+		RecordHash:         consentRecord.Hash,
+		Resources:          resources,
+		ValidFrom:          ValidFrom(consentRecord.ValidFrom.Format("2006-01-02")),
+		ValidTo:            ValidTo(consentRecord.ValidTo.Format("2006-01-02")),
+		Version:            &version,
+	}
 }

@@ -35,6 +35,10 @@ var siws = []*ServerInterfaceWrapper{
 	serverInterfaceWrapper(nil), serverInterfaceWrapper(errors.New("Server error")),
 }
 
+func (t *testServer) FindConsentRecord(ctx echo.Context, proofHash string, params FindConsentRecordParams) error {
+	return t.err
+}
+
 func (t *testServer) DeleteConsent(ctx echo.Context, proofHash string) error {
 	return t.err
 }
@@ -108,6 +112,7 @@ func TestRegisterHandlers(t *testing.T) {
 		echo.EXPECT().POST("/consent", gomock.Any())
 		echo.EXPECT().POST("/consent/check", gomock.Any())
 		echo.EXPECT().POST("/consent/query", gomock.Any())
+		echo.EXPECT().GET("/consent/:proofHash", gomock.Any())
 		echo.EXPECT().DELETE("/consent/:proofHash", gomock.Any())
 
 		RegisterHandlers(echo, &testServer{})

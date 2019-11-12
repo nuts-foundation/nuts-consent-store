@@ -91,6 +91,38 @@ paths:
               schema:
                 type: string
   /consent/{proofHash}:
+    get:
+      summary: "Retrieve a consent record by hash, use latest query param to only return a value if the given consent record is the latest in the chain."
+      operationId: findConsentRecord
+      tags:
+        - consent
+      parameters:
+        - name: proofHash
+          in: path
+          description: "the hash of the consent proof, acts as an identifier for the consent record"
+          required: true
+          schema:
+            type: string
+        - name: latest
+          in: query
+          description: "flag to indicate to only return a value when the given record is the latest in the chain"
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: "Consent record found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsentRecord"
+        '404':
+          description: "not found because hash doesn't exist or it is not the latest in the chain when the latest flag is used"
+          content:
+            text/plain:
+              example: "Record not found with hash X"
+              schema:
+                type: string
     delete:
       summary: "Remove a consent record for a C-S-A combination."
       operationId: deleteConsent
@@ -148,13 +180,13 @@ components:
           example:
             "Only measurements are allowed, SOEP not"
     ConsentQueryRequest:
-      description: "Query can either be a full text search string like % or a subject identifier."
-      required:
-        - query
+      description: "Find consent records for any combination of actor, custodian and subject."
       properties:
         custodian:
           $ref: "#/components/schemas/Identifier"
         actor:
+          $ref: "#/components/schemas/Identifier"
+        subject:
           $ref: "#/components/schemas/Identifier"
         page:
           $ref: "#/components/schemas/PageDefinition"
@@ -162,14 +194,6 @@ components:
           type: string
           format: date
           description: "Date at which consent has to be valid. Optional, when empty, Now() is used"
-        query:
-          type: string
-          description: >
-            Free text search for finding subjects
-            or
-            Generic identifier used for representing BSN, agbcode, etc.
-            It's always constructed as an URN followed by a double colon (:) and then the identifying value of the given URN
-          example: "urn:oid:2.16.840.1.113883.2.4.6.1:00000007, Mr Janse%"
     ConsentQueryResponse:
       required:
         - page
@@ -210,15 +234,11 @@ components:
     ConsentRecord:
       description: "consent record corresponding with a single attachment in the distrubuted consent record."
       required:
-        - uuid
         - resources
         - validFrom
         - validTo
-        - version
+        - recordHash
       properties:
-        uuid:
-          type: string
-          description: "uuid, originally taken from the event that started the creation"
         resources:
           description: "Array of fhir resources"
           type: array
@@ -230,10 +250,13 @@ components:
           $ref: "#/components/schemas/ValidTo"
         recordHash:
           type: string
-          description: "the unique hash for the consent record proving consent has been given"
+          description: "the unique hash for the consent record proving consent has been given, can be seen as the unique ID for a consentRecord"
+        previousRecordHash:
+          type: string
+          description: "the hash of the previous version of the hash"
         version:
           type: integer
-          description: "the version number for the record (given the same uuid), starts at 1"
+          description: "the version number for the record, starts at 1, equals the length of the chain when following the previousRecordHash"
     SimplifiedConsent:
       description: "Simplified consent record"
       required:

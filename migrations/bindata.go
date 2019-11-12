@@ -141,7 +141,7 @@ func _2_alter_consent_record_add_version_uuidDownSql() (*asset, error) {
 	return a, nil
 }
 
-var __2_alter_consent_record_add_version_uuidUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x8e\xb1\x0e\x82\x30\x18\x84\x77\x9e\xe2\x46\x48\x58\x34\x61\x62\xfa\xa5\xbf\x4a\x52\x4b\x6c\x5a\xe3\x46\x0c\x30\x74\x29\x5a\xa8\xcf\x6f\x34\x76\x71\x72\xbc\x4b\xee\xfb\x8e\xa4\x61\x0d\x43\x3b\xc9\x18\x66\xbf\x4c\x7e\xed\xc3\x34\xcc\x61\x04\x09\x81\xa6\x93\xf6\xa4\xf0\x9c\xc2\xe2\x66\x8f\x56\x19\x3e\xb0\x86\xe0\x3d\x59\x69\xb0\xa9\xb3\xff\x00\x31\xba\x11\x17\xd2\xcd\x91\x74\xbe\xad\xaa\xa2\xce\xb2\x46\x33\x19\x86\x55\xed\xd9\x32\x5a\x25\xf8\x8a\xe8\xdd\xe3\x3b\xef\x93\xb4\x53\x3f\xe0\xfc\x7e\x5b\xdd\x3b\xa6\xda\x8d\xe5\xc7\x50\xa6\xa3\x45\xfd\x0a\x00\x00\xff\xff\xdb\x75\xe2\x63\xd8\x00\x00\x00")
+var __2_alter_consent_record_add_version_uuidUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x8f\x31\x8b\x84\x30\x10\x85\x7b\x7f\xc5\x94\x0a\x36\x77\x60\x65\x35\x67\xe6\xee\x84\x6c\x64\x43\xb2\x6c\x27\xa2\x01\xd3\x24\x6e\x62\xfc\xfd\xcb\x2e\x6b\x63\x65\x39\x03\xef\x7b\xdf\x43\xae\x48\x82\xc2\x1f\x4e\x30\x7a\x17\x8d\x5b\xfb\x60\x46\x1f\x26\x40\xc6\xa0\xe9\xb8\xbe\x08\xd8\x4c\x88\xd6\x3b\x68\x85\xa2\x3f\x92\xc0\xe8\x17\x35\x57\xf0\x55\x67\xe7\x00\x29\xd9\x09\x6e\x28\x9b\x7f\x94\xf9\x77\x55\x15\x67\x83\x4b\x30\x9b\xf5\x29\xf6\xf3\x10\xe7\x03\x21\x6b\x24\xa1\x22\xd0\xa2\xbd\x6a\x82\x56\x30\xba\x43\x72\xf6\xf1\xe1\xf4\xbb\x76\x27\x0e\x0d\xf9\x32\xac\xf6\x75\xee\x6f\x3b\x95\x6f\xc7\x72\x9f\x5a\xd4\xcf\x00\x00\x00\xff\xff\x52\x46\xc5\x47\x1a\x01\x00\x00")
 
 func _2_alter_consent_record_add_version_uuidUpSqlBytes() ([]byte, error) {
 	return bindataRead(
@@ -156,7 +156,7 @@ func _2_alter_consent_record_add_version_uuidUpSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "2_alter_consent_record_add_version_uuid.up.sql", size: 216, mode: os.FileMode(420), modTime: time.Unix(1573476811, 0)}
+	info := bindataFileInfo{name: "2_alter_consent_record_add_version_uuid.up.sql", size: 282, mode: os.FileMode(420), modTime: time.Unix(1573546518, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -176,7 +176,7 @@ func bindataGo() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "bindata.go", size: 12288, mode: os.FileMode(420), modTime: time.Unix(1573478310, 0)}
+	info := bindataFileInfo{name: "bindata.go", size: 12288, mode: os.FileMode(420), modTime: time.Unix(1573546560, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -237,7 +237,7 @@ var _bindata = map[string]func() (*asset, error){
 	"1_create_table_consent_rule.up.sql":               _1_create_table_consent_ruleUpSql,
 	"2_alter_consent_record_add_version_uuid.down.sql": _2_alter_consent_record_add_version_uuidDownSql,
 	"2_alter_consent_record_add_version_uuid.up.sql":   _2_alter_consent_record_add_version_uuidUpSql,
-	"bindata.go":                                       bindataGo,
+	"bindata.go": bindataGo,
 }
 
 // AssetDir returns the file names below a certain
@@ -285,7 +285,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1_create_table_consent_rule.up.sql":               &bintree{_1_create_table_consent_ruleUpSql, map[string]*bintree{}},
 	"2_alter_consent_record_add_version_uuid.down.sql": &bintree{_2_alter_consent_record_add_version_uuidDownSql, map[string]*bintree{}},
 	"2_alter_consent_record_add_version_uuid.up.sql":   &bintree{_2_alter_consent_record_add_version_uuidUpSql, map[string]*bintree{}},
-	"bindata.go":                                       &bintree{bindataGo, map[string]*bintree{}},
+	"bindata.go": &bintree{bindataGo, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

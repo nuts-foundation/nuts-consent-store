@@ -24,7 +24,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/labstack/gommon/random"
-	uuid "github.com/satori/go.uuid"
+	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -426,7 +426,7 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 		echo := mock.NewMockContext(ctrl)
 
 		consent := testConsent()
-		consent.Records[0].RecordHash = nil
+		consent.Records[0].RecordHash = ""
 
 		json, _ := json.Marshal(consent)
 		request := &http.Request{
@@ -568,7 +568,6 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 		echo := mock.NewMockContext(ctrl)
 
 		query := consentQuery()
-		query.Query = "%"
 		json, _ := json.Marshal(query)
 		request := &http.Request{
 			Body: ioutil.NopCloser(bytes.NewReader(json)),
@@ -580,7 +579,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 			Results: []SimplifiedConsent{
 				{
 					Id:        "ejNYuhAQ",
-					Subject:   Identifier("urn:subject"),
+					Subject:   Identifier("subject"),
 					Custodian: Identifier("custodian"),
 					Actor:     Identifier("actor"),
 					Resources: []string{
@@ -595,9 +594,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 
 		err := client.QueryConsent(echo)
 
-		if err != nil {
-			t.Errorf("Expected no error, got [%v]", err)
-		}
+		assert.NoError(t, err)
 	})
 
 	t.Run("API call returns 200 with results for subject search", func(t *testing.T) {
@@ -606,7 +603,8 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 		echo := mock.NewMockContext(ctrl)
 
 		query := consentQuery()
-		query.Query = "urn:subject"
+		subj := Identifier("subject")
+		query.Subject = &subj
 		json, _ := json.Marshal(query)
 		request := &http.Request{
 			Body: ioutil.NopCloser(bytes.NewReader(json)),
@@ -618,7 +616,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 			Results: []SimplifiedConsent{
 				{
 					Id:        "ejNYuhAQ",
-					Subject:   Identifier("urn:subject"),
+					Subject:   Identifier("subject"),
 					Custodian: Identifier("custodian"),
 					Actor:     Identifier("actor"),
 					Resources: []string{
@@ -687,33 +685,6 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 			t.Errorf("Expected error [%s], got: [%v]", expected, err)
 		}
 	})
-
-	t.Run("API call returns 400 for missing query", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-		echo := mock.NewMockContext(ctrl)
-
-		consent := consentQuery()
-		consent.Query = ""
-
-		json, _ := json.Marshal(consent)
-		request := &http.Request{
-			Body: ioutil.NopCloser(bytes.NewReader(json)),
-		}
-
-		echo.EXPECT().Request().Return(request).AnyTimes()
-
-		err := client.QueryConsent(echo)
-
-		if err == nil {
-			t.Error("Expected error got nothing")
-		}
-
-		expected := "code=400, message=missing query in queryRequest"
-		if !strings.Contains(err.Error(), expected) {
-			t.Errorf("Expected error [%s], got: [%v]", expected, err)
-		}
-	})
 }
 
 func TestDefaultConsentStore_DeleteConsent(t *testing.T) {
@@ -754,13 +725,11 @@ func TestDefaultConsentStore_DeleteConsent(t *testing.T) {
 
 		err := client.DeleteConsent(echo, "a")
 
-		if err == nil {
-			t.Error("Expected error, got nothing", err)
-		}
-
-		expected := "code=404, message=no ConsentRecord found for given hash"
-		if !strings.Contains(err.Error(), expected) {
-			t.Errorf("Expected error [%s], got: [%s]", expected, err.Error())
+		if assert.Error(t, err) {
+			expected := "code=404, message=record not found"
+			if !strings.Contains(err.Error(), expected) {
+				t.Errorf("Expected error [%s], got: [%s]", expected, err.Error())
+			}
 		}
 	})
 
@@ -783,20 +752,17 @@ func TestDefaultConsentStore_DeleteConsent(t *testing.T) {
 }
 
 func testConsent() CreateConsentRequest {
-	hash := random.String(8)
 	return CreateConsentRequest{
-		Id:         random.String(8),
-		Actor:      Identifier("actor"),
-		Custodian:  Identifier("custodian"),
-		Subject:    Identifier("urn:subject"),
+		Id:        random.String(8),
+		Actor:     Identifier("actor"),
+		Custodian: Identifier("custodian"),
+		Subject:   Identifier("subject"),
 		Records: []ConsentRecord{
 			{
-				RecordHash: &hash,
+				RecordHash: random.String(8),
 				Resources:  []string{"resource"},
 				ValidFrom:  ValidFrom("2019-01-01"),
 				ValidTo:    ValidTo("2030-01-01"),
-				Uuid: uuid.NewV4().String(),
-				Version: 1,
 			},
 		},
 	}
@@ -804,7 +770,7 @@ func testConsent() CreateConsentRequest {
 
 func consentCheckRequest() ConsentCheckRequest {
 	return ConsentCheckRequest{
-		Subject:      Identifier("urn:subject"),
+		Subject:      Identifier("subject"),
 		Custodian:    Identifier("custodian"),
 		Actor:        Identifier("actor"),
 		ResourceType: "resource",
@@ -813,9 +779,10 @@ func consentCheckRequest() ConsentCheckRequest {
 
 func consentQuery() QueryConsentJSONRequestBody {
 	actor := Identifier("actor")
+	subject := Identifier("subject")
 	return QueryConsentJSONRequestBody{
-		Actor: &actor,
-		Query: "subject",
+		Actor:   &actor,
+		Subject: &subject,
 	}
 }
 
@@ -842,7 +809,7 @@ func defaultConsentStore() ApiWrapper {
 func consentRuleForQuery() pkg.PatientConsent {
 	return pkg.PatientConsent{
 		ID:        random.String(8),
-		Subject:   "urn:subject",
+		Subject:   "subject",
 		Custodian: "custodian",
 		Actor:     "actor",
 		Records: []pkg.ConsentRecord{

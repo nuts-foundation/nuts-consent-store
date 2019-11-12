@@ -20,6 +20,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
@@ -67,12 +68,10 @@ func (w *ApiWrapper) CreateConsent(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, "missing resources in one or more records within createRequest")
 		}
 
-		if r.RecordHash == nil {
+		if len(r.RecordHash) == 0 {
 			return echo.NewHTTPError(http.StatusBadRequest, "missing recordHash in one or more records within createRequest")
 		}
 	}
-
-
 
 	c, err := createRequest.ToPatientConsent()
 
@@ -143,22 +142,50 @@ func (w *ApiWrapper) CheckConsent(ctx echo.Context) error {
 	return ctx.JSON(200, checkResponse)
 }
 
+var ErrorMissingHash = errors.New("missing proofHash")
+
 // DeleteConsent deletes the consentRecord for a given proofHash
 func (w *ApiWrapper) DeleteConsent(ctx echo.Context, proofHash string) error {
 	if len(proofHash) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "missing proofHash")
+		return echo.NewHTTPError(http.StatusBadRequest, ErrorMissingHash)
 	}
 
 	// delete record, if it doesn't exist an error is returned
 	if f, err := w.Cs.DeleteConsentRecordByHash(ctx.Request().Context(), proofHash); err != nil || !f {
 		if !f {
-			return echo.NewHTTPError(http.StatusNotFound, "no ConsentRecord found for given hash")
+			return echo.NewHTTPError(http.StatusNotFound, err)
 		}
 
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
 	return ctx.NoContent(202)
+}
+
+func (w *ApiWrapper) FindConsentRecord(ctx echo.Context, proofHash string, params FindConsentRecordParams) error {
+	if len(proofHash) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, ErrorMissingHash)
+	}
+
+	var (
+		latest bool
+		record pkg.ConsentRecord
+		err    error
+	)
+
+	if params.Latest != nil {
+		latest = *params.Latest
+	}
+
+	if record, err = w.Cs.FindConsentRecordByHash(ctx.Request().Context(), proofHash, latest); err != nil {
+		if errors.Is(err, pkg.ErrorNotFound) || errors.Is(err, pkg.ErrorConsentRecordNotLatest) {
+			return echo.NewHTTPError(http.StatusNotFound, err)
+		}
+
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	return ctx.JSON(200, FromConsentRecord(record))
 }
 
 func (w *ApiWrapper) QueryConsent(ctx echo.Context) error {
@@ -170,7 +197,7 @@ func (w *ApiWrapper) QueryConsent(ctx echo.Context) error {
 	var checkRequest = &ConsentQueryRequest{}
 	err = json.Unmarshal(buf, checkRequest)
 	var (
-		actor, custodian *string
+		actor, custodian, subject *string
 	)
 
 	if checkRequest.Actor != nil && len(*checkRequest.Actor) > 0 {
@@ -183,17 +210,18 @@ func (w *ApiWrapper) QueryConsent(ctx echo.Context) error {
 		custodian = &custodianString
 	}
 
-	if len(checkRequest.Query) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "missing query in queryRequest")
-	}
-
 	var rules []pkg.PatientConsent
 
 	if actor == nil && custodian == nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "missing actor or custodian in queryRequest")
 	}
 
-	rules, err = w.Cs.QueryConsent(ctx.Request().Context(), actor, custodian, &checkRequest.Query)
+	if checkRequest.Subject != nil {
+		s := string(*checkRequest.Subject)
+		subject = &s
+	}
+
+	rules, err = w.Cs.QueryConsent(ctx.Request().Context(), actor, custodian, subject)
 
 	if err != nil {
 		return err
