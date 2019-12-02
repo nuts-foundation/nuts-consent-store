@@ -23,13 +23,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/labstack/gommon/random"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/labstack/gommon/random"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/golang/mock/gomock"
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
@@ -579,10 +580,10 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 			TotalResults: 1,
 			Results: []SimplifiedConsent{
 				{
-					Id:        crq.ID,
-					Subject:   Identifier("subject"),
-					Custodian: Identifier("custodian"),
-					Actor:     Identifier("actor"),
+					Id:         crq.ID,
+					Subject:    Identifier("subject"),
+					Custodian:  Identifier("custodian"),
+					Actor:      Identifier("actor"),
 					RecordHash: &crq.Records[0].Hash,
 					Resources: []string{
 						"resource",
@@ -592,6 +593,31 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 				},
 			},
 			Page: PageDefinition{},
+		})
+
+		err := client.QueryConsent(echo)
+
+		assert.NoError(t, err)
+	})
+
+	t.Run("API call returns 200 without results in time frame", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		echo := mock.NewMockContext(ctrl)
+
+		query := consentQuery()
+		tt := time.Now().Add(time.Hour * 25)
+		query.ValidAt = &tt
+		json, _ := json.Marshal(query)
+		request := &http.Request{
+			Body: ioutil.NopCloser(bytes.NewReader(json)),
+		}
+
+		echo.EXPECT().Request().Return(request).AnyTimes()
+		echo.EXPECT().JSON(200, ConsentQueryResponse{
+			TotalResults: 0,
+			Results:      nil,
+			Page:         PageDefinition{},
 		})
 
 		err := client.QueryConsent(echo)
@@ -617,10 +643,10 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 			TotalResults: 1,
 			Results: []SimplifiedConsent{
 				{
-					Id:        crq.ID,
-					Subject:   Identifier("subject"),
-					Custodian: Identifier("custodian"),
-					Actor:     Identifier("actor"),
+					Id:         crq.ID,
+					Subject:    Identifier("subject"),
+					Custodian:  Identifier("custodian"),
+					Actor:      Identifier("actor"),
 					RecordHash: &crq.Records[0].Hash,
 					Resources: []string{
 						"resource",

@@ -22,13 +22,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/nuts-foundation/nuts-consent-store/pkg"
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/nuts-foundation/nuts-consent-store/pkg"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
 // RoundTripFunc
@@ -241,7 +242,7 @@ func TestHttpClient_FindConsentRecordByHash(t *testing.T) {
 	t.Run("200", func(t *testing.T) {
 		resp, _ := json.Marshal(FromConsentRecord(consentRecord()))
 		client := testClient(200, resp)
-		res, err := client.FindConsentRecordByHash(context.TODO(),"hash", false)
+		res, err := client.FindConsentRecordByHash(context.TODO(), "hash", false)
 
 		if assert.NoError(t, err) {
 			assert.Equal(t, "Hash", res.Hash)
@@ -272,6 +273,19 @@ func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
 		if len(res) != 1 {
 			t.Errorf("Expected 1 patientConsent, got %d", len(res))
 		}
+	})
+
+	t.Run("200 without results in time frame", func(t *testing.T) {
+		resp, _ := json.Marshal(ConsentQueryResponse{Results: []SimplifiedConsent{}})
+		client := testClient(200, resp)
+		tt := time.Now().Add(time.Hour)
+		res, err := client.QueryConsent(context.TODO(), &a, nil, &s, &tt)
+
+		if err != nil {
+			t.Fatalf("Expected no error, got [%s]", err.Error())
+		}
+
+		assert.Len(t, res, 0)
 	})
 
 	t.Run("client returns error", func(t *testing.T) {
