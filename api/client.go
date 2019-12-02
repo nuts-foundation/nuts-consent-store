@@ -38,8 +38,99 @@ type HttpClient struct {
 	customClient  *http.Client
 }
 
+// FindConsentRecordByHash returns a ConsentRecord based on a hash. A latest flag can be added to indicate a record may only be returned if it's the latest in the chain.
+func (hb HttpClient) FindConsentRecordByHash(context context.Context, proofHash string, latest bool) (pkg.ConsentRecord, error) {
+
+	var consentRecord pkg.ConsentRecord
+
+	if len(proofHash) == 0 {
+		return consentRecord, ErrorMissingHash
+	}
+
+	result, err := hb.client().FindConsentRecord(context, proofHash, &FindConsentRecordParams{Latest: &latest})
+	if err != nil {
+		err = fmt.Errorf("error while finding consent record in consent-store: %w", err)
+		hb.Logger.Error(err)
+		return consentRecord, err
+	}
+
+	body, err := hb.checkResponse(result)
+	if err != nil {
+		return consentRecord, err
+	}
+
+	var cr ConsentRecord
+	if err := json.Unmarshal(body, &cr); err != nil {
+		err = fmt.Errorf("could not unmarshal response body, reason: %w", err)
+		hb.Logger.Error(err)
+		return consentRecord, err
+	}
+
+	return cr.ToConsentRecord()
+}
+
+// QueryConsent returns PatientConsent records based on a combination of actor, custodian and subject. The only constraint is that either actor or custodian must not be empty.
 func (hb HttpClient) QueryConsent(context context.Context, actor *string, custodian *string, subject *string) ([]pkg.PatientConsent, error) {
-	panic("implement me")
+	var (
+		rules []pkg.PatientConsent
+		req   QueryConsentJSONRequestBody
+	)
+
+	if actor != nil {
+		a := Identifier(*actor)
+		req.Actor = &a
+	}
+
+	if custodian != nil {
+		c := Identifier(*custodian)
+		req.Custodian = &c
+	}
+
+	if subject != nil {
+		s := Identifier(*subject)
+		req.Subject = &s
+	}
+
+	result, err := hb.client().QueryConsent(context, req)
+	if err != nil {
+		err = fmt.Errorf("error while querying for consent in consent-store: %v", err)
+		hb.Logger.Error(err)
+		return rules, err
+	}
+
+	body, err := hb.checkResponse(result)
+	if err != nil {
+		return nil, err
+	}
+
+	var cqr ConsentQueryResponse
+	if err := json.Unmarshal(body, &cqr); err != nil {
+		err = fmt.Errorf("could not unmarshal response body, reason: %v", err)
+		hb.Logger.Error(err)
+		return rules, err
+	}
+
+	for _, sr := range cqr.Results {
+		patientConsent := pkg.PatientConsent{
+			Actor:     string(sr.Actor),
+			Subject:   string(sr.Subject),
+			Custodian: string(sr.Custodian),
+			Records: []pkg.ConsentRecord{
+				{
+					Hash:      "unknown",
+					Resources: []pkg.Resource{},
+				},
+			},
+		}
+
+		for _, r := range sr.Resources {
+			patientConsent.Records[0].Resources = append(patientConsent.Records[0].Resources, pkg.Resource{ResourceType: r})
+		}
+
+		rules = append(rules, patientConsent)
+	}
+
+	return rules, nil
 }
 
 func (hb HttpClient) DeleteConsentRecordByHash(context context.Context, proofHash string) (bool, error) {
@@ -108,8 +199,20 @@ func (hb HttpClient) RecordConsent(ctx context.Context, consent []pkg.PatientCon
 	req.Custodian = Identifier(consent[0].Custodian)
 	req.Subject = Identifier(consent[0].Subject)
 
-	for _, r := range consent[0].Resources() {
-		req.Resources = append(req.Resources, r.ResourceType)
+	for _, r := range consent[0].Records {
+		version := int(r.Version)
+
+		cr := ConsentRecord{
+			RecordHash:         r.Hash,
+			PreviousRecordHash: r.PreviousHash,
+			ValidFrom:          ValidFrom(r.ValidFrom.Format(time.RFC3339)),
+			ValidTo:            ValidTo(r.ValidTo.Format(time.RFC3339)),
+			Version:            &version,
+		}
+		for _, sr := range r.Resources {
+			cr.Resources = append(cr.Resources, sr.ResourceType)
+		}
+		req.Records = append(req.Records, cr)
 	}
 
 	result, err := hb.client().CreateConsent(ctx, req)
@@ -125,63 +228,6 @@ func (hb HttpClient) RecordConsent(ctx context.Context, consent []pkg.PatientCon
 	}
 
 	return nil
-}
-
-// QueryConsentForActor returns all the patientConsents for a given actor
-func (hb HttpClient) QueryConsentForActor(ctx context.Context, actor string, query string) ([]pkg.PatientConsent, error) {
-	var rules []pkg.PatientConsent
-	actorIdentifier := Identifier(actor)
-
-	req := QueryConsentJSONRequestBody{
-		Actor: &actorIdentifier,
-		Query: query,
-	}
-
-	result, err := hb.client().QueryConsent(ctx, req)
-	if err != nil {
-		err = fmt.Errorf("error while querying for consent in consent-store: %v", err)
-		hb.Logger.Error(err)
-		return rules, err
-	}
-
-	body, err := hb.checkResponse(result)
-	if err != nil {
-		return nil, err
-	}
-
-	var cqr ConsentQueryResponse
-	if err := json.Unmarshal(body, &cqr); err != nil {
-		err = fmt.Errorf("could not unmarshal response body, reason: %v", err)
-		hb.Logger.Error(err)
-		return rules, err
-	}
-
-	for _, sr := range cqr.Results {
-		patientConsent := pkg.PatientConsent{
-			Actor:     actor,
-			Subject:   string(sr.Subject),
-			Custodian: string(sr.Custodian),
-			Records: []pkg.ConsentRecord{
-				{
-					Hash:      "unknown",
-					Resources: []pkg.Resource{},
-				},
-			},
-		}
-
-		for _, r := range sr.Resources {
-			patientConsent.Records[0].Resources = append(patientConsent.Records[0].Resources, pkg.Resource{ResourceType: r})
-		}
-
-		rules = append(rules, patientConsent)
-	}
-
-	return rules, nil
-}
-
-// QueryConsentForActorAndSubject does the same as QueryConsentForActor, the backend just checks if the query starts with urn:
-func (hb HttpClient) QueryConsentForActorAndSubject(ctx context.Context, actor string, subject string) ([]pkg.PatientConsent, error) {
-	return hb.QueryConsentForActor(ctx, actor, subject)
 }
 
 func (hb *HttpClient) checkResponse(result *http.Response) ([]byte, error) {

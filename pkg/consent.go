@@ -25,28 +25,36 @@ import (
 	"fmt"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
-	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
 	bindata "github.com/golang-migrate/migrate/v4/source/go_bindata"
 	"github.com/jinzhu/gorm"
+	// import needed to enable the sqlite dialect for gorm
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	// sqlite driver
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/nuts-foundation/nuts-consent-store/migrations"
+	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
 )
 
+// ConsentStoreConfig holds the config for the consent store
 type ConsentStoreConfig struct {
 	Connectionstring string
 	Mode             string
 	Address          string
 }
 
+// ConfigConnectionString is the config name for the connection string
 const ConfigConnectionString = "connectionstring"
+// ConfigMode is the config name for the mode of the store (server, client)
 const ConfigMode = "mode"
+// ConfigAddress is the config name for the api address when running in client mode
 const ConfigAddress = "address"
+// ConfigConnectionStringDefault is the default db connection string
 const ConfigConnectionStringDefault = ":memory:"
 
+// ConsentStore is the main data struct holding the config and references to the DB
 type ConsentStore struct {
 	Db    *gorm.DB
 	sqlDb *sql.DB
@@ -65,16 +73,15 @@ type ConsentStoreClient interface {
 	// RecordConsent records a record in the Db, this is not to be used to create a new distributed consent record. It's only valid for the local node.
 	// It should only be called by the consent logic component (or for development purposes)
 	RecordConsent(context context.Context, consent []PatientConsent) error
-	// QueryConsentForActor can be used to perform full text searches on the backend. Scoped on actor only.
-	QueryConsentForActor(context context.Context, actor string, query string) ([]PatientConsent, error)
-	// QueryConsentForActorAndSubject can be used to list the custodians and resources for a given Actor and Subject.
-	QueryConsentForActorAndSubject(context context.Context, actor string, subject string) ([]PatientConsent, error)
 	// QueryConsent can be used to query consent from a custodian/actor point of view.
 	QueryConsent(context context.Context, actor *string, custodian *string, subject *string) ([]PatientConsent, error)
 	// DeleteConsentRecordByHash removes a ConsentRecord from the db. Returns true if the record was found and deleted.
 	DeleteConsentRecordByHash(context context.Context, proofHash string) (bool, error)
+	// FindConsentRecordByHash find a consent record given its hash, the latest flag indicates the requirement if the record is the latest in the chain.
+	FindConsentRecordByHash(context context.Context, proofHash string, latest bool) (ConsentRecord, error)
 }
 
+// ConsentStoreInstance returns a singleton consent store
 func ConsentStoreInstance() *ConsentStore {
 	oneEngine.Do(func() {
 		instance = &ConsentStore{
@@ -87,10 +94,12 @@ func ConsentStoreInstance() *ConsentStore {
 	return instance
 }
 
+// Logger returns the standard logger with a module field
 func Logger() *logrus.Entry {
 	return logrus.StandardLogger().WithField("module", "consent-store")
 }
 
+// Configure opens a DB connection and runs migrations
 func (cs *ConsentStore) Configure() error {
 	var (
 		err error
@@ -203,7 +212,11 @@ func (cs *ConsentStore) ConsentAuth(context context.Context, custodian string, s
 	return false, nil
 }
 
+// ErrorInvalidValidTo is returned when the ValidTo from a ConsentRecord comes before the ValidFrom
+var ErrorInvalidValidTo = errors.New("ConsentRecord validation failed: ValidTo must come after ValidFrom")
+
 // RecordConsent records a list of PatientConsents, their records and their resources.
+// For consent records that are updates, this function finds the version number and UUID from the previous record
 func (cs *ConsentStore) RecordConsent(context context.Context, consent []PatientConsent) error {
 
 	// start transaction
@@ -236,25 +249,34 @@ func (cs *ConsentStore) RecordConsent(context context.Context, consent []Patient
 			return err
 		}
 
-		// Since we will store the new state, delete all records and their resources.
-		for _, record := range tpc.Records {
-			if err := tx.Delete(&record).Error; err != nil {
-				tx.Rollback()
-				return err
-			}
-		}
-
 		for _, cr := range pr.Records {
 			tcr := ConsentRecord{
 				PatientConsentID: tpc.ID,
 				Hash:             cr.Hash,
 				ValidFrom:        cr.ValidFrom,
 				ValidTo:          cr.ValidTo,
+				UUID:             uuid.NewV4().String(),
+				Version:          1,
+			}
+
+			// if this is an update to an existing entry, find UUID and version
+			if cr.PreviousHash != nil {
+				var pcr ConsentRecord
+				if err := tx.Where("hash = ?", *cr.PreviousHash).First(&pcr).Error; err != nil {
+					tx.Rollback()
+					if gorm.IsRecordNotFoundError(err) {
+						return ErrorNotFound
+					}
+					return fmt.Errorf("error when finding existing consent record for hash %s: %w", *cr.PreviousHash, err)
+				}
+				tcr.PreviousHash = cr.PreviousHash
+				tcr.Version = pcr.Version + 1
+				tcr.UUID = pcr.UUID
 			}
 
 			if !tcr.ValidTo.After(tcr.ValidFrom) {
 				tx.Rollback()
-				return errors.New("ConsentRecord validation failed: ValidTo must come after ValidFrom")
+				return ErrorInvalidValidTo
 			}
 
 			// Save all current resources
@@ -269,49 +291,83 @@ func (cs *ConsentStore) RecordConsent(context context.Context, consent []Patient
 	return tx.Commit().Error
 }
 
-// QueryConsentForActor returns all PatientConsents for a given actor
-func (cs *ConsentStore) QueryConsentForActor(context context.Context, actor string, query string) ([]PatientConsent, error) {
-	var rules []PatientConsent
+func (cs *ConsentStore) patientConsentByConsentRecord(context context.Context, records []uint) ([]PatientConsent, error) {
+	var consentMap = make(map[string]*PatientConsent)
 
-	if err := cs.Db.Debug().Where("Actor = ?", actor).Preload("Records").Preload("Records.Resources").Find(&rules).Error; err != nil {
+	for _, ri := range records {
+		var cr ConsentRecord
+		if err := cs.Db.Debug().Where("id = ?", ri).Preload("Resources").Find(&cr).Error; err != nil {
+			return nil, err
+		}
+
+		cpc := consentMap[cr.PatientConsentID]
+		if cpc == nil {
+			var pc PatientConsent
+			if err := cs.Db.Debug().Where("id = ?", cr.PatientConsentID).Find(&pc).Error; err != nil {
+				return nil, err
+			}
+			cpc = &pc
+			consentMap[cr.PatientConsentID] = &pc
+		}
+		cpc.Records = append(cpc.Records, cr)
+	}
+
+	var consentList []PatientConsent
+
+	for _, v := range consentMap {
+		consentList = append(consentList, *v)
+	}
+
+	return consentList, nil
+}
+
+// QueryConsent accepts actor, custodian and subject, if these are nil, it's not used in the query.
+func (cs *ConsentStore) QueryConsent(context context.Context, _actor *string, _custodian *string, _subject *string) ([]PatientConsent, error) {
+	var pc PatientConsent
+
+	if _actor != nil {
+		pc.Actor = *_actor
+	}
+
+	if _custodian != nil {
+		pc.Custodian = *_custodian
+	}
+
+	if _subject != nil {
+		pc.Subject = *_subject
+	}
+
+	var records []uint
+
+	rows, err := cs.Db.Debug().Where(pc).
+		Table("patient_consent").
+		//Preload("Records").Preload("Records.Resources").
+		Select("consent_record.id").
+		Joins("left join consent_record on consent_record.patient_consent_id = patient_consent.id").
+		Group("consent_record.uuid").Having("max(consent_record.version)").
+		Rows()
+
+	defer rows.Close()
+
+	if err != nil {
 		return nil, err
 	}
 
-	return rules, nil
-}
+	for rows.Next() {
+		var rID uint
 
-// QueryConsentForActorAndSubject  returns all PatientConsents for a given actor and subject
-func (cs *ConsentStore) QueryConsentForActorAndSubject(context context.Context, actor string, subject string) ([]PatientConsent, error) {
-	var rules []PatientConsent
+		err = rows.Scan(&rID)
+		if err != nil {
+			return nil, err
+		}
 
-	if err := cs.Db.Debug().Where("Actor = ? AND Subject = ?", actor, subject).Preload("Records").Preload("Records.Resources").Find(&rules).Error; err != nil {
-		return nil, err
+		records = append(records, rID)
 	}
 
-	return rules, nil
-}
+	// new queries can only be done after rows has been closed....
+	rows.Close()
 
-// QueryConsent accepts actor, custodian and subject, if these are nil, it uses a wildcard to query.
-func (cs *ConsentStore) QueryConsent(context context.Context, _actor *string, _custodian *string, _subject *string) (rules []PatientConsent, err error) {
-	var (
-		actor, custodian, subject string
-	)
-
-	if actor = "%"; _actor != nil {
-		actor = *_actor
-	}
-
-	if custodian = "%"; _custodian != nil {
-		custodian = *_custodian
-	}
-
-	if subject = "%"; _subject != nil {
-		subject = *_subject
-	}
-
-	err = cs.Db.Debug().Where("Actor LIKE ? AND Subject LIKE ? AND Custodian LIKE ?", actor, subject, custodian).Preload("Records").Preload("Records.Resources").Find(&rules).Error
-
-	return
+	return cs.patientConsentByConsentRecord(context, records)
 }
 
 // DeleteConsentRecordByHash deletes a consent record by its hash. Returns boolean to indicate the success of the operation
@@ -320,7 +376,7 @@ func (cs *ConsentStore) DeleteConsentRecordByHash(context context.Context, proof
 
 	if err := cs.Db.Debug().Where("hash = ?", proofHash).First(&record).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
-			return false, nil
+			return false, ErrorNotFound
 		}
 		return false, err
 	}
@@ -330,4 +386,81 @@ func (cs *ConsentStore) DeleteConsentRecordByHash(context context.Context, proof
 	}
 
 	return true, nil
+}
+
+// FindConsentRecordByHash find a consent record given its hash, the latest flag indicates the requirement if the record is the latest in the chain.
+func (cs *ConsentStore) FindConsentRecordByHash(context context.Context, proofHash string, latest bool) (ConsentRecord, error) {
+	var (
+		record ConsentRecord
+		err    error
+	)
+
+	if latest {
+		err = cs.findConsentRecordByHashGrouped(context, proofHash, &record)
+	} else {
+		err = cs.findConsentRecordByHashExact(context, proofHash, &record)
+	}
+
+	if err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return record, ErrorNotFound
+		}
+		return record, err
+	}
+
+	return record, nil
+}
+
+// ErrorConsentRecordNotLatest is returned when the latest consent record for a chain is requested but given hash is not the latest
+var ErrorConsentRecordNotLatest = errors.New("consent record for given hash is not the latest in the chain")
+
+// ErrorNotFound is the same as Gorm.IsRecordNotFound
+var ErrorNotFound = errors.New("record not found")
+
+func (cs *ConsentStore) findConsentRecordByHashGrouped(context context.Context, proofHash string, record *ConsentRecord) error {
+	var id uint
+
+	// sub query broken
+	var cr ConsentRecord
+	if err := cs.Db.Debug().Where("hash = ?", proofHash).First(&cr).Error; err != nil {
+		return err
+	}
+
+	rows, err := cs.Db.Debug().Where("uuid = ?", cr.UUID).
+		Table("consent_record").
+		Select("id, hash").
+		Group("uuid").Having("max(version)").
+		Rows()
+
+	if err != nil {
+		return err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var h string
+		err = rows.Scan(&id, &h)
+		if err != nil {
+			return err
+		}
+
+		if h != proofHash {
+			return ErrorConsentRecordNotLatest
+		}
+
+		if rows.NextResultSet() {
+			// for future safety...
+			return errors.New("BUG in findConsentRecordByHashGrouped, unique result should have been given")
+		}
+	}
+
+	// new queries can only be done after rows has been closed....
+	rows.Close()
+
+	return cs.Db.Debug().Where("id = ?", id).First(record).Error
+}
+
+func (cs *ConsentStore) findConsentRecordByHashExact(context context.Context, proofHash string, record *ConsentRecord) error {
+	return cs.Db.Debug().Where("hash = ?", proofHash).First(record).Error
 }

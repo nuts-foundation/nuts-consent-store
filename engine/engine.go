@@ -46,7 +46,7 @@ func NewConsentStoreEngine() *engine.Engine {
 		ConfigKey: "cstore",
 		FlagSet:   flagSet(),
 		Routes: func(router runtime.EchoRouter) {
-			api.RegisterHandlers(router, &api.ApiWrapper{Cs: cs})
+			api.RegisterHandlers(router, &api.Wrapper{Cs: cs})
 		},
 		Start:    cs.Start,
 		Shutdown: cs.Shutdown,
@@ -90,9 +90,9 @@ func cmd() *cobra.Command {
 			)
 
 			if len(args) > 1 {
-				consentList, err = csc.QueryConsentForActorAndSubject(context.TODO(), args[0], args[1])
+				consentList, err = csc.QueryConsent(context.TODO(), &args[0], nil, &args[1])
 			} else {
-				consentList, err = csc.QueryConsentForActor(context.TODO(), args[0], "*")
+				consentList, err = csc.QueryConsent(context.TODO(), &args[0], nil, nil)
 			}
 
 			if err != nil {

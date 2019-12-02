@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/labstack/gommon/random"
+	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -425,7 +426,7 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 		echo := mock.NewMockContext(ctrl)
 
 		consent := testConsent()
-		consent.RecordHash = nil
+		consent.Records[0].RecordHash = ""
 
 		json, _ := json.Marshal(consent)
 		request := &http.Request{
@@ -440,7 +441,7 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 			t.Error("Expected error got nothing")
 		}
 
-		expected := "code=400, message=missing recordHash in createRequest"
+		expected := "code=400, message=missing recordHash in one or more records within createRequest"
 		if !strings.Contains(err.Error(), expected) {
 			t.Errorf("Expected error %s, got: [%s]", expected, err.Error())
 		}
@@ -506,7 +507,7 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 		echo := mock.NewMockContext(ctrl)
 
 		consent := testConsent()
-		consent.Resources = []string{}
+		consent.Records[0].Resources = []string{}
 
 		json, _ := json.Marshal(consent)
 		request := &http.Request{
@@ -521,7 +522,7 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 			t.Error("Expected error got nothing")
 		}
 
-		expected := "code=400, message=missing resources in createRequest"
+		expected := "code=400, message=missing resources in one or more records within createRequest"
 		if !strings.Contains(err.Error(), expected) {
 			t.Errorf("Expected error [%s], got: [%v]", expected, err)
 		}
@@ -530,7 +531,8 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 
 func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 	client := defaultConsentStore()
-	if err := client.Cs.RecordConsent(context.Background(), []pkg.PatientConsent{consentRuleForQuery()}); err != nil {
+	crq := consentRuleForQuery()
+	if err := client.Cs.RecordConsent(context.Background(), []pkg.PatientConsent{crq}); err != nil {
 		t.Fatal(err)
 	}
 	defer client.Cs.Shutdown()
@@ -567,7 +569,6 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 		echo := mock.NewMockContext(ctrl)
 
 		query := consentQuery()
-		query.Query = "%"
 		json, _ := json.Marshal(query)
 		request := &http.Request{
 			Body: ioutil.NopCloser(bytes.NewReader(json)),
@@ -578,8 +579,8 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 			TotalResults: 1,
 			Results: []SimplifiedConsent{
 				{
-					Id:        "ejNYuhAQ",
-					Subject:   Identifier("urn:subject"),
+					Id:        crq.ID,
+					Subject:   Identifier("subject"),
 					Custodian: Identifier("custodian"),
 					Actor:     Identifier("actor"),
 					Resources: []string{
@@ -594,9 +595,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 
 		err := client.QueryConsent(echo)
 
-		if err != nil {
-			t.Errorf("Expected no error, got [%v]", err)
-		}
+		assert.NoError(t, err)
 	})
 
 	t.Run("API call returns 200 with results for subject search", func(t *testing.T) {
@@ -605,7 +604,8 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 		echo := mock.NewMockContext(ctrl)
 
 		query := consentQuery()
-		query.Query = "urn:subject"
+		subj := Identifier("subject")
+		query.Subject = &subj
 		json, _ := json.Marshal(query)
 		request := &http.Request{
 			Body: ioutil.NopCloser(bytes.NewReader(json)),
@@ -616,8 +616,8 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 			TotalResults: 1,
 			Results: []SimplifiedConsent{
 				{
-					Id:        "ejNYuhAQ",
-					Subject:   Identifier("urn:subject"),
+					Id:        crq.ID,
+					Subject:   Identifier("subject"),
 					Custodian: Identifier("custodian"),
 					Actor:     Identifier("actor"),
 					Resources: []string{
@@ -632,9 +632,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 
 		err := client.QueryConsent(echo)
 
-		if err != nil {
-			t.Errorf("Expected no error, got [%v]", err)
-		}
+		assert.NoError(t, err)
 	})
 
 	t.Run("Missing body gives 400", func(t *testing.T) {
@@ -686,33 +684,6 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 			t.Errorf("Expected error [%s], got: [%v]", expected, err)
 		}
 	})
-
-	t.Run("API call returns 400 for missing query", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-		echo := mock.NewMockContext(ctrl)
-
-		consent := consentQuery()
-		consent.Query = ""
-
-		json, _ := json.Marshal(consent)
-		request := &http.Request{
-			Body: ioutil.NopCloser(bytes.NewReader(json)),
-		}
-
-		echo.EXPECT().Request().Return(request).AnyTimes()
-
-		err := client.QueryConsent(echo)
-
-		if err == nil {
-			t.Error("Expected error got nothing")
-		}
-
-		expected := "code=400, message=missing query in queryRequest"
-		if !strings.Contains(err.Error(), expected) {
-			t.Errorf("Expected error [%s], got: [%v]", expected, err)
-		}
-	})
 }
 
 func TestDefaultConsentStore_DeleteConsent(t *testing.T) {
@@ -732,13 +703,9 @@ func TestDefaultConsentStore_DeleteConsent(t *testing.T) {
 
 		err := client.DeleteConsent(echo, "")
 
-		if err == nil {
-			t.Error("Expected error, got nothing", err)
-		}
-
-		expected := "code=400, message=missing proofHash"
-		if !strings.Contains(err.Error(), expected) {
-			t.Errorf("Expected error [%s], got: [%s]", expected, err.Error())
+		if assert.Error(t, err) {
+			expected := "code=400, message=missing proofHash"
+			assert.Contains(t, err.Error(), expected)
 		}
 	})
 
@@ -753,13 +720,8 @@ func TestDefaultConsentStore_DeleteConsent(t *testing.T) {
 
 		err := client.DeleteConsent(echo, "a")
 
-		if err == nil {
-			t.Error("Expected error, got nothing", err)
-		}
-
-		expected := "code=404, message=no ConsentRecord found for given hash"
-		if !strings.Contains(err.Error(), expected) {
-			t.Errorf("Expected error [%s], got: [%s]", expected, err.Error())
+		if assert.Error(t, err) {
+			assert.Contains(t, err.Error(), pkg.ErrorNotFound.Error())
 		}
 	})
 
@@ -781,23 +743,106 @@ func TestDefaultConsentStore_DeleteConsent(t *testing.T) {
 	})
 }
 
-func testConsent() SimplifiedConsent {
-	hash := random.String(8)
-	return SimplifiedConsent{
-		Id:         random.String(8),
-		Actor:      Identifier("actor"),
-		Custodian:  Identifier("custodian"),
-		Subject:    Identifier("urn:subject"),
-		RecordHash: &hash,
-		Resources:  []string{"resource"},
-		ValidFrom:  ValidFrom("2019-01-01"),
-		ValidTo:    ValidTo("2030-01-01"),
+func TestDefaultConsentStore_FindConsentRecord(t *testing.T) {
+	client := defaultConsentStore()
+	crq := consentRuleForQuery()
+	client.Cs.RecordConsent(context.Background(), []pkg.PatientConsent{crq})
+	defer client.Cs.Shutdown()
+
+	t.Run("missing proofHash returns 400", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		echo := mock.NewMockContext(ctrl)
+
+		request := &http.Request{}
+
+		echo.EXPECT().Request().Return(request).AnyTimes()
+
+		err := client.FindConsentRecord(echo, "", FindConsentRecordParams{})
+
+		if assert.Error(t, err) {
+			expected := "code=400, message=missing proofHash"
+			assert.Contains(t, err.Error(), expected)
+		}
+	})
+
+	t.Run("Unknown proofHash returns 404", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		echo := mock.NewMockContext(ctrl)
+
+		request := &http.Request{}
+
+		echo.EXPECT().Request().Return(request).AnyTimes()
+
+		err := client.FindConsentRecord(echo, "a", FindConsentRecordParams{})
+
+		if assert.Error(t, err) {
+			assert.Contains(t, err.Error(), pkg.ErrorNotFound.Error())
+		}
+	})
+
+	t.Run("Correct find", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		echo := mock.NewMockContext(ctrl)
+
+		request := &http.Request{}
+
+		echo.EXPECT().Request().Return(request).AnyTimes()
+		echo.EXPECT().JSON(200, gomock.Any())
+
+		tt := true
+		err := client.FindConsentRecord(echo, crq.Records[0].Hash, FindConsentRecordParams{Latest: &tt})
+
+		assert.NoError(t, err)
+	})
+
+	t.Run("find previous with latest flag", func(t *testing.T) {
+		crq2 := consentRuleForQuery()
+		crq2.ID = crq.ID
+		crq2.Records[0].PreviousHash = &crq.Records[0].Hash
+		if err := client.Cs.RecordConsent(context.Background(), []pkg.PatientConsent{crq2}); err != nil {
+			assert.Fail(t, err.Error())
+		}
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		echo := mock.NewMockContext(ctrl)
+
+		request := &http.Request{}
+
+		echo.EXPECT().Request().Return(request).AnyTimes()
+
+		tt := true
+		err := client.FindConsentRecord(echo, crq.Records[0].Hash, FindConsentRecordParams{Latest: &tt})
+
+		if assert.Error(t, err) {
+			assert.Contains(t, err.Error(), pkg.ErrorConsentRecordNotLatest.Error())
+		}
+	})
+}
+
+func testConsent() CreateConsentRequest {
+	return CreateConsentRequest{
+		Id:        random.String(8),
+		Actor:     Identifier("actor"),
+		Custodian: Identifier("custodian"),
+		Subject:   Identifier("subject"),
+		Records: []ConsentRecord{
+			{
+				RecordHash: random.String(8),
+				Resources:  []string{"resource"},
+				ValidFrom:  ValidFrom("2019-01-01"),
+				ValidTo:    ValidTo("2030-01-01"),
+			},
+		},
 	}
 }
 
 func consentCheckRequest() ConsentCheckRequest {
 	return ConsentCheckRequest{
-		Subject:      Identifier("urn:subject"),
+		Subject:      Identifier("subject"),
 		Custodian:    Identifier("custodian"),
 		Actor:        Identifier("actor"),
 		ResourceType: "resource",
@@ -806,13 +851,14 @@ func consentCheckRequest() ConsentCheckRequest {
 
 func consentQuery() QueryConsentJSONRequestBody {
 	actor := Identifier("actor")
+	subject := Identifier("subject")
 	return QueryConsentJSONRequestBody{
-		Actor: &actor,
-		Query: "subject",
+		Actor:   &actor,
+		Subject: &subject,
 	}
 }
 
-func defaultConsentStore() ApiWrapper {
+func defaultConsentStore() Wrapper {
 	client := pkg.ConsentStore{
 		Config: pkg.ConsentStoreConfig{
 			Connectionstring: ":memory:",
@@ -829,13 +875,13 @@ func defaultConsentStore() ApiWrapper {
 
 	client.RunMigrations(client.Db.DB())
 
-	return ApiWrapper{Cs: &client}
+	return Wrapper{Cs: &client}
 }
 
 func consentRuleForQuery() pkg.PatientConsent {
 	return pkg.PatientConsent{
 		ID:        random.String(8),
-		Subject:   "urn:subject",
+		Subject:   "subject",
 		Custodian: "custodian",
 		Actor:     "actor",
 		Records: []pkg.ConsentRecord{
@@ -845,7 +891,7 @@ func consentRuleForQuery() pkg.PatientConsent {
 				Resources: []pkg.Resource{
 					{ResourceType: "resource"},
 				},
-				Hash: "ejNYuhAQ",
+				Hash: random.String(8),
 			},
 		},
 	}
