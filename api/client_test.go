@@ -229,7 +229,7 @@ func TestHttpClient_QueryConsentForActor(t *testing.T) {
 		}})
 		client := testClient(200, resp)
 		a := "actor"
-		res, err := client.QueryConsent(context.TODO(), &a, nil, nil)
+		res, err := client.QueryConsent(context.TODO(), &a, nil, nil, nil)
 
 		if assert.NoError(t, err) {
 			assert.Len(t, res, 1)
@@ -263,7 +263,7 @@ func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
 			},
 		}})
 		client := testClient(200, resp)
-		res, err := client.QueryConsent(context.TODO(), &a, nil, &s)
+		res, err := client.QueryConsent(context.TODO(), &a, nil, &s, nil)
 
 		if err != nil {
 			t.Errorf("Expected no error, got [%s]", err.Error())
@@ -277,7 +277,7 @@ func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
 	t.Run("client returns error", func(t *testing.T) {
 		client := testClient(500, []byte("error"))
 
-		_, err := client.QueryConsent(context.TODO(), &a, nil, &s)
+		_, err := client.QueryConsent(context.TODO(), &a, nil, &s, nil)
 
 		if err == nil {
 			t.Error("Expected error, got nothing")
@@ -293,7 +293,7 @@ func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
 	t.Run("client returns invalid json", func(t *testing.T) {
 		client := testClient(200, []byte("{"))
 
-		_, err := client.QueryConsent(context.TODO(), &a, nil, &s)
+		_, err := client.QueryConsent(context.TODO(), &a, nil, &s, nil)
 
 		if err == nil {
 			t.Error("Expected error, got nothing")
@@ -318,7 +318,7 @@ func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
 			}
 		})
 
-		_, err := client.QueryConsent(context.TODO(), &a, nil, &s)
+		_, err := client.QueryConsent(context.TODO(), &a, nil, &s, nil)
 
 		if err == nil {
 			t.Error("Expected error, got nothing")
