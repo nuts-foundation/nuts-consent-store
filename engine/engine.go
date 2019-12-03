@@ -21,6 +21,8 @@ package engine
 import (
 	"context"
 	"errors"
+	"strings"
+
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
@@ -32,7 +34,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"strings"
 )
 
 func NewConsentStoreEngine() *engine.Engine {
@@ -90,9 +91,9 @@ func cmd() *cobra.Command {
 			)
 
 			if len(args) > 1 {
-				consentList, err = csc.QueryConsent(context.TODO(), &args[0], nil, &args[1])
+				consentList, err = csc.QueryConsent(context.TODO(), &args[0], nil, &args[1], nil)
 			} else {
-				consentList, err = csc.QueryConsent(context.TODO(), &args[0], nil, nil)
+				consentList, err = csc.QueryConsent(context.TODO(), &args[0], nil, nil, nil)
 			}
 
 			if err != nil {

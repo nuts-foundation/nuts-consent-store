@@ -70,11 +70,15 @@ func (hb HttpClient) FindConsentRecordByHash(context context.Context, proofHash 
 }
 
 // QueryConsent returns PatientConsent records based on a combination of actor, custodian and subject. The only constraint is that either actor or custodian must not be empty.
-func (hb HttpClient) QueryConsent(context context.Context, actor *string, custodian *string, subject *string) ([]pkg.PatientConsent, error) {
+func (hb HttpClient) QueryConsent(context context.Context, actor *string, custodian *string, subject *string, validAt *time.Time) ([]pkg.PatientConsent, error) {
 	var (
 		rules []pkg.PatientConsent
 		req   QueryConsentJSONRequestBody
 	)
+
+	if validAt != nil {
+		req.ValidAt = validAt
+	}
 
 	if actor != nil {
 		a := Identifier(*actor)

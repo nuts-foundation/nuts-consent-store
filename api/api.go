@@ -227,7 +227,7 @@ func (w *Wrapper) QueryConsent(ctx echo.Context) error {
 		subject = &s
 	}
 
-	rules, err = w.Cs.QueryConsent(ctx.Request().Context(), actor, custodian, subject)
+	rules, err = w.Cs.QueryConsent(ctx.Request().Context(), actor, custodian, subject, checkRequest.ValidAt)
 
 	if err != nil {
 		return err

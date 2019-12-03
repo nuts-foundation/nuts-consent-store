@@ -74,7 +74,7 @@ type ConsentStoreClient interface {
 	// It should only be called by the consent logic component (or for development purposes)
 	RecordConsent(context context.Context, consent []PatientConsent) error
 	// QueryConsent can be used to query consent from a custodian/actor point of view.
-	QueryConsent(context context.Context, actor *string, custodian *string, subject *string) ([]PatientConsent, error)
+	QueryConsent(context context.Context, actor *string, custodian *string, subject *string, validAt *time.Time) ([]PatientConsent, error)
 	// DeleteConsentRecordByHash removes a ConsentRecord from the db. Returns true if the record was found and deleted.
 	DeleteConsentRecordByHash(context context.Context, proofHash string) (bool, error)
 	// FindConsentRecordByHash find a consent record given its hash, the latest flag indicates the requirement if the record is the latest in the chain.
@@ -322,8 +322,13 @@ func (cs *ConsentStore) patientConsentByConsentRecord(context context.Context, r
 }
 
 // QueryConsent accepts actor, custodian and subject, if these are nil, it's not used in the query.
-func (cs *ConsentStore) QueryConsent(context context.Context, _actor *string, _custodian *string, _subject *string) ([]PatientConsent, error) {
+func (cs *ConsentStore) QueryConsent(context context.Context, _actor *string, _custodian *string, _subject *string, _validAt *time.Time) ([]PatientConsent, error) {
 	var pc PatientConsent
+
+	validAt := time.Now()
+	if _validAt != nil {
+		validAt = *_validAt
+	}
 
 	if _actor != nil {
 		pc.Actor = *_actor
@@ -344,6 +349,8 @@ func (cs *ConsentStore) QueryConsent(context context.Context, _actor *string, _c
 		//Preload("Records").Preload("Records.Resources").
 		Select("consent_record.id").
 		Joins("left join consent_record on consent_record.patient_consent_id = patient_consent.id").
+		Where("consent_record.valid_from <= ?", validAt).
+		Where("consent_record.valid_to > ?", validAt).
 		Group("consent_record.uuid").Having("max(consent_record.version)").
 		Rows()
 

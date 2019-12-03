@@ -22,11 +22,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/labstack/gommon/random"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestConsentStoreInstance(t *testing.T) {
@@ -71,7 +72,7 @@ func TestConsentStore_RecordConsent(t *testing.T) {
 		if assert.NoError(t, err) {
 			a := "actor"
 			s := "subject"
-			pcs, err := client.QueryConsent(context.TODO(), &a, nil, &s)
+			pcs, err := client.QueryConsent(context.TODO(), &a, nil, &s, nil)
 
 			if assert.NoError(t, err) {
 				assert.Equal(t, uint(1), pcs[0].Records[0].Version)
@@ -194,11 +195,11 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 		}
 		err := client.RecordConsent(context.TODO(), rules)
 		if err != nil {
-			t.Errorf("Expected no error, got [%v]", err)
+			t.Fatalf("Expected no error, got [%v]", err)
 		}
 
 		// Update the validTo of the record.
-		rules[0].Records[0].ValidTo = time.Now()
+		rules[0].Records[0].ValidTo = time.Now().Add(time.Hour)
 		hcp := rules[0].Records[0].Hash
 		rules[0].Records[0].PreviousHash = &hcp
 		rules[0].Records[0].Hash = "234caefh_2"
@@ -206,7 +207,7 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 		err = client.RecordConsent(context.TODO(), rules)
 		if assert.NoError(t, err) {
 			a := "actor333"
-			consent, err := client.QueryConsent(context.TODO(), &a, nil, nil)
+			consent, err := client.QueryConsent(context.TODO(), &a, nil, nil, nil)
 			if assert.NoError(t, err) {
 
 				assert.Len(t, consent, 1)
@@ -433,7 +434,7 @@ func TestConsentStore_QueryConsentForActor(t *testing.T) {
 
 	t.Run("Recorded consent can be found", func(t *testing.T) {
 		a := "actor"
-		consent, err := client.QueryConsent(context.TODO(), &a, nil, nil)
+		consent, err := client.QueryConsent(context.TODO(), &a, nil, nil, nil)
 
 		if err != nil {
 			t.Errorf("Expected no error, got [%v]", err)
@@ -444,9 +445,19 @@ func TestConsentStore_QueryConsentForActor(t *testing.T) {
 		}
 	})
 
+	t.Run("Recorded consent is not found outside time frame", func(t *testing.T) {
+		a := "actor"
+		tt := time.Now().Add(time.Hour * 13)
+		consent, err := client.QueryConsent(context.TODO(), &a, nil, nil, &tt)
+
+		if assert.NoError(t, err) {
+			assert.Len(t, consent, 0)
+		}
+	})
+
 	t.Run("Non-recorded is not found", func(t *testing.T) {
 		a := "actor3"
-		consent, err := client.QueryConsent(context.TODO(), &a, nil, nil)
+		consent, err := client.QueryConsent(context.TODO(), &a, nil, nil, nil)
 
 		if err != nil {
 			t.Errorf("Expected no error, got [%v]", err)
@@ -506,7 +517,7 @@ func TestConsentStore_QueryConsentForActorAndSubject(t *testing.T) {
 	t.Run("Recorded consent can be found", func(t *testing.T) {
 		a := "actor"
 		s := "subject"
-		consent, err := client.QueryConsent(context.TODO(), &a, nil, &s)
+		consent, err := client.QueryConsent(context.TODO(), &a, nil, &s, nil)
 
 		if err != nil {
 			t.Errorf("Expected no error, got [%v]", err)
@@ -520,7 +531,7 @@ func TestConsentStore_QueryConsentForActorAndSubject(t *testing.T) {
 	t.Run("Non-recorded is not found", func(t *testing.T) {
 		a := "actor"
 		s := "subject2"
-		consent, err := client.QueryConsent(context.TODO(), &a, nil, &s)
+		consent, err := client.QueryConsent(context.TODO(), &a, nil, &s, nil)
 
 		if err != nil {
 			t.Errorf("Expected no error, got [%v]", err)
@@ -651,7 +662,7 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 	t.Run("Recorded consent can be found by subject", func(t *testing.T) {
 		subject := "subject"
 
-		consent, err := client.QueryConsent(context.TODO(), nil, nil, &subject)
+		consent, err := client.QueryConsent(context.TODO(), nil, nil, &subject, nil)
 
 		if assert.NoError(t, err) {
 			assert.Len(t, consent, 2)
@@ -664,7 +675,7 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 	t.Run("Recorded consent can be found by custodian", func(t *testing.T) {
 		custodian := "custodian2"
 
-		consent, err := client.QueryConsent(context.TODO(), nil, &custodian, nil)
+		consent, err := client.QueryConsent(context.TODO(), nil, &custodian, nil, nil)
 
 		if err != nil {
 			t.Errorf("Expected no error, got [%v]", err)

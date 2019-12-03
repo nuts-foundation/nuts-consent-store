@@ -22,13 +22,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/nuts-foundation/nuts-consent-store/pkg"
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/nuts-foundation/nuts-consent-store/pkg"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
 // RoundTripFunc
@@ -229,7 +230,7 @@ func TestHttpClient_QueryConsentForActor(t *testing.T) {
 		}})
 		client := testClient(200, resp)
 		a := "actor"
-		res, err := client.QueryConsent(context.TODO(), &a, nil, nil)
+		res, err := client.QueryConsent(context.TODO(), &a, nil, nil, nil)
 
 		if assert.NoError(t, err) {
 			assert.Len(t, res, 1)
@@ -241,7 +242,7 @@ func TestHttpClient_FindConsentRecordByHash(t *testing.T) {
 	t.Run("200", func(t *testing.T) {
 		resp, _ := json.Marshal(FromConsentRecord(consentRecord()))
 		client := testClient(200, resp)
-		res, err := client.FindConsentRecordByHash(context.TODO(),"hash", false)
+		res, err := client.FindConsentRecordByHash(context.TODO(), "hash", false)
 
 		if assert.NoError(t, err) {
 			assert.Equal(t, "Hash", res.Hash)
@@ -263,7 +264,7 @@ func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
 			},
 		}})
 		client := testClient(200, resp)
-		res, err := client.QueryConsent(context.TODO(), &a, nil, &s)
+		res, err := client.QueryConsent(context.TODO(), &a, nil, &s, nil)
 
 		if err != nil {
 			t.Errorf("Expected no error, got [%s]", err.Error())
@@ -274,10 +275,23 @@ func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
 		}
 	})
 
+	t.Run("200 without results in time frame", func(t *testing.T) {
+		resp, _ := json.Marshal(ConsentQueryResponse{Results: []SimplifiedConsent{}})
+		client := testClient(200, resp)
+		tt := time.Now().Add(time.Hour)
+		res, err := client.QueryConsent(context.TODO(), &a, nil, &s, &tt)
+
+		if err != nil {
+			t.Fatalf("Expected no error, got [%s]", err.Error())
+		}
+
+		assert.Len(t, res, 0)
+	})
+
 	t.Run("client returns error", func(t *testing.T) {
 		client := testClient(500, []byte("error"))
 
-		_, err := client.QueryConsent(context.TODO(), &a, nil, &s)
+		_, err := client.QueryConsent(context.TODO(), &a, nil, &s, nil)
 
 		if err == nil {
 			t.Error("Expected error, got nothing")
@@ -293,7 +307,7 @@ func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
 	t.Run("client returns invalid json", func(t *testing.T) {
 		client := testClient(200, []byte("{"))
 
-		_, err := client.QueryConsent(context.TODO(), &a, nil, &s)
+		_, err := client.QueryConsent(context.TODO(), &a, nil, &s, nil)
 
 		if err == nil {
 			t.Error("Expected error, got nothing")
@@ -318,7 +332,7 @@ func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
 			}
 		})
 
-		_, err := client.QueryConsent(context.TODO(), &a, nil, &s)
+		_, err := client.QueryConsent(context.TODO(), &a, nil, &s, nil)
 
 		if err == nil {
 			t.Error("Expected error, got nothing")
