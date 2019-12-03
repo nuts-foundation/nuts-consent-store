@@ -78,7 +78,8 @@ func (hb HttpClient) QueryConsent(context context.Context, actor *string, custod
 	)
 
 	if validAt != nil {
-		req.ValidAt = validAt
+		s := validAt.Format(pkg.Iso8601DateTime)
+		req.ValidAt = &s
 	}
 
 	if actor != nil {

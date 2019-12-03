@@ -209,6 +209,7 @@ func (w *Wrapper) QueryConsent(ctx echo.Context) error {
 	var (
 		actor, custodian, subject *string
 	)
+	va := time.Now()
 
 	if checkRequest.Actor != nil && len(*checkRequest.Actor) > 0 {
 		actorString := string(*checkRequest.Actor)
@@ -231,7 +232,14 @@ func (w *Wrapper) QueryConsent(ctx echo.Context) error {
 		subject = &s
 	}
 
-	rules, err = w.Cs.QueryConsent(ctx.Request().Context(), actor, custodian, subject, checkRequest.ValidAt)
+	if checkRequest.ValidAt != nil {
+		va, err = time.Parse(pkg.Iso8601DateTime, *checkRequest.ValidAt)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid format for validAt, required: %s", pkg.Iso8601DateTime))
+		}
+	}
+
+	rules, err = w.Cs.QueryConsent(ctx.Request().Context(), actor, custodian, subject, &va)
 
 	if err != nil {
 		return err

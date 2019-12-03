@@ -166,7 +166,7 @@ components:
           example: "Observation"
         validAt:
           type: string
-          description: "Date at which consent has to be valid. Optional, when empty, Now() is used. format: 2020-01-01"
+          description: "Date at which consent has to be valid. Optional, when empty, Now() is used. format: 2020-01-01T12:00:00+01:00"
     ConsentCheckResponse:
       required:
         - outcome
@@ -192,8 +192,7 @@ components:
           $ref: "#/components/schemas/PageDefinition"
         validAt:
           type: string
-          format: date
-          description: "Date at which consent has to be valid. Optional, when empty, Now() is used"
+          description: "Date at which consent has to be valid. Optional, when empty, Now() is used. format: 2020-01-01T12:00:00+01:00"
     ConsentQueryResponse:
       required:
         - page

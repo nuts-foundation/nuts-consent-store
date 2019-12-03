@@ -606,7 +606,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 		echo := mock.NewMockContext(ctrl)
 
 		query := consentQuery()
-		tt := time.Now().Add(time.Hour * 25)
+		tt := time.Now().Add(time.Hour * 25).Format(pkg.Iso8601DateTime)
 		query.ValidAt = &tt
 		json, _ := json.Marshal(query)
 		request := &http.Request{
@@ -708,6 +708,34 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 		}
 
 		expected := "code=400, message=missing actor or custodian in queryRequest"
+		if !strings.HasPrefix(err.Error(), expected) {
+			t.Errorf("Expected error [%s], got: [%v]", expected, err)
+		}
+	})
+
+	t.Run("API call returns 400 for invalid validAt format", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		echo := mock.NewMockContext(ctrl)
+
+		consent := consentQuery()
+		invalidTime := "2006-01-02"
+		consent.ValidAt = &invalidTime
+
+		json, _ := json.Marshal(consent)
+		request := &http.Request{
+			Body: ioutil.NopCloser(bytes.NewReader(json)),
+		}
+
+		echo.EXPECT().Request().Return(request).AnyTimes()
+
+		err := client.QueryConsent(echo)
+
+		if err == nil {
+			t.Error("Expected error got nothing")
+		}
+
+		expected := "code=400, message=invalid format for validAt, required: 2006-01-02T15:04:05-07:00"
 		if !strings.HasPrefix(err.Error(), expected) {
 			t.Errorf("Expected error [%s], got: [%v]", expected, err)
 		}
