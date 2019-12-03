@@ -41,6 +41,7 @@ func TestFromSimplifiedConsentRule(t *testing.T) {
 		assert.Equal(t, Identifier("subject"), sc.Subject)
 		assert.Equal(t, Identifier("custodian"), sc.Custodian)
 		assert.Equal(t, Identifier("actor"), sc.Actor)
+		assert.Equal(t, "", *sc.RecordHash)
 		assert.Len(t, sc.Resources, 1)
 		assert.Equal(t, "resource", sc.Resources[0])
 	})

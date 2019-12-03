@@ -98,6 +98,7 @@ func FromPatientConsent(patientConsent []pkg.PatientConsent) ([]SimplifiedConsen
 				Custodian: Identifier(c.Custodian),
 				Actor:     Identifier(c.Actor),
 				Resources: resources,
+				RecordHash: &r.Hash,
 				ValidFrom: ValidFrom(r.ValidFrom.Format("2006-01-02")),
 				ValidTo:   ValidTo(r.ValidTo.Format("2006-01-02")),
 			})

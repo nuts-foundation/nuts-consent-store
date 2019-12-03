@@ -583,6 +583,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 					Subject:   Identifier("subject"),
 					Custodian: Identifier("custodian"),
 					Actor:     Identifier("actor"),
+					RecordHash: &crq.Records[0].Hash,
 					Resources: []string{
 						"resource",
 					},
@@ -620,6 +621,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 					Subject:   Identifier("subject"),
 					Custodian: Identifier("custodian"),
 					Actor:     Identifier("actor"),
+					RecordHash: &crq.Records[0].Hash,
 					Resources: []string{
 						"resource",
 					},
