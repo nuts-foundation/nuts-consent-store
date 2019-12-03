@@ -40,15 +40,15 @@ type HttpClient struct {
 }
 
 // FindConsentRecordByHash returns a ConsentRecord based on a hash. A latest flag can be added to indicate a record may only be returned if it's the latest in the chain.
-func (hb HttpClient) FindConsentRecordByHash(context context.Context, proofHash string, latest bool) (pkg.ConsentRecord, error) {
+func (hb HttpClient) FindConsentRecordByHash(context context.Context, consentRecordHash string, latest bool) (pkg.ConsentRecord, error) {
 
 	var consentRecord pkg.ConsentRecord
 
-	if len(proofHash) == 0 {
+	if len(consentRecordHash) == 0 {
 		return consentRecord, ErrorMissingHash
 	}
 
-	result, err := hb.client().FindConsentRecord(context, proofHash, &FindConsentRecordParams{Latest: &latest})
+	result, err := hb.client().FindConsentRecord(context, consentRecordHash, &FindConsentRecordParams{Latest: &latest})
 	if err != nil {
 		err = fmt.Errorf("error while finding consent record in consent-store: %w", err)
 		hb.Logger.Error(err)
@@ -138,9 +138,9 @@ func (hb HttpClient) QueryConsent(context context.Context, actor *string, custod
 	return rules, nil
 }
 
-func (hb HttpClient) DeleteConsentRecordByHash(context context.Context, proofHash string) (bool, error) {
+func (hb HttpClient) DeleteConsentRecordByHash(context context.Context, consentRecordHash string) (bool, error) {
 	// delete record, if it doesn't exist an error is returned
-	result, err := hb.client().DeleteConsent(context, proofHash)
+	result, err := hb.client().DeleteConsent(context, consentRecordHash)
 	if err != nil {
 		err := fmt.Errorf("error while deleting consent in consent-store: %v", err)
 		hb.Logger.Error(err)

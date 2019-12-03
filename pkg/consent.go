@@ -23,19 +23,22 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	bindata "github.com/golang-migrate/migrate/v4/source/go_bindata"
 	"github.com/jinzhu/gorm"
+
 	// import needed to enable the sqlite dialect for gorm
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	// sqlite driver
+	"sync"
+	"time"
+
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/nuts-foundation/nuts-consent-store/migrations"
 	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
-	"sync"
-	"time"
 )
 
 // ConsentStoreConfig holds the config for the consent store
@@ -47,10 +50,13 @@ type ConsentStoreConfig struct {
 
 // ConfigConnectionString is the config name for the connection string
 const ConfigConnectionString = "connectionstring"
+
 // ConfigMode is the config name for the mode of the store (server, client)
 const ConfigMode = "mode"
+
 // ConfigAddress is the config name for the api address when running in client mode
 const ConfigAddress = "address"
+
 // ConfigConnectionStringDefault is the default db connection string
 const ConfigConnectionStringDefault = ":memory:"
 
@@ -76,9 +82,9 @@ type ConsentStoreClient interface {
 	// QueryConsent can be used to query consent from a custodian/actor point of view.
 	QueryConsent(context context.Context, actor *string, custodian *string, subject *string, validAt *time.Time) ([]PatientConsent, error)
 	// DeleteConsentRecordByHash removes a ConsentRecord from the db. Returns true if the record was found and deleted.
-	DeleteConsentRecordByHash(context context.Context, proofHash string) (bool, error)
+	DeleteConsentRecordByHash(context context.Context, consentRecordHash string) (bool, error)
 	// FindConsentRecordByHash find a consent record given its hash, the latest flag indicates the requirement if the record is the latest in the chain.
-	FindConsentRecordByHash(context context.Context, proofHash string, latest bool) (ConsentRecord, error)
+	FindConsentRecordByHash(context context.Context, consentRecordHash string, latest bool) (ConsentRecord, error)
 }
 
 // ConsentStoreInstance returns a singleton consent store
@@ -378,10 +384,10 @@ func (cs *ConsentStore) QueryConsent(context context.Context, _actor *string, _c
 }
 
 // DeleteConsentRecordByHash deletes a consent record by its hash. Returns boolean to indicate the success of the operation
-func (cs *ConsentStore) DeleteConsentRecordByHash(context context.Context, proofHash string) (bool, error) {
+func (cs *ConsentStore) DeleteConsentRecordByHash(context context.Context, consentRecordHash string) (bool, error) {
 	record := ConsentRecord{}
 
-	if err := cs.Db.Debug().Where("hash = ?", proofHash).First(&record).Error; err != nil {
+	if err := cs.Db.Debug().Where("hash = ?", consentRecordHash).First(&record).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return false, ErrorNotFound
 		}
@@ -396,16 +402,16 @@ func (cs *ConsentStore) DeleteConsentRecordByHash(context context.Context, proof
 }
 
 // FindConsentRecordByHash find a consent record given its hash, the latest flag indicates the requirement if the record is the latest in the chain.
-func (cs *ConsentStore) FindConsentRecordByHash(context context.Context, proofHash string, latest bool) (ConsentRecord, error) {
+func (cs *ConsentStore) FindConsentRecordByHash(context context.Context, consentRecordHash string, latest bool) (ConsentRecord, error) {
 	var (
 		record ConsentRecord
 		err    error
 	)
 
 	if latest {
-		err = cs.findConsentRecordByHashGrouped(context, proofHash, &record)
+		err = cs.findConsentRecordByHashGrouped(context, consentRecordHash, &record)
 	} else {
-		err = cs.findConsentRecordByHashExact(context, proofHash, &record)
+		err = cs.findConsentRecordByHashExact(context, consentRecordHash, &record)
 	}
 
 	if err != nil {
@@ -424,12 +430,12 @@ var ErrorConsentRecordNotLatest = errors.New("consent record for given hash is n
 // ErrorNotFound is the same as Gorm.IsRecordNotFound
 var ErrorNotFound = errors.New("record not found")
 
-func (cs *ConsentStore) findConsentRecordByHashGrouped(context context.Context, proofHash string, record *ConsentRecord) error {
+func (cs *ConsentStore) findConsentRecordByHashGrouped(context context.Context, consentRecordHash string, record *ConsentRecord) error {
 	var id uint
 
 	// sub query broken
 	var cr ConsentRecord
-	if err := cs.Db.Debug().Where("hash = ?", proofHash).First(&cr).Error; err != nil {
+	if err := cs.Db.Debug().Where("hash = ?", consentRecordHash).First(&cr).Error; err != nil {
 		return err
 	}
 
@@ -452,7 +458,7 @@ func (cs *ConsentStore) findConsentRecordByHashGrouped(context context.Context, 
 			return err
 		}
 
-		if h != proofHash {
+		if h != consentRecordHash {
 			return ErrorConsentRecordNotLatest
 		}
 
@@ -468,6 +474,6 @@ func (cs *ConsentStore) findConsentRecordByHashGrouped(context context.Context, 
 	return cs.Db.Debug().Where("id = ?", id).First(record).Error
 }
 
-func (cs *ConsentStore) findConsentRecordByHashExact(context context.Context, proofHash string, record *ConsentRecord) error {
-	return cs.Db.Debug().Where("hash = ?", proofHash).First(record).Error
+func (cs *ConsentStore) findConsentRecordByHashExact(context context.Context, consentRecordHash string, record *ConsentRecord) error {
+	return cs.Db.Debug().Where("hash = ?", consentRecordHash).First(record).Error
 }

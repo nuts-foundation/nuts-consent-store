@@ -421,7 +421,7 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 		}
 	})
 
-	t.Run("API call returns 400 for missing proofHash", func(t *testing.T) {
+	t.Run("API call returns 400 for missing consentRecordHash", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 		echo := mock.NewMockContext(ctrl)
@@ -648,7 +648,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 					Custodian:  Identifier("custodian"),
 					Actor:      Identifier("actor"),
 					RecordHash: &crq.Records[0].Hash,
-					Resources:  []string{
+					Resources: []string{
 						"resource",
 					},
 					ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format(pkg.Iso8601DateTime)),
@@ -720,7 +720,7 @@ func TestDefaultConsentStore_DeleteConsent(t *testing.T) {
 	client.Cs.RecordConsent(context.Background(), []pkg.PatientConsent{crq})
 	defer client.Cs.Shutdown()
 
-	t.Run("missing proofHash returns 400", func(t *testing.T) {
+	t.Run("missing consentRecordHash returns 400", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 		echo := mock.NewMockContext(ctrl)
@@ -732,12 +732,12 @@ func TestDefaultConsentStore_DeleteConsent(t *testing.T) {
 		err := client.DeleteConsent(echo, "")
 
 		if assert.Error(t, err) {
-			expected := "code=400, message=missing proofHash"
+			expected := "code=400, message=missing consentRecordHash"
 			assert.Contains(t, err.Error(), expected)
 		}
 	})
 
-	t.Run("Unknown proofHash returns 404", func(t *testing.T) {
+	t.Run("Unknown consentRecordHash returns 404", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 		echo := mock.NewMockContext(ctrl)
@@ -777,7 +777,7 @@ func TestDefaultConsentStore_FindConsentRecord(t *testing.T) {
 	client.Cs.RecordConsent(context.Background(), []pkg.PatientConsent{crq})
 	defer client.Cs.Shutdown()
 
-	t.Run("missing proofHash returns 400", func(t *testing.T) {
+	t.Run("missing consentRecordHash returns 400", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 		echo := mock.NewMockContext(ctrl)
@@ -789,12 +789,12 @@ func TestDefaultConsentStore_FindConsentRecord(t *testing.T) {
 		err := client.FindConsentRecord(echo, "", FindConsentRecordParams{})
 
 		if assert.Error(t, err) {
-			expected := "code=400, message=missing proofHash"
+			expected := "code=400, message=missing consentRecordHash"
 			assert.Contains(t, err.Error(), expected)
 		}
 	})
 
-	t.Run("Unknown proofHash returns 404", func(t *testing.T) {
+	t.Run("Unknown consentRecordHash returns 404", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 		echo := mock.NewMockContext(ctrl)

@@ -20,11 +20,12 @@ package api
 
 import (
 	"errors"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/golang/mock/gomock"
 	"github.com/labstack/echo/v4"
 	"github.com/nuts-foundation/nuts-go-core/mock"
-	"net/http/httptest"
-	"testing"
 )
 
 type testServer struct {
@@ -35,11 +36,11 @@ var siws = []*ServerInterfaceWrapper{
 	serverInterfaceWrapper(nil), serverInterfaceWrapper(errors.New("Server error")),
 }
 
-func (t *testServer) FindConsentRecord(ctx echo.Context, proofHash string, params FindConsentRecordParams) error {
+func (t *testServer) FindConsentRecord(ctx echo.Context, consentRecordHash string, params FindConsentRecordParams) error {
 	return t.err
 }
 
-func (t *testServer) DeleteConsent(ctx echo.Context, proofHash string) error {
+func (t *testServer) DeleteConsent(ctx echo.Context, consentRecordHash string) error {
 	return t.err
 }
 
@@ -112,8 +113,8 @@ func TestRegisterHandlers(t *testing.T) {
 		echo.EXPECT().POST("/consent", gomock.Any())
 		echo.EXPECT().POST("/consent/check", gomock.Any())
 		echo.EXPECT().POST("/consent/query", gomock.Any())
-		echo.EXPECT().GET("/consent/:proofHash", gomock.Any())
-		echo.EXPECT().DELETE("/consent/:proofHash", gomock.Any())
+		echo.EXPECT().GET("/consent/:consentRecordHash", gomock.Any())
+		echo.EXPECT().DELETE("/consent/:consentRecordHash", gomock.Any())
 
 		RegisterHandlers(echo, &testServer{})
 	})

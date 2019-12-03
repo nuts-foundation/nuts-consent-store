@@ -149,17 +149,17 @@ func (w *Wrapper) CheckConsent(ctx echo.Context) error {
 	return ctx.JSON(200, checkResponse)
 }
 
-// ErrorMissingHash is returned when the proofHash parameter is missing
-var ErrorMissingHash = errors.New("missing proofHash")
+// ErrorMissingHash is returned when the consentRecordHash parameter is missing
+var ErrorMissingHash = errors.New("missing consentRecordHash")
 
-// DeleteConsent deletes the consentRecord for a given proofHash
-func (w *Wrapper) DeleteConsent(ctx echo.Context, proofHash string) error {
-	if len(proofHash) == 0 {
+// DeleteConsent deletes the consentRecord for a given consentRecordHash
+func (w *Wrapper) DeleteConsent(ctx echo.Context, consentRecordHash string) error {
+	if len(consentRecordHash) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, ErrorMissingHash)
 	}
 
 	// delete record, if it doesn't exist an error is returned
-	if f, err := w.Cs.DeleteConsentRecordByHash(ctx.Request().Context(), proofHash); err != nil || !f {
+	if f, err := w.Cs.DeleteConsentRecordByHash(ctx.Request().Context(), consentRecordHash); err != nil || !f {
 		if !f {
 			return echo.NewHTTPError(http.StatusNotFound, err)
 		}
@@ -171,8 +171,8 @@ func (w *Wrapper) DeleteConsent(ctx echo.Context, proofHash string) error {
 }
 
 // FindConsentRecord returns a ConsentRecord based on a hash. A latest flag can be added to indicate a record may only be returned if it's the latest in the chain.
-func (w *Wrapper) FindConsentRecord(ctx echo.Context, proofHash string, params FindConsentRecordParams) error {
-	if len(proofHash) == 0 {
+func (w *Wrapper) FindConsentRecord(ctx echo.Context, consentRecordHash string, params FindConsentRecordParams) error {
+	if len(consentRecordHash) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, ErrorMissingHash)
 	}
 
@@ -186,7 +186,7 @@ func (w *Wrapper) FindConsentRecord(ctx echo.Context, proofHash string, params F
 		latest = *params.Latest
 	}
 
-	if record, err = w.Cs.FindConsentRecordByHash(ctx.Request().Context(), proofHash, latest); err != nil {
+	if record, err = w.Cs.FindConsentRecordByHash(ctx.Request().Context(), consentRecordHash, latest); err != nil {
 		if errors.Is(err, pkg.ErrorNotFound) || errors.Is(err, pkg.ErrorConsentRecordNotLatest) {
 			return echo.NewHTTPError(http.StatusNotFound, err)
 		}

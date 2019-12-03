@@ -153,10 +153,10 @@ type ClientInterface interface {
 	QueryConsent(ctx context.Context, body QueryConsentJSONRequestBody) (*http.Response, error)
 
 	// DeleteConsent request
-	DeleteConsent(ctx context.Context, proofHash string) (*http.Response, error)
+	DeleteConsent(ctx context.Context, consentRecordHash string) (*http.Response, error)
 
 	// FindConsentRecord request
-	FindConsentRecord(ctx context.Context, proofHash string, params *FindConsentRecordParams) (*http.Response, error)
+	FindConsentRecord(ctx context.Context, consentRecordHash string, params *FindConsentRecordParams) (*http.Response, error)
 }
 
 func (c *Client) CreateConsentWithBody(ctx context.Context, contentType string, body io.Reader) (*http.Response, error) {
@@ -249,8 +249,8 @@ func (c *Client) QueryConsent(ctx context.Context, body QueryConsentJSONRequestB
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteConsent(ctx context.Context, proofHash string) (*http.Response, error) {
-	req, err := NewDeleteConsentRequest(c.Server, proofHash)
+func (c *Client) DeleteConsent(ctx context.Context, consentRecordHash string) (*http.Response, error) {
+	req, err := NewDeleteConsentRequest(c.Server, consentRecordHash)
 	if err != nil {
 		return nil, err
 	}
@@ -264,8 +264,8 @@ func (c *Client) DeleteConsent(ctx context.Context, proofHash string) (*http.Res
 	return c.Client.Do(req)
 }
 
-func (c *Client) FindConsentRecord(ctx context.Context, proofHash string, params *FindConsentRecordParams) (*http.Response, error) {
-	req, err := NewFindConsentRecordRequest(c.Server, proofHash, params)
+func (c *Client) FindConsentRecord(ctx context.Context, consentRecordHash string, params *FindConsentRecordParams) (*http.Response, error) {
+	req, err := NewFindConsentRecordRequest(c.Server, consentRecordHash, params)
 	if err != nil {
 		return nil, err
 	}
@@ -358,12 +358,12 @@ func NewQueryConsentRequestWithBody(server string, contentType string, body io.R
 }
 
 // NewDeleteConsentRequest generates requests for DeleteConsent
-func NewDeleteConsentRequest(server string, proofHash string) (*http.Request, error) {
+func NewDeleteConsentRequest(server string, consentRecordHash string) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParam("simple", false, "proofHash", proofHash)
+	pathParam0, err = runtime.StyleParam("simple", false, "consentRecordHash", consentRecordHash)
 	if err != nil {
 		return nil, err
 	}
@@ -379,12 +379,12 @@ func NewDeleteConsentRequest(server string, proofHash string) (*http.Request, er
 }
 
 // NewFindConsentRecordRequest generates requests for FindConsentRecord
-func NewFindConsentRecordRequest(server string, proofHash string, params *FindConsentRecordParams) (*http.Request, error) {
+func NewFindConsentRecordRequest(server string, consentRecordHash string, params *FindConsentRecordParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParam("simple", false, "proofHash", proofHash)
+	pathParam0, err = runtime.StyleParam("simple", false, "consentRecordHash", consentRecordHash)
 	if err != nil {
 		return nil, err
 	}
@@ -602,8 +602,8 @@ func (c *ClientWithResponses) QueryConsentWithResponse(ctx context.Context, body
 }
 
 // DeleteConsentWithResponse request returning *DeleteConsentResponse
-func (c *ClientWithResponses) DeleteConsentWithResponse(ctx context.Context, proofHash string) (*deleteConsentResponse, error) {
-	rsp, err := c.DeleteConsent(ctx, proofHash)
+func (c *ClientWithResponses) DeleteConsentWithResponse(ctx context.Context, consentRecordHash string) (*deleteConsentResponse, error) {
+	rsp, err := c.DeleteConsent(ctx, consentRecordHash)
 	if err != nil {
 		return nil, err
 	}
@@ -611,8 +611,8 @@ func (c *ClientWithResponses) DeleteConsentWithResponse(ctx context.Context, pro
 }
 
 // FindConsentRecordWithResponse request returning *FindConsentRecordResponse
-func (c *ClientWithResponses) FindConsentRecordWithResponse(ctx context.Context, proofHash string, params *FindConsentRecordParams) (*findConsentRecordResponse, error) {
-	rsp, err := c.FindConsentRecord(ctx, proofHash, params)
+func (c *ClientWithResponses) FindConsentRecordWithResponse(ctx context.Context, consentRecordHash string, params *FindConsentRecordParams) (*findConsentRecordResponse, error) {
+	rsp, err := c.FindConsentRecord(ctx, consentRecordHash, params)
 	if err != nil {
 		return nil, err
 	}
@@ -740,10 +740,10 @@ type ServerInterface interface {
 	CheckConsent(ctx echo.Context) error
 	// Do a query for available consent// (POST /consent/query)
 	QueryConsent(ctx echo.Context) error
-	// Remove a consent record for a C-S-A combination.// (DELETE /consent/{proofHash})
-	DeleteConsent(ctx echo.Context, proofHash string) error
-	// Retrieve a consent record by hash, use latest query param to only return a value if the given consent record is the latest in the chain.// (GET /consent/{proofHash})
-	FindConsentRecord(ctx echo.Context, proofHash string, params FindConsentRecordParams) error
+	// Remove a consent record for a C-S-A combination.// (DELETE /consent/{consentRecordHash})
+	DeleteConsent(ctx echo.Context, consentRecordHash string) error
+	// Retrieve a consent record by hash, use latest query param to only return a value if the given consent record is the latest in the chain.// (GET /consent/{consentRecordHash})
+	FindConsentRecord(ctx echo.Context, consentRecordHash string, params FindConsentRecordParams) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -781,28 +781,28 @@ func (w *ServerInterfaceWrapper) QueryConsent(ctx echo.Context) error {
 // DeleteConsent converts echo context to params.
 func (w *ServerInterfaceWrapper) DeleteConsent(ctx echo.Context) error {
 	var err error
-	// ------------- Path parameter "proofHash" -------------
-	var proofHash string
+	// ------------- Path parameter "consentRecordHash" -------------
+	var consentRecordHash string
 
-	err = runtime.BindStyledParameter("simple", false, "proofHash", ctx.Param("proofHash"), &proofHash)
+	err = runtime.BindStyledParameter("simple", false, "consentRecordHash", ctx.Param("consentRecordHash"), &consentRecordHash)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter proofHash: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter consentRecordHash: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.DeleteConsent(ctx, proofHash)
+	err = w.Handler.DeleteConsent(ctx, consentRecordHash)
 	return err
 }
 
 // FindConsentRecord converts echo context to params.
 func (w *ServerInterfaceWrapper) FindConsentRecord(ctx echo.Context) error {
 	var err error
-	// ------------- Path parameter "proofHash" -------------
-	var proofHash string
+	// ------------- Path parameter "consentRecordHash" -------------
+	var consentRecordHash string
 
-	err = runtime.BindStyledParameter("simple", false, "proofHash", ctx.Param("proofHash"), &proofHash)
+	err = runtime.BindStyledParameter("simple", false, "consentRecordHash", ctx.Param("consentRecordHash"), &consentRecordHash)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter proofHash: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter consentRecordHash: %s", err))
 	}
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -818,7 +818,7 @@ func (w *ServerInterfaceWrapper) FindConsentRecord(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.FindConsentRecord(ctx, proofHash, params)
+	err = w.Handler.FindConsentRecord(ctx, consentRecordHash, params)
 	return err
 }
 
@@ -832,7 +832,8 @@ func RegisterHandlers(router runtime.EchoRouter, si ServerInterface) {
 	router.POST("/consent", wrapper.CreateConsent)
 	router.POST("/consent/check", wrapper.CheckConsent)
 	router.POST("/consent/query", wrapper.QueryConsent)
-	router.DELETE("/consent/:proofHash", wrapper.DeleteConsent)
-	router.GET("/consent/:proofHash", wrapper.FindConsentRecord)
+	router.DELETE("/consent/:consentRecordHash", wrapper.DeleteConsent)
+	router.GET("/consent/:consentRecordHash", wrapper.FindConsentRecord)
 
 }
+

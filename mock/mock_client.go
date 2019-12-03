@@ -6,10 +6,11 @@ package mock
 
 import (
 	context "context"
-	gomock "github.com/golang/mock/gomock"
-	pkg "github.com/nuts-foundation/nuts-consent-store/pkg"
 	reflect "reflect"
 	time "time"
+
+	gomock "github.com/golang/mock/gomock"
+	pkg "github.com/nuts-foundation/nuts-consent-store/pkg"
 )
 
 // MockConsentStoreClient is a mock of ConsentStoreClient interface
@@ -80,31 +81,31 @@ func (mr *MockConsentStoreClientMockRecorder) QueryConsent(context, actor, custo
 }
 
 // DeleteConsentRecordByHash mocks base method
-func (m *MockConsentStoreClient) DeleteConsentRecordByHash(context context.Context, proofHash string) (bool, error) {
+func (m *MockConsentStoreClient) DeleteConsentRecordByHash(context context.Context, consentRecordHash string) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteConsentRecordByHash", context, proofHash)
+	ret := m.ctrl.Call(m, "DeleteConsentRecordByHash", context, consentRecordHash)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // DeleteConsentRecordByHash indicates an expected call of DeleteConsentRecordByHash
-func (mr *MockConsentStoreClientMockRecorder) DeleteConsentRecordByHash(context, proofHash interface{}) *gomock.Call {
+func (mr *MockConsentStoreClientMockRecorder) DeleteConsentRecordByHash(context, consentRecordHash interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteConsentRecordByHash", reflect.TypeOf((*MockConsentStoreClient)(nil).DeleteConsentRecordByHash), context, proofHash)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteConsentRecordByHash", reflect.TypeOf((*MockConsentStoreClient)(nil).DeleteConsentRecordByHash), context, consentRecordHash)
 }
 
 // FindConsentRecordByHash mocks base method
-func (m *MockConsentStoreClient) FindConsentRecordByHash(context context.Context, proofHash string, latest bool) (pkg.ConsentRecord, error) {
+func (m *MockConsentStoreClient) FindConsentRecordByHash(context context.Context, consentRecordHash string, latest bool) (pkg.ConsentRecord, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindConsentRecordByHash", context, proofHash, latest)
+	ret := m.ctrl.Call(m, "FindConsentRecordByHash", context, consentRecordHash, latest)
 	ret0, _ := ret[0].(pkg.ConsentRecord)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // FindConsentRecordByHash indicates an expected call of FindConsentRecordByHash
-func (mr *MockConsentStoreClientMockRecorder) FindConsentRecordByHash(context, proofHash, latest interface{}) *gomock.Call {
+func (mr *MockConsentStoreClientMockRecorder) FindConsentRecordByHash(context, consentRecordHash, latest interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindConsentRecordByHash", reflect.TypeOf((*MockConsentStoreClient)(nil).FindConsentRecordByHash), context, proofHash, latest)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindConsentRecordByHash", reflect.TypeOf((*MockConsentStoreClient)(nil).FindConsentRecordByHash), context, consentRecordHash, latest)
 }

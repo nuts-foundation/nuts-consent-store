@@ -90,14 +90,14 @@ paths:
               example: "missing value for actor"
               schema:
                 type: string
-  /consent/{proofHash}:
+  /consent/{consentRecordHash}:
     get:
       summary: "Retrieve a consent record by hash, use latest query param to only return a value if the given consent record is the latest in the chain."
       operationId: findConsentRecord
       tags:
         - consent
       parameters:
-        - name: proofHash
+        - name: consentRecordHash
           in: path
           description: "the hash of the consent proof, acts as an identifier for the consent record"
           required: true
@@ -129,7 +129,7 @@ paths:
       tags:
         - consent
       parameters:
-        - name: proofHash
+        - name: consentRecordHash
           in: path
           description: "the hash of the consent proof, acts as an identifier for the consent record"
           required: true
