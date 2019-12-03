@@ -20,8 +20,9 @@ package api
 
 import (
 	"errors"
-	"github.com/nuts-foundation/nuts-consent-store/pkg"
 	"time"
+
+	"github.com/nuts-foundation/nuts-consent-store/pkg"
 )
 
 // ToPatientConsent converts the SimplifiedConsent object to an internal PatientConsent
@@ -53,21 +54,21 @@ func (cr ConsentRecord) ToConsentRecord() (pkg.ConsentRecord, error) {
 		resources = append(resources, pkg.Resource{ResourceType: a})
 	}
 
-	validFrom, err := time.Parse("2006-01-02", string(cr.ValidFrom))
+	validFrom, err := time.Parse(pkg.Iso6801DateTime, string(cr.ValidFrom))
 	if err != nil {
 		return pkg.ConsentRecord{}, err
 	}
-	validTo, err := time.Parse("2006-01-02", string(cr.ValidTo))
+	validTo, err := time.Parse(pkg.Iso6801DateTime, string(cr.ValidTo))
 	if err != nil {
 		return pkg.ConsentRecord{}, err
 	}
 
 	return pkg.ConsentRecord{
-		ValidFrom: validFrom,
-		ValidTo:   validTo,
-		Hash:      cr.RecordHash,
+		ValidFrom:    validFrom,
+		ValidTo:      validTo,
+		Hash:         cr.RecordHash,
 		PreviousHash: cr.PreviousRecordHash,
-		Resources: resources,
+		Resources:    resources,
 	}, nil
 }
 
@@ -93,14 +94,14 @@ func FromPatientConsent(patientConsent []pkg.PatientConsent) ([]SimplifiedConsen
 				resources = append(resources, r2.ResourceType)
 			}
 			consent = append(consent, SimplifiedConsent{
-				Id:        c.ID,
-				Subject:   Identifier(c.Subject),
-				Custodian: Identifier(c.Custodian),
-				Actor:     Identifier(c.Actor),
-				Resources: resources,
+				Id:         c.ID,
+				Subject:    Identifier(c.Subject),
+				Custodian:  Identifier(c.Custodian),
+				Actor:      Identifier(c.Actor),
+				Resources:  resources,
 				RecordHash: &r.Hash,
-				ValidFrom: ValidFrom(r.ValidFrom.Format("2006-01-02")),
-				ValidTo:   ValidTo(r.ValidTo.Format("2006-01-02")),
+				ValidFrom:  ValidFrom(r.ValidFrom.Format(pkg.Iso6801DateTime)),
+				ValidTo:    ValidTo(r.ValidTo.Format(pkg.Iso6801DateTime)),
 			})
 		}
 	}
@@ -121,8 +122,8 @@ func FromConsentRecord(consentRecord pkg.ConsentRecord) ConsentRecord {
 		PreviousRecordHash: consentRecord.PreviousHash,
 		RecordHash:         consentRecord.Hash,
 		Resources:          resources,
-		ValidFrom:          ValidFrom(consentRecord.ValidFrom.Format("2006-01-02")),
-		ValidTo:            ValidTo(consentRecord.ValidTo.Format("2006-01-02")),
+		ValidFrom:          ValidFrom(consentRecord.ValidFrom.Format(pkg.Iso6801DateTime)),
+		ValidTo:            ValidTo(consentRecord.ValidTo.Format(pkg.Iso6801DateTime)),
 		Version:            &version,
 	}
 }

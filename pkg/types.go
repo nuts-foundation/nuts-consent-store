@@ -20,9 +20,12 @@ package pkg
 
 import (
 	"fmt"
-	"github.com/jinzhu/gorm"
 	"time"
+
+	"github.com/jinzhu/gorm"
 )
+
+const Iso6801DateTime = "2006-01-02T15:04:05-07:00"
 
 // PatientConsent defines struct for patient_consent table.
 // ID refers to the HMAC id for a custodian(subject-actor)
