@@ -643,10 +643,10 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 			TotalResults: 1,
 			Results: []SimplifiedConsent{
 				{
-					Id:         crq.ID,
-					Subject:    Identifier("subject"),
-					Custodian:  Identifier("custodian"),
-					Actor:      Identifier("actor"),
+					Id:        crq.ID,
+					Subject:   Identifier("subject"),
+					Custodian: Identifier("custodian"),
+					Actor:     Identifier("actor"),
 					RecordHash: &crq.Records[0].Hash,
 					Resources: []string{
 						"resource",
