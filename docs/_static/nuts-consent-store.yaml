@@ -232,7 +232,7 @@ components:
           items:
             $ref: "#/components/schemas/ConsentRecord"
     ConsentRecord:
-      description: "consent record corresponding with a single attachment in the distrubuted consent record."
+      description: "consent record corresponding with a single attachment in the distributed consent record."
       required:
         - resources
         - validFrom
@@ -310,9 +310,9 @@ components:
       example: urn:oid:2.16.840.1.113883.2.4.6.1:00000007
     ValidFrom:
       type: string
-      format: '2020-01-01'
-      description: "Date from which a record is valid (inclusive)"
+      format: '2020-01-01T12:00:00+01:00'
+      description: "DateTime from which a record is valid (inclusive)"
     ValidTo:
       type: string
-      format: '2020-01-01'
-      description: "Date to which a record is valid (exclusive)"
+      format: '2020-01-01T12:00:00+01:00'
+      description: "DateTime to which a record is valid (exclusive)"

@@ -96,7 +96,7 @@ func TestDefaultConsentStore_CheckConsent(t *testing.T) {
 		echo := mock.NewMockContext(ctrl)
 
 		ccr := consentCheckRequest()
-		validAt := time.Now().Format("2006-01-02")
+		validAt := time.Now().Format(pkg.Iso8601DateTime)
 		ccr.ValidAt = &validAt
 		json, _ := json.Marshal(ccr)
 		request := &http.Request{
@@ -588,8 +588,8 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 					Resources: []string{
 						"resource",
 					},
-					ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format("2006-01-02")),
-					ValidTo:   ValidTo(time.Now().Add(time.Hour * 24).Format("2006-01-02")),
+					ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format(pkg.Iso8601DateTime)),
+					ValidTo:   ValidTo(time.Now().Add(time.Hour * 24).Format(pkg.Iso8601DateTime)),
 				},
 			},
 			Page: PageDefinition{},
@@ -643,16 +643,16 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 			TotalResults: 1,
 			Results: []SimplifiedConsent{
 				{
-					Id:        crq.ID,
-					Subject:   Identifier("subject"),
-					Custodian: Identifier("custodian"),
-					Actor:     Identifier("actor"),
+					Id:         crq.ID,
+					Subject:    Identifier("subject"),
+					Custodian:  Identifier("custodian"),
+					Actor:      Identifier("actor"),
 					RecordHash: &crq.Records[0].Hash,
-					Resources: []string{
+					Resources:  []string{
 						"resource",
 					},
-					ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format("2006-01-02")),
-					ValidTo:   ValidTo(time.Now().Add(time.Hour * 24).Format("2006-01-02")),
+					ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format(pkg.Iso8601DateTime)),
+					ValidTo:   ValidTo(time.Now().Add(time.Hour * 24).Format(pkg.Iso8601DateTime)),
 				},
 			},
 			Page: PageDefinition{},
@@ -861,8 +861,8 @@ func testConsent() CreateConsentRequest {
 			{
 				RecordHash: random.String(8),
 				Resources:  []string{"resource"},
-				ValidFrom:  ValidFrom("2019-01-01"),
-				ValidTo:    ValidTo("2030-01-01"),
+				ValidFrom:  ValidFrom("2019-01-01T12:00:00+01:00"),
+				ValidTo:    ValidTo("2030-01-01T12:00:00+01:00"),
 			},
 		},
 	}

@@ -23,11 +23,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/nuts-foundation/nuts-consent-store/pkg"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/nuts-foundation/nuts-consent-store/pkg"
+	"github.com/sirupsen/logrus"
 )
 
 // HttpClient holds the server address and other basic settings for the http client
@@ -164,7 +165,7 @@ func (hb HttpClient) ConsentAuth(ctx context.Context, custodian string, subject 
 	}
 
 	if checkpoint != nil {
-		s := checkpoint.Format("2006-01-02")
+		s := checkpoint.Format(pkg.Iso8601DateTime)
 		req.ValidAt = &s
 	}
 

@@ -19,11 +19,12 @@
 package api
 
 import (
+	"testing"
+	"time"
+
 	"github.com/labstack/gommon/random"
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestFromSimplifiedConsentRule(t *testing.T) {
@@ -74,55 +75,27 @@ func TestCreateConsentRequest_ToPatientConsent(t *testing.T) {
 			{
 				RecordHash: random.String(8),
 				Resources:  []string{"resource"},
-				ValidFrom:  "2019-01-01",
-				ValidTo:    "2020-01-01",
+				ValidFrom:  "2019-01-01T12:00:00+01:00",
+				ValidTo:    "2020-01-01T12:00:00+01:00",
 				Version:    &version,
 			},
 		},
 	}
 
 	t.Run("correct transform", func(t *testing.T) {
-		pc, _ := sc.ToPatientConsent()
-
-		if pc.Subject != string(sc.Subject) {
-			t.Error("Expected Subject to match")
-			return
+		pc, err := sc.ToPatientConsent()
+		if err != nil {
+			t.Fatal(err.Error())
 		}
 
-		if pc.Custodian != string(sc.Custodian) {
-			t.Error("Expected Custodian to match")
-			return
-		}
-
-		if pc.Actor != string(sc.Actor) {
-			t.Error("Expected Actor to match")
-			return
-		}
-
-		if len(pc.Records) != 1 {
-			t.Error("Expected 1 record in PatientConsent")
-			return
-		}
-
-		if pc.Records[0].Hash != sc.Records[0].RecordHash {
-			t.Error("Expected Hash to match")
-			return
-		}
-
-		if pc.Resources()[0].ResourceType != sc.Records[0].Resources[0] {
-			t.Error("Expected Resources to match")
-			return
-		}
-
-		if pc.Records[0].ValidFrom.Format("2006-01-02") != string(sc.Records[0].ValidFrom) {
-			t.Error("Expected ValidFrom to match")
-			return
-		}
-
-		if pc.Records[0].ValidTo.Format("2006-01-02") != string(sc.Records[0].ValidTo) {
-			t.Error("Expected ValidTo to match")
-			return
-		}
+		assert.Equal(t, string(sc.Subject), pc.Subject)
+		assert.Equal(t, string(sc.Custodian), pc.Custodian)
+		assert.Equal(t, string(sc.Actor), pc.Actor)
+		assert.Len(t, pc.Records, 1)
+		assert.Equal(t, sc.Records[0].RecordHash, pc.Records[0].Hash)
+		assert.Equal(t, sc.Records[0].Resources[0], pc.Resources()[0].ResourceType)
+		assert.Equal(t, string(sc.Records[0].ValidFrom), pc.Records[0].ValidFrom.Format(pkg.Iso8601DateTime))
+		assert.Equal(t, string(sc.Records[0].ValidTo), pc.Records[0].ValidTo.Format(pkg.Iso8601DateTime))
 	})
 
 	t.Run("Incorrect validTo returns error", func(t *testing.T) {
@@ -134,7 +107,7 @@ func TestCreateConsentRequest_ToPatientConsent(t *testing.T) {
 			return
 		}
 
-		expected := "parsing time \"202-01-01\" as \"2006-01-02\": cannot parse \"01-01\" as \"2006\""
+		expected := "parsing time \"202-01-01\" as \"2006-01-02T15:04:05-07:00\": cannot parse \"01-01\" as \"2006\""
 		if err.Error() != expected {
 			t.Errorf("Expected error [%s], got [%v]", expected, err.Error())
 		}
@@ -149,7 +122,7 @@ func TestCreateConsentRequest_ToPatientConsent(t *testing.T) {
 			return
 		}
 
-		expected := "parsing time \"202-01-01\" as \"2006-01-02\": cannot parse \"01-01\" as \"2006\""
+		expected := "parsing time \"202-01-01\" as \"2006-01-02T15:04:05-07:00\": cannot parse \"01-01\" as \"2006\""
 		if err.Error() != expected {
 			t.Errorf("Expected error [%s], got [%v]", expected, err.Error())
 		}
@@ -163,8 +136,8 @@ func TestFromConsentRecord(t *testing.T) {
 		assert.Equal(t, "PreviousHash", *pc.PreviousRecordHash)
 		assert.Equal(t, "Hash", pc.RecordHash)
 		assert.Equal(t, 2, *pc.Version)
-		assert.Equal(t, ValidTo("2001-09-12"), pc.ValidTo)
-		assert.Equal(t, ValidFrom("2001-09-11"), pc.ValidFrom)
+		assert.Equal(t, ValidTo("2001-09-12T12:00:00+02:00"), pc.ValidTo)
+		assert.Equal(t, ValidFrom("2001-09-11T12:00:00+02:00"), pc.ValidFrom)
 	})
 }
 
@@ -185,8 +158,8 @@ func patientConsent() pkg.PatientConsent {
 }
 
 func consentRecord() pkg.ConsentRecord {
-	t1, _ := time.Parse("2006-01-02", "2001-09-11")
-	t2, _ := time.Parse("2006-01-02", "2001-09-12")
+	t1, _ := time.Parse(pkg.Iso8601DateTime, "2001-09-11T12:00:00+02:00")
+	t2, _ := time.Parse(pkg.Iso8601DateTime, "2001-09-12T12:00:00+02:00")
 
 	prevH := "PreviousHash"
 

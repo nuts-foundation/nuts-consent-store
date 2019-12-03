@@ -22,12 +22,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/labstack/echo/v4"
-	"github.com/nuts-foundation/nuts-consent-store/pkg"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/labstack/echo/v4"
+	"github.com/nuts-foundation/nuts-consent-store/pkg"
+	"github.com/sirupsen/logrus"
 )
 
 // Wrapper implements the ServerInterface for the base ConsentStore
@@ -76,6 +77,9 @@ func (w *Wrapper) CreateConsent(ctx echo.Context) error {
 	}
 
 	c, err := createRequest.ToPatientConsent()
+	if err != nil {
+		return err
+	}
 
 	err = w.Cs.RecordConsent(ctx.Request().Context(), []pkg.PatientConsent{c})
 
@@ -114,7 +118,7 @@ func (w *Wrapper) CheckConsent(ctx echo.Context) error {
 
 	var checkpoint *time.Time
 	if checkRequest.ValidAt != nil {
-		cp, err := time.Parse("2006-01-02", *checkRequest.ValidAt)
+		cp, err := time.Parse(pkg.Iso8601DateTime, *checkRequest.ValidAt)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid value for validAt: %s", *checkRequest.ValidAt))
 		}
