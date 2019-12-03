@@ -96,7 +96,7 @@ func TestDefaultConsentStore_CheckConsent(t *testing.T) {
 		echo := mock.NewMockContext(ctrl)
 
 		ccr := consentCheckRequest()
-		validAt := time.Now().Format(pkg.Iso6801DateTime)
+		validAt := time.Now().Format(pkg.Iso8601DateTime)
 		ccr.ValidAt = &validAt
 		json, _ := json.Marshal(ccr)
 		request := &http.Request{
@@ -588,8 +588,8 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 					Resources: []string{
 						"resource",
 					},
-					ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format(pkg.Iso6801DateTime)),
-					ValidTo:   ValidTo(time.Now().Add(time.Hour * 24).Format(pkg.Iso6801DateTime)),
+					ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format(pkg.Iso8601DateTime)),
+					ValidTo:   ValidTo(time.Now().Add(time.Hour * 24).Format(pkg.Iso8601DateTime)),
 				},
 			},
 			Page: PageDefinition{},
@@ -651,8 +651,8 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 					Resources: []string{
 						"resource",
 					},
-					ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format(pkg.Iso6801DateTime)),
-					ValidTo:   ValidTo(time.Now().Add(time.Hour * 24).Format(pkg.Iso6801DateTime)),
+					ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format(pkg.Iso8601DateTime)),
+					ValidTo:   ValidTo(time.Now().Add(time.Hour * 24).Format(pkg.Iso8601DateTime)),
 				},
 			},
 			Page: PageDefinition{},

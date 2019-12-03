@@ -25,8 +25,8 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-// Iso6801DateTime is the date format used in the API for denoting a zoned date time
-const Iso6801DateTime = "2006-01-02T15:04:05-07:00"
+// Iso8601DateTime is the date format used in the API for denoting a zoned date time
+const Iso8601DateTime = "2006-01-02T15:04:05-07:00"
 
 // PatientConsent defines struct for patient_consent table.
 // ID refers to the HMAC id for a custodian(subject-actor)

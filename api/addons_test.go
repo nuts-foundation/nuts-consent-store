@@ -94,8 +94,8 @@ func TestCreateConsentRequest_ToPatientConsent(t *testing.T) {
 		assert.Len(t, pc.Records, 1)
 		assert.Equal(t, sc.Records[0].RecordHash, pc.Records[0].Hash)
 		assert.Equal(t, sc.Records[0].Resources[0], pc.Resources()[0].ResourceType)
-		assert.Equal(t, string(sc.Records[0].ValidFrom), pc.Records[0].ValidFrom.Format(pkg.Iso6801DateTime))
-		assert.Equal(t, string(sc.Records[0].ValidTo), pc.Records[0].ValidTo.Format(pkg.Iso6801DateTime))
+		assert.Equal(t, string(sc.Records[0].ValidFrom), pc.Records[0].ValidFrom.Format(pkg.Iso8601DateTime))
+		assert.Equal(t, string(sc.Records[0].ValidTo), pc.Records[0].ValidTo.Format(pkg.Iso8601DateTime))
 	})
 
 	t.Run("Incorrect validTo returns error", func(t *testing.T) {
@@ -158,8 +158,8 @@ func patientConsent() pkg.PatientConsent {
 }
 
 func consentRecord() pkg.ConsentRecord {
-	t1, _ := time.Parse(pkg.Iso6801DateTime, "2001-09-11T12:00:00+02:00")
-	t2, _ := time.Parse(pkg.Iso6801DateTime, "2001-09-12T12:00:00+02:00")
+	t1, _ := time.Parse(pkg.Iso8601DateTime, "2001-09-11T12:00:00+02:00")
+	t2, _ := time.Parse(pkg.Iso8601DateTime, "2001-09-12T12:00:00+02:00")
 
 	prevH := "PreviousHash"
 

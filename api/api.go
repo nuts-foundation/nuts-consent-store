@@ -118,7 +118,7 @@ func (w *Wrapper) CheckConsent(ctx echo.Context) error {
 
 	var checkpoint *time.Time
 	if checkRequest.ValidAt != nil {
-		cp, err := time.Parse(pkg.Iso6801DateTime, *checkRequest.ValidAt)
+		cp, err := time.Parse(pkg.Iso8601DateTime, *checkRequest.ValidAt)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid value for validAt: %s", *checkRequest.ValidAt))
 		}

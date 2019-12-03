@@ -54,11 +54,11 @@ func (cr ConsentRecord) ToConsentRecord() (pkg.ConsentRecord, error) {
 		resources = append(resources, pkg.Resource{ResourceType: a})
 	}
 
-	validFrom, err := time.Parse(pkg.Iso6801DateTime, string(cr.ValidFrom))
+	validFrom, err := time.Parse(pkg.Iso8601DateTime, string(cr.ValidFrom))
 	if err != nil {
 		return pkg.ConsentRecord{}, err
 	}
-	validTo, err := time.Parse(pkg.Iso6801DateTime, string(cr.ValidTo))
+	validTo, err := time.Parse(pkg.Iso8601DateTime, string(cr.ValidTo))
 	if err != nil {
 		return pkg.ConsentRecord{}, err
 	}
@@ -100,8 +100,8 @@ func FromPatientConsent(patientConsent []pkg.PatientConsent) ([]SimplifiedConsen
 				Actor:      Identifier(c.Actor),
 				Resources:  resources,
 				RecordHash: &r.Hash,
-				ValidFrom:  ValidFrom(r.ValidFrom.Format(pkg.Iso6801DateTime)),
-				ValidTo:    ValidTo(r.ValidTo.Format(pkg.Iso6801DateTime)),
+				ValidFrom:  ValidFrom(r.ValidFrom.Format(pkg.Iso8601DateTime)),
+				ValidTo:    ValidTo(r.ValidTo.Format(pkg.Iso8601DateTime)),
 			})
 		}
 	}
@@ -122,8 +122,8 @@ func FromConsentRecord(consentRecord pkg.ConsentRecord) ConsentRecord {
 		PreviousRecordHash: consentRecord.PreviousHash,
 		RecordHash:         consentRecord.Hash,
 		Resources:          resources,
-		ValidFrom:          ValidFrom(consentRecord.ValidFrom.Format(pkg.Iso6801DateTime)),
-		ValidTo:            ValidTo(consentRecord.ValidTo.Format(pkg.Iso6801DateTime)),
+		ValidFrom:          ValidFrom(consentRecord.ValidFrom.Format(pkg.Iso8601DateTime)),
+		ValidTo:            ValidTo(consentRecord.ValidTo.Format(pkg.Iso8601DateTime)),
 		Version:            &version,
 	}
 }

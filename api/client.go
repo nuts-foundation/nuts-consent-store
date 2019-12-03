@@ -165,7 +165,7 @@ func (hb HttpClient) ConsentAuth(ctx context.Context, custodian string, subject 
 	}
 
 	if checkpoint != nil {
-		s := checkpoint.Format(pkg.Iso6801DateTime)
+		s := checkpoint.Format(pkg.Iso8601DateTime)
 		req.ValidAt = &s
 	}
 
