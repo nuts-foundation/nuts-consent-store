@@ -648,7 +648,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 					Custodian:  Identifier("custodian"),
 					Actor:      Identifier("actor"),
 					RecordHash: &crq.Records[0].Hash,
-					Resources: []string{
+					Resources:  []string{
 						"resource",
 					},
 					ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format(pkg.Iso8601DateTime)),
