@@ -46,6 +46,14 @@ The client and server API is generated from the nuts-consent-store open-api spec
     oapi-codegen -generate server,client,types -package api docs/_static/nuts-consent-store.yaml > api/generated.go
 
 
+Generating mocks
+----------------
+Mocks used by other modules, generate with:
+
+.. code-block:: shell
+
+    mockgen -destination=mock/mock_client.go -package=mock -source=pkg/consent.go
+
 Binary format migrations
 ------------------------
 
