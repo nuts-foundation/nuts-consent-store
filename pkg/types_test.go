@@ -39,10 +39,10 @@ func TestConsentRule_String(t *testing.T) {
 	})
 }
 
-func TestResource_String(t *testing.T) {
+func TestDataClass_String(t *testing.T) {
 	t.Run("outputs string representation of model", func(t *testing.T) {
-		model := Resource{
-			ResourceType: "resource",
+		model := DataClass{
+			Code: "resource",
 		}
 
 		out := model.String()
@@ -95,9 +95,9 @@ func testConsent() *PatientConsent {
 		Subject:   "subject",
 		Records: []ConsentRecord{
 			{
-				ValidFrom: time.Now(),
-				ValidTo:   time.Now().Add(time.Hour * 24 * 365),
-				Resources: []Resource{{ResourceType: "resource"}},
+				ValidFrom:   time.Now(),
+				ValidTo:     time.Now().Add(time.Hour * 24 * 365),
+				DataClasses: []DataClass{{Code: "resource"}},
 			},
 		},
 	}

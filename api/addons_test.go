@@ -44,7 +44,7 @@ func TestFromSimplifiedConsentRule(t *testing.T) {
 		assert.Equal(t, Identifier("actor"), sc.Actor)
 		assert.Equal(t, "", sc.Records[0].RecordHash)
 		assert.Len(t, sc.Records, 1)
-		assert.Equal(t, "resource", sc.Records[0].Resources[0])
+		assert.Equal(t, "resource", sc.Records[0].DataClasses[0])
 	})
 }
 
@@ -56,11 +56,11 @@ func TestCreateConsentRequest_ToPatientConsent(t *testing.T) {
 		Subject:   "subject",
 		Records: []ConsentRecord{
 			{
-				RecordHash: random.String(8),
-				Resources:  []string{"resource"},
-				ValidFrom:  "2019-01-01T12:00:00+01:00",
-				ValidTo:    "2020-01-01T12:00:00+01:00",
-				Version:    &version,
+				RecordHash:  random.String(8),
+				DataClasses: []string{"resource"},
+				ValidFrom:   "2019-01-01T12:00:00+01:00",
+				ValidTo:     "2020-01-01T12:00:00+01:00",
+				Version:     &version,
 			},
 		},
 	}
@@ -76,7 +76,7 @@ func TestCreateConsentRequest_ToPatientConsent(t *testing.T) {
 		assert.Equal(t, string(sc.Actor), pc.Actor)
 		assert.Len(t, pc.Records, 1)
 		assert.Equal(t, sc.Records[0].RecordHash, pc.Records[0].Hash)
-		assert.Equal(t, sc.Records[0].Resources[0], pc.Resources()[0].ResourceType)
+		assert.Equal(t, sc.Records[0].DataClasses[0], pc.DataClasses()[0].Code)
 		assert.Equal(t, string(sc.Records[0].ValidFrom), pc.Records[0].ValidFrom.Format(pkg.Iso8601DateTime))
 		assert.Equal(t, string(sc.Records[0].ValidTo), pc.Records[0].ValidTo.Format(pkg.Iso8601DateTime))
 	})
@@ -132,8 +132,8 @@ func patientConsent() pkg.PatientConsent {
 		Actor:     "actor",
 		Records: []pkg.ConsentRecord{
 			{
-				Resources: []pkg.Resource{
-					{ResourceType: "resource"},
+				DataClasses: []pkg.DataClass{
+					{Code: "resource"},
 				},
 			},
 		},
@@ -155,8 +155,8 @@ func consentRecord() pkg.ConsentRecord {
 		PreviousHash:     &prevH,
 		Version:          2,
 		UUID:             "UUID",
-		Resources: []pkg.Resource{
-			{ResourceType: "resource"},
+		DataClasses: []pkg.DataClass{
+			{Code: "resource"},
 		},
 	}
 }

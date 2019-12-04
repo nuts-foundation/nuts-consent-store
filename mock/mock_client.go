@@ -6,11 +6,10 @@ package mock
 
 import (
 	context "context"
-	reflect "reflect"
-	time "time"
-
 	gomock "github.com/golang/mock/gomock"
 	pkg "github.com/nuts-foundation/nuts-consent-store/pkg"
+	reflect "reflect"
+	time "time"
 )
 
 // MockConsentStoreClient is a mock of ConsentStoreClient interface
@@ -37,18 +36,18 @@ func (m *MockConsentStoreClient) EXPECT() *MockConsentStoreClientMockRecorder {
 }
 
 // ConsentAuth mocks base method
-func (m *MockConsentStoreClient) ConsentAuth(context context.Context, custodian, subject, actor, resourceType string, checkpoint *time.Time) (bool, error) {
+func (m *MockConsentStoreClient) ConsentAuth(context context.Context, custodian, subject, actor, dataClass string, checkpoint *time.Time) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ConsentAuth", context, custodian, subject, actor, resourceType, checkpoint)
+	ret := m.ctrl.Call(m, "ConsentAuth", context, custodian, subject, actor, dataClass, checkpoint)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ConsentAuth indicates an expected call of ConsentAuth
-func (mr *MockConsentStoreClientMockRecorder) ConsentAuth(context, custodian, subject, actor, resourceType, checkpoint interface{}) *gomock.Call {
+func (mr *MockConsentStoreClientMockRecorder) ConsentAuth(context, custodian, subject, actor, dataClass, checkpoint interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsentAuth", reflect.TypeOf((*MockConsentStoreClient)(nil).ConsentAuth), context, custodian, subject, actor, resourceType, checkpoint)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsentAuth", reflect.TypeOf((*MockConsentStoreClient)(nil).ConsentAuth), context, custodian, subject, actor, dataClass, checkpoint)
 }
 
 // RecordConsent mocks base method

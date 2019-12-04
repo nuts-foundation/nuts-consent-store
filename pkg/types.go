@@ -48,13 +48,13 @@ func (pc *PatientConsent) BeforeDelete(tx *gorm.DB) (err error) {
 	return tx.Delete(ConsentRecord{}, "patient_consent_id = ?", pc.ID).Error
 }
 
-// Resources combines all resources from all records
-func (pc PatientConsent) Resources() []Resource {
-	var resources []Resource
+// DataClasses combines all consent data classes from all records
+func (pc PatientConsent) DataClasses() []DataClass {
+	var dataClasses []DataClass
 	for _, r := range pc.Records {
-		resources = append(resources, r.Resources...)
+		dataClasses = append(dataClasses, r.DataClasses...)
 	}
-	return resources
+	return dataClasses
 }
 
 // ConsentRecord represents the individual records/attachments for a PatientConsent
@@ -69,7 +69,7 @@ type ConsentRecord struct {
 	PreviousHash     *string
 	Version          uint   `gorm:"DEFAULT:1"`
 	UUID             string `gorm:"column:uuid;not null"`
-	Resources        []Resource
+	DataClasses      []DataClass
 }
 
 // TableName returns the SQL table for this type
@@ -77,20 +77,20 @@ func (ConsentRecord) TableName() string {
 	return "consent_record"
 }
 
-// BeforeDelete makes sure the Resources of a ConsentRecords gets deleted too
+// BeforeDelete makes sure the DataClasses of a ConsentRecords gets deleted too
 func (cr *ConsentRecord) BeforeDelete(tx *gorm.DB) (err error) {
-	return tx.Delete(Resource{}, "consent_record_id = ?", cr.ID).Error
+	return tx.Delete(DataClass{}, "consent_record_id = ?", cr.ID).Error
 }
 
-// Resource defines struct for resource table
-type Resource struct {
+// DataClass defines struct for data_class table
+type DataClass struct {
 	ConsentRecordID uint
-	ResourceType    string `gorm:"not null"`
+	Code            string `gorm:"not null"`
 }
 
 // TableName returns the SQL table for this type
-func (Resource) TableName() string {
-	return "resource"
+func (DataClass) TableName() string {
+	return "data_class"
 }
 
 func (pc *PatientConsent) String() string {
@@ -102,15 +102,15 @@ func (pc *PatientConsent) SameTriple(other *PatientConsent) bool {
 	return pc.Subject == other.Subject && pc.Custodian == other.Custodian && pc.Actor == other.Actor
 }
 
-func (r *Resource) String() string {
-	return r.ResourceType
+func (r *DataClass) String() string {
+	return r.Code
 }
 
-// ResourcesFromStrings converts a slice of strings to a slice of Recources
-func ResourcesFromStrings(list []string) []Resource {
-	a := make([]Resource, len(list))
+// DataClassesFromStrings converts a slice of strings to a slice of Recources
+func DataClassesFromStrings(list []string) []DataClass {
+	a := make([]DataClass, len(list))
 	for i, l := range list {
-		a[i] = Resource{ResourceType: l}
+		a[i] = DataClass{Code: l}
 	}
 	return a
 }

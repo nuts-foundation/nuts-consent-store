@@ -67,7 +67,7 @@ func (w *Wrapper) CreateConsent(ctx echo.Context) error {
 	}
 
 	for _, r := range createRequest.Records {
-		if len(r.Resources) == 0 {
+		if len(r.DataClasses) == 0 {
 			return echo.NewHTTPError(http.StatusBadRequest, "missing resources in one or more records within createRequest")
 		}
 
@@ -112,7 +112,7 @@ func (w *Wrapper) CheckConsent(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "missing actor in checkRequest")
 	}
 
-	if len(checkRequest.ResourceType) == 0 {
+	if len(checkRequest.DataClass) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "missing resourceType in checkRequest")
 	}
 
@@ -130,7 +130,7 @@ func (w *Wrapper) CheckConsent(ctx echo.Context) error {
 		string(checkRequest.Custodian),
 		string(checkRequest.Subject),
 		string(checkRequest.Actor),
-		checkRequest.ResourceType,
+		checkRequest.DataClass,
 		checkpoint)
 
 	if err != nil {

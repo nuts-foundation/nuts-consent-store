@@ -124,7 +124,7 @@ func cmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			csc := client.NewConsentStoreClient()
 
-			resources := pkg.ResourcesFromStrings(strings.Split(args[3], ","))
+			resources := pkg.DataClassesFromStrings(strings.Split(args[3], ","))
 
 			err := csc.RecordConsent(context.TODO(), []pkg.PatientConsent{
 				{
@@ -133,7 +133,7 @@ func cmd() *cobra.Command {
 					Actor:     args[2],
 					Records: []pkg.ConsentRecord{
 						{
-							Resources: resources,
+							DataClasses: resources,
 						},
 					},
 				},

@@ -19,11 +19,11 @@ import (
 
 // ConsentCheckRequest defines model for ConsentCheckRequest.
 type ConsentCheckRequest struct {
-	Actor        Identifier `json:"actor"`
-	Custodian    Identifier `json:"custodian"`
-	ResourceType string     `json:"resourceType"`
-	Subject      Identifier `json:"subject"`
-	ValidAt      *string    `json:"validAt,omitempty"`
+	Actor     Identifier `json:"actor"`
+	Custodian Identifier `json:"custodian"`
+	DataClass string     `json:"dataClass"`
+	Subject   Identifier `json:"subject"`
+	ValidAt   *string    `json:"validAt,omitempty"`
 }
 
 // ConsentCheckResponse defines model for ConsentCheckResponse.
@@ -50,9 +50,9 @@ type ConsentQueryResponse struct {
 
 // ConsentRecord defines model for ConsentRecord.
 type ConsentRecord struct {
+	DataClasses        []string  `json:"dataClasses"`
 	PreviousRecordHash *string   `json:"previousRecordHash,omitempty"`
 	RecordHash         string    `json:"recordHash"`
-	Resources          []string  `json:"resources"`
 	ValidFrom          ValidFrom `json:"validFrom"`
 	ValidTo            ValidTo   `json:"validTo"`
 	Version            *int      `json:"version,omitempty"`

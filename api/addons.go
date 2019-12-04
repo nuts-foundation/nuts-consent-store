@@ -47,10 +47,10 @@ func (sc PatientConsent) ToPatientConsent() (pkg.PatientConsent, error) {
 
 // ToConsentRecord converts the API consent record object to the internal DB object
 func (cr ConsentRecord) ToConsentRecord() (pkg.ConsentRecord, error) {
-	var resources []pkg.Resource
+	var resources []pkg.DataClass
 
-	for _, a := range cr.Resources {
-		resources = append(resources, pkg.Resource{ResourceType: a})
+	for _, a := range cr.DataClasses {
+		resources = append(resources, pkg.DataClass{Code: a})
 	}
 
 	validFrom, err := time.Parse(pkg.Iso8601DateTime, string(cr.ValidFrom))
@@ -67,7 +67,7 @@ func (cr ConsentRecord) ToConsentRecord() (pkg.ConsentRecord, error) {
 		ValidTo:      validTo,
 		Hash:         cr.RecordHash,
 		PreviousHash: cr.PreviousRecordHash,
-		Resources:    resources,
+		DataClasses:  resources,
 	}, nil
 }
 
@@ -103,8 +103,8 @@ func FromPatientConsent(pc pkg.PatientConsent) PatientConsent {
 // FromConsentRecord converts the DB type to api type
 func FromConsentRecord(consentRecord pkg.ConsentRecord) ConsentRecord {
 	var resources []string
-	for _, r2 := range consentRecord.Resources {
-		resources = append(resources, r2.ResourceType)
+	for _, r2 := range consentRecord.DataClasses {
+		resources = append(resources, r2.Code)
 	}
 
 	version := int(consentRecord.Version)
@@ -112,7 +112,7 @@ func FromConsentRecord(consentRecord pkg.ConsentRecord) ConsentRecord {
 	return ConsentRecord{
 		PreviousRecordHash: consentRecord.PreviousHash,
 		RecordHash:         consentRecord.Hash,
-		Resources:          resources,
+		DataClasses:        resources,
 		ValidFrom:          ValidFrom(consentRecord.ValidFrom.Format(pkg.Iso8601DateTime)),
 		ValidTo:            ValidTo(consentRecord.ValidTo.Format(pkg.Iso8601DateTime)),
 		Version:            &version,

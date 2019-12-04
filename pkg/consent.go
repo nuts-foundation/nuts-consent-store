@@ -75,7 +75,7 @@ var oneEngine sync.Once
 // ConsentStoreClient defines all actions possible through a direct connection, command-line and REST api
 type ConsentStoreClient interface {
 	// ConsentAuth checks if a record exists in the Db for the given combination and returns a bool. Checkpoint is optional and default to time.Now()
-	ConsentAuth(context context.Context, custodian string, subject string, actor string, resourceType string, checkpoint *time.Time) (bool, error)
+	ConsentAuth(context context.Context, custodian string, subject string, actor string, dataClass string, checkpoint *time.Time) (bool, error)
 	// RecordConsent records a record in the Db, this is not to be used to create a new distributed consent record. It's only valid for the local node.
 	// It should only be called by the consent logic component (or for development purposes)
 	RecordConsent(context context.Context, consent []PatientConsent) error
@@ -158,7 +158,7 @@ func (cs *ConsentStore) Start() error {
 func (cs *ConsentStore) RunMigrations(db *sql.DB) error {
 	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
 
-	// wrap assets into Resource
+	// wrap assets into DataClass
 	s := bindata.Resource(migrations.AssetNames(),
 		func(name string) ([]byte, error) {
 			return migrations.Asset(name)
@@ -200,7 +200,7 @@ func (cs *ConsentStore) ConsentAuth(context context.Context, custodian string, s
 	var tdb = cs.Db.Debug()
 	tdb = tdb.Table("patient_consent")
 	tdb = tdb.Joins("JOIN consent_record ON consent_record.patient_consent_id = patient_consent.id")
-	tdb = tdb.Preload("Records.Resources")
+	tdb = tdb.Preload("Records.DataClasses")
 	tdb = tdb.Where("custodian = ? AND subject = ? AND actor = ?", custodian, subject, actor)
 	tdb = tdb.Where("consent_record.valid_from <= ?", cp)
 	tdb = tdb.Where("consent_record.valid_to > ?", cp)
@@ -209,8 +209,8 @@ func (cs *ConsentStore) ConsentAuth(context context.Context, custodian string, s
 		return false, err
 	}
 
-	for _, n := range target.Resources() {
-		if resourceType == n.ResourceType {
+	for _, n := range target.DataClasses() {
+		if resourceType == n.Code {
 			return true, nil
 		}
 	}
@@ -221,7 +221,7 @@ func (cs *ConsentStore) ConsentAuth(context context.Context, custodian string, s
 // ErrorInvalidValidTo is returned when the ValidTo from a ConsentRecord comes before the ValidFrom
 var ErrorInvalidValidTo = errors.New("ConsentRecord validation failed: ValidTo must come after ValidFrom")
 
-// RecordConsent records a list of PatientConsents, their records and their resources.
+// RecordConsent records a list of PatientConsents, their records and their data classes.
 // For consent records that are updates, this function finds the version number and UUID from the previous record
 func (cs *ConsentStore) RecordConsent(context context.Context, consent []PatientConsent) error {
 
@@ -286,7 +286,7 @@ func (cs *ConsentStore) RecordConsent(context context.Context, consent []Patient
 			}
 
 			// Save all current resources
-			tcr.Resources = cr.Resources
+			tcr.DataClasses = cr.DataClasses
 			if err := tx.Save(&tcr).Error; err != nil {
 				tx.Rollback()
 				return err
@@ -302,7 +302,7 @@ func (cs *ConsentStore) patientConsentByConsentRecord(context context.Context, r
 
 	for _, ri := range records {
 		var cr ConsentRecord
-		if err := cs.Db.Debug().Where("id = ?", ri).Preload("Resources").Find(&cr).Error; err != nil {
+		if err := cs.Db.Debug().Where("id = ?", ri).Preload("DataClasses").Find(&cr).Error; err != nil {
 			return nil, err
 		}
 
@@ -352,7 +352,7 @@ func (cs *ConsentStore) QueryConsent(context context.Context, _actor *string, _c
 
 	rows, err := cs.Db.Debug().Where(pc).
 		Table("patient_consent").
-		//Preload("Records").Preload("Records.Resources").
+		//Preload("Records").Preload("Records.DataClasses").
 		Select("consent_record.id").
 		Joins("left join consent_record on consent_record.patient_consent_id = patient_consent.id").
 		Where("consent_record.valid_from <= ?", validAt).

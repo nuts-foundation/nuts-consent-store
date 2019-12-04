@@ -225,9 +225,9 @@ func TestHttpClient_QueryConsentForActor(t *testing.T) {
 				{
 					Records: []ConsentRecord{
 						{
-							Resources: []string{"test"},
-							ValidFrom: "2019-01-01T12:00:00+01:00",
-							ValidTo:   "2029-01-01T12:00:00+01:00",
+							DataClasses: []string{"test"},
+							ValidFrom:   "2019-01-01T12:00:00+01:00",
+							ValidTo:     "2029-01-01T12:00:00+01:00",
 						},
 					},
 					Actor:     "actor",
@@ -268,9 +268,9 @@ func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
 				{
 					Records: []ConsentRecord{
 						{
-							ValidFrom: "2019-01-01T12:00:00+01:00",
-							ValidTo:   "2029-01-01T12:00:00+01:00",
-							Resources: []string{"test"},
+							ValidFrom:   "2019-01-01T12:00:00+01:00",
+							ValidTo:     "2029-01-01T12:00:00+01:00",
+							DataClasses: []string{"test"},
 						},
 					},
 					Actor:     "actor",
