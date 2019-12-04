@@ -43,9 +43,9 @@ type ConsentQueryRequest struct {
 
 // ConsentQueryResponse defines model for ConsentQueryResponse.
 type ConsentQueryResponse struct {
-	Page         PageDefinition      `json:"page"`
-	Results      []SimplifiedConsent `json:"results"`
-	TotalResults int                 `json:"totalResults"`
+	Page         PageDefinition   `json:"page"`
+	Results      []PatientConsent `json:"results"`
+	TotalResults int              `json:"totalResults"`
 }
 
 // ConsentRecord defines model for ConsentRecord.
@@ -58,15 +58,6 @@ type ConsentRecord struct {
 	Version            *int      `json:"version,omitempty"`
 }
 
-// CreateConsentRequest defines model for CreateConsentRequest.
-type CreateConsentRequest struct {
-	Actor     Identifier      `json:"actor"`
-	Custodian Identifier      `json:"custodian"`
-	Id        string          `json:"id"`
-	Records   []ConsentRecord `json:"records"`
-	Subject   Identifier      `json:"subject"`
-}
-
 // Identifier defines model for Identifier.
 type Identifier string
 
@@ -76,17 +67,13 @@ type PageDefinition struct {
 	Offset int `json:"offset"`
 }
 
-// SimplifiedConsent defines model for SimplifiedConsent.
-type SimplifiedConsent struct {
-	Actor      Identifier `json:"actor"`
-	Custodian  Identifier `json:"custodian"`
-	Id         string     `json:"id"`
-	RecordHash *string    `json:"recordHash,omitempty"`
-	Resources  []string   `json:"resources"`
-	Subject    Identifier `json:"subject"`
-	ValidFrom  ValidFrom  `json:"validFrom"`
-	ValidTo    ValidTo    `json:"validTo"`
-	Version    int        `json:"version"`
+// PatientConsent defines model for PatientConsent.
+type PatientConsent struct {
+	Actor     Identifier      `json:"actor"`
+	Custodian Identifier      `json:"custodian"`
+	Id        string          `json:"id"`
+	Records   []ConsentRecord `json:"records"`
+	Subject   Identifier      `json:"subject"`
 }
 
 // ValidFrom defines model for ValidFrom.
@@ -96,7 +83,7 @@ type ValidFrom string
 type ValidTo string
 
 // createConsentJSONBody defines parameters for CreateConsent.
-type createConsentJSONBody CreateConsentRequest
+type createConsentJSONBody PatientConsent
 
 // checkConsentJSONBody defines parameters for CheckConsent.
 type checkConsentJSONBody ConsentCheckRequest

@@ -29,7 +29,7 @@ import (
 
 func TestFromSimplifiedConsentRule(t *testing.T) {
 	t.Run("single patientConsent converted", func(t *testing.T) {
-		scs, _ := FromPatientConsent([]pkg.PatientConsent{patientConsent()})
+		scs := FromPatientConsents([]pkg.PatientConsent{patientConsent()})
 
 		if len(scs) != 1 {
 			t.Error("Expected rules to have 1 item")
@@ -42,32 +42,15 @@ func TestFromSimplifiedConsentRule(t *testing.T) {
 		assert.Equal(t, Identifier("subject"), sc.Subject)
 		assert.Equal(t, Identifier("custodian"), sc.Custodian)
 		assert.Equal(t, Identifier("actor"), sc.Actor)
-		assert.Equal(t, "", *sc.RecordHash)
-		assert.Len(t, sc.Resources, 1)
-		assert.Equal(t, "resource", sc.Resources[0])
-	})
-
-	t.Run("multiple actors gives error", func(t *testing.T) {
-		crs := []pkg.PatientConsent{patientConsent(), patientConsent()}
-		crs[1].Actor = "actor2"
-
-		_, err := FromPatientConsent(crs)
-
-		if err == nil {
-			t.Error("Expected error, got nothing")
-			return
-		}
-
-		expected := "Can not convert consent rules with multiple actors"
-		if err.Error() != expected {
-			t.Errorf("Expected error [%s], got [%v]", expected, err.Error())
-		}
+		assert.Equal(t, "", sc.Records[0].RecordHash)
+		assert.Len(t, sc.Records, 1)
+		assert.Equal(t, "resource", sc.Records[0].Resources[0])
 	})
 }
 
 func TestCreateConsentRequest_ToPatientConsent(t *testing.T) {
 	version := 1
-	sc := CreateConsentRequest{
+	sc := PatientConsent{
 		Actor:     "actor",
 		Custodian: "custodian",
 		Subject:   "subject",

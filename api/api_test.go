@@ -23,6 +23,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -530,6 +531,36 @@ func TestDefaultConsentStore_CreateConsent(t *testing.T) {
 	})
 }
 
+// ConsentQueryResponseMatcher a gomock matcher for ConsentQueryResponse (contains pointers)
+type ConsentQueryResponseMatcher struct {
+	want ConsentQueryResponse
+}
+
+// Matches checks the json of want and got objects
+func (c ConsentQueryResponseMatcher) Matches(x interface{}) bool {
+	resp, ok := x.(ConsentQueryResponse)
+
+	if !ok {
+		return false
+	}
+
+	wantBytes, err := json.Marshal(c.want)
+	if err != nil {
+		return false
+	}
+
+	gotBytes, err := json.Marshal(resp)
+	if err != nil {
+		return false
+	}
+
+	return string(wantBytes) == string(gotBytes)
+}
+
+func (c ConsentQueryResponseMatcher) String() string {
+	return fmt.Sprintf("%v", c.want)
+}
+
 func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 	client := defaultConsentStore()
 	crq := consentRuleForQuery()
@@ -575,25 +606,31 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 			Body: ioutil.NopCloser(bytes.NewReader(json)),
 		}
 
+		v := 1
 		echo.EXPECT().Request().Return(request).AnyTimes()
-		echo.EXPECT().JSON(200, ConsentQueryResponse{
+		echo.EXPECT().JSON(200, ConsentQueryResponseMatcher{want: ConsentQueryResponse{
 			TotalResults: 1,
-			Results: []SimplifiedConsent{
+			Results: []PatientConsent{
 				{
-					Id:         crq.ID,
-					Subject:    Identifier("subject"),
-					Custodian:  Identifier("custodian"),
-					Actor:      Identifier("actor"),
-					RecordHash: &crq.Records[0].Hash,
-					Resources: []string{
-						"resource",
+					Id:        crq.ID,
+					Subject:   "subject",
+					Custodian: "custodian",
+					Actor:     "actor",
+					Records: []ConsentRecord{
+						{
+							RecordHash: crq.Records[0].Hash,
+							Resources: []string{
+								"resource",
+							},
+							ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format(pkg.Iso8601DateTime)),
+							ValidTo:   ValidTo(time.Now().Add(time.Hour * 24).Format(pkg.Iso8601DateTime)),
+							Version:   &v,
+						},
 					},
-					ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format(pkg.Iso8601DateTime)),
-					ValidTo:   ValidTo(time.Now().Add(time.Hour * 24).Format(pkg.Iso8601DateTime)),
 				},
 			},
 			Page: PageDefinition{},
-		})
+		}})
 
 		err := client.QueryConsent(echo)
 
@@ -638,21 +675,27 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 			Body: ioutil.NopCloser(bytes.NewReader(json)),
 		}
 
+		v := 1
 		echo.EXPECT().Request().Return(request).AnyTimes()
 		echo.EXPECT().JSON(200, ConsentQueryResponse{
 			TotalResults: 1,
-			Results: []SimplifiedConsent{
+			Results: []PatientConsent{
 				{
-					Id:         crq.ID,
-					Subject:    Identifier("subject"),
-					Custodian:  Identifier("custodian"),
-					Actor:      Identifier("actor"),
-					RecordHash: &crq.Records[0].Hash,
-					Resources: []string{
-						"resource",
+					Id:        crq.ID,
+					Subject:   "subject",
+					Custodian: "custodian",
+					Actor:     "actor",
+					Records: []ConsentRecord{
+						{
+							RecordHash: crq.Records[0].Hash,
+							Resources: []string{
+								"resource",
+							},
+							ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format(pkg.Iso8601DateTime)),
+							ValidTo:   ValidTo(time.Now().Add(time.Hour * 24).Format(pkg.Iso8601DateTime)),
+							Version:   &v,
+						},
 					},
-					ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format(pkg.Iso8601DateTime)),
-					ValidTo:   ValidTo(time.Now().Add(time.Hour * 24).Format(pkg.Iso8601DateTime)),
 				},
 			},
 			Page: PageDefinition{},
@@ -851,8 +894,8 @@ func TestDefaultConsentStore_FindConsentRecord(t *testing.T) {
 	})
 }
 
-func testConsent() CreateConsentRequest {
-	return CreateConsentRequest{
+func testConsent() PatientConsent {
+	return PatientConsent{
 		Id:        random.String(8),
 		Actor:     Identifier("actor"),
 		Custodian: Identifier("custodian"),

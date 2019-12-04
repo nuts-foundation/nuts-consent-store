@@ -116,22 +116,10 @@ func (hb HttpClient) QueryConsent(context context.Context, actor *string, custod
 	}
 
 	for _, sr := range cqr.Results {
-		patientConsent := pkg.PatientConsent{
-			Actor:     string(sr.Actor),
-			Subject:   string(sr.Subject),
-			Custodian: string(sr.Custodian),
-			Records: []pkg.ConsentRecord{
-				{
-					Hash:      "unknown",
-					Resources: []pkg.Resource{},
-				},
-			},
+		patientConsent, err := sr.ToPatientConsent()
+		if err != nil {
+			return rules, err
 		}
-
-		for _, r := range sr.Resources {
-			patientConsent.Records[0].Resources = append(patientConsent.Records[0].Resources, pkg.Resource{ResourceType: r})
-		}
-
 		rules = append(rules, patientConsent)
 	}
 

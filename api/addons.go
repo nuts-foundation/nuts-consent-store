@@ -19,14 +19,13 @@
 package api
 
 import (
-	"errors"
 	"time"
 
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
 )
 
 // ToPatientConsent converts the SimplifiedConsent object to an internal PatientConsent
-func (sc CreateConsentRequest) ToPatientConsent() (pkg.PatientConsent, error) {
+func (sc PatientConsent) ToPatientConsent() (pkg.PatientConsent, error) {
 	var records []pkg.ConsentRecord
 
 	for _, r := range sc.Records {
@@ -73,40 +72,32 @@ func (cr ConsentRecord) ToConsentRecord() (pkg.ConsentRecord, error) {
 }
 
 // FromPatientConsent converts a slice of pkg.PatientConsent to a slice of SimplifiedConsent
-// it cannot convert when multiple actors are involved
-func FromPatientConsent(patientConsent []pkg.PatientConsent) ([]SimplifiedConsent, error) {
-	var (
-		firstActor string
-		consent    []SimplifiedConsent
-	)
+func FromPatientConsents(pc []pkg.PatientConsent) []PatientConsent {
+	var consents []PatientConsent
 
-	for _, c := range patientConsent {
-		if firstActor == "" {
-			firstActor = c.Actor
-		} else {
-			if firstActor != c.Actor {
-				return nil, errors.New("Can not convert consent rules with multiple actors")
-			}
-		}
-		for _, r := range c.Records {
-			var resources []string
-			for _, r2 := range r.Resources {
-				resources = append(resources, r2.ResourceType)
-			}
-			consent = append(consent, SimplifiedConsent{
-				Id:         c.ID,
-				Subject:    Identifier(c.Subject),
-				Custodian:  Identifier(c.Custodian),
-				Actor:      Identifier(c.Actor),
-				Resources:  resources,
-				RecordHash: &r.Hash,
-				ValidFrom:  ValidFrom(r.ValidFrom.Format(pkg.Iso8601DateTime)),
-				ValidTo:    ValidTo(r.ValidTo.Format(pkg.Iso8601DateTime)),
-			})
-		}
+	for _, c := range pc {
+		consents = append(consents, FromPatientConsent(c))
 	}
 
-	return consent, nil
+	return consents
+}
+
+// FromPatientConsent converts a pkg.PatientConsent to a PatientConsent
+func FromPatientConsent(pc pkg.PatientConsent) PatientConsent {
+	var records []ConsentRecord
+
+	for _, r := range pc.Records {
+		cr := FromConsentRecord(r)
+		records = append(records, cr)
+	}
+
+	return PatientConsent{
+		Id:        pc.ID,
+		Subject:   Identifier(pc.Subject),
+		Custodian: Identifier(pc.Custodian),
+		Actor:     Identifier(pc.Actor),
+		Records:   records,
+	}
 }
 
 // FromConsentRecord converts the DB type to api type

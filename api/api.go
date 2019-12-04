@@ -43,7 +43,7 @@ func (w *Wrapper) CreateConsent(ctx echo.Context) error {
 		return err
 	}
 
-	var createRequest = &CreateConsentRequest{}
+	var createRequest = &PatientConsent{}
 	err = json.Unmarshal(buf, createRequest)
 
 	if len(createRequest.Id) == 0 {
@@ -239,7 +239,7 @@ func (w *Wrapper) QueryConsent(ctx echo.Context) error {
 
 	logrus.Debugf("Found %d results", len(rules))
 
-	results, err := FromPatientConsent(rules)
+	results := FromPatientConsents(rules)
 
 	if err != nil {
 		return err
