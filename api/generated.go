@@ -14,7 +14,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"time"
 )
 
 // ConsentCheckRequest defines model for ConsentCheckRequest.
@@ -38,7 +37,7 @@ type ConsentQueryRequest struct {
 	Custodian *Identifier     `json:"custodian,omitempty"`
 	Page      *PageDefinition `json:"page,omitempty"`
 	Subject   *Identifier     `json:"subject,omitempty"`
-	ValidAt   *time.Time      `json:"validAt,omitempty"`
+	ValidAt   *string         `json:"validAt,omitempty"`
 }
 
 // ConsentQueryResponse defines model for ConsentQueryResponse.
