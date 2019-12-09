@@ -116,22 +116,10 @@ func (hb HttpClient) QueryConsent(context context.Context, actor *string, custod
 	}
 
 	for _, sr := range cqr.Results {
-		patientConsent := pkg.PatientConsent{
-			Actor:     string(sr.Actor),
-			Subject:   string(sr.Subject),
-			Custodian: string(sr.Custodian),
-			Records: []pkg.ConsentRecord{
-				{
-					Hash:      "unknown",
-					Resources: []pkg.Resource{},
-				},
-			},
+		patientConsent, err := sr.ToPatientConsent()
+		if err != nil {
+			return rules, err
 		}
-
-		for _, r := range sr.Resources {
-			patientConsent.Records[0].Resources = append(patientConsent.Records[0].Resources, pkg.Resource{ResourceType: r})
-		}
-
 		rules = append(rules, patientConsent)
 	}
 
@@ -158,10 +146,10 @@ func (hb HttpClient) DeleteConsentRecordByHash(context context.Context, consentR
 // ConsentAuth checks if there is an active consent for a given custodian, subject, actor, resourceType and an optional moment in time (checkpoint)
 func (hb HttpClient) ConsentAuth(ctx context.Context, custodian string, subject string, actor string, resourceType string, checkpoint *time.Time) (bool, error) {
 	req := CheckConsentJSONRequestBody{
-		Actor:        Identifier(actor),
-		Custodian:    Identifier(custodian),
-		Subject:      Identifier(subject),
-		ResourceType: resourceType,
+		Actor:     Identifier(actor),
+		Custodian: Identifier(custodian),
+		Subject:   Identifier(subject),
+		DataClass: resourceType,
 	}
 
 	if checkpoint != nil {
@@ -214,8 +202,8 @@ func (hb HttpClient) RecordConsent(ctx context.Context, consent []pkg.PatientCon
 			ValidTo:            ValidTo(r.ValidTo.Format(time.RFC3339)),
 			Version:            &version,
 		}
-		for _, sr := range r.Resources {
-			cr.Resources = append(cr.Resources, sr.ResourceType)
+		for _, sr := range r.DataClasses {
+			cr.DataClasses = append(cr.DataClasses, sr.Code)
 		}
 		req.Records = append(req.Records, cr)
 	}

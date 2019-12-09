@@ -220,14 +220,22 @@ func TestHttpClient_ConsentAuth(t *testing.T) {
 
 func TestHttpClient_QueryConsentForActor(t *testing.T) {
 	t.Run("200", func(t *testing.T) {
-		resp, _ := json.Marshal(ConsentQueryResponse{Results: []SimplifiedConsent{
-			{
-				Resources: []string{"test"},
-				Actor:     Identifier("actor"),
-				Subject:   Identifier("subject"),
-				Custodian: Identifier("custodian"),
+		resp, _ := json.Marshal(ConsentQueryResponse{
+			Results: []PatientConsent{
+				{
+					Records: []ConsentRecord{
+						{
+							DataClasses: []string{"test"},
+							ValidFrom:   "2019-01-01T12:00:00+01:00",
+							ValidTo:     "2029-01-01T12:00:00+01:00",
+						},
+					},
+					Actor:     "actor",
+					Subject:   "subject",
+					Custodian: "custodian",
+				},
 			},
-		}})
+		})
 		client := testClient(200, resp)
 		a := "actor"
 		res, err := client.QueryConsent(context.TODO(), &a, nil, nil, nil)
@@ -255,14 +263,22 @@ func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
 	s := "urn:subject"
 
 	t.Run("200", func(t *testing.T) {
-		resp, _ := json.Marshal(ConsentQueryResponse{Results: []SimplifiedConsent{
-			{
-				Resources: []string{"test"},
-				Actor:     Identifier("actor"),
-				Subject:   Identifier("subject"),
-				Custodian: Identifier("custodian"),
+		resp, _ := json.Marshal(ConsentQueryResponse{
+			Results: []PatientConsent{
+				{
+					Records: []ConsentRecord{
+						{
+							ValidFrom:   "2019-01-01T12:00:00+01:00",
+							ValidTo:     "2029-01-01T12:00:00+01:00",
+							DataClasses: []string{"test"},
+						},
+					},
+					Actor:     "actor",
+					Subject:   "subject",
+					Custodian: "custodian",
+				},
 			},
-		}})
+		})
 		client := testClient(200, resp)
 		res, err := client.QueryConsent(context.TODO(), &a, nil, &s, nil)
 
@@ -276,7 +292,7 @@ func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
 	})
 
 	t.Run("200 without results in time frame", func(t *testing.T) {
-		resp, _ := json.Marshal(ConsentQueryResponse{Results: []SimplifiedConsent{}})
+		resp, _ := json.Marshal(ConsentQueryResponse{Results: []PatientConsent{}})
 		client := testClient(200, resp)
 		tt := time.Now().Add(time.Hour)
 		res, err := client.QueryConsent(context.TODO(), &a, nil, &s, &tt)

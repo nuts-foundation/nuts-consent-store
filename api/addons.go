@@ -19,14 +19,13 @@
 package api
 
 import (
-	"errors"
 	"time"
 
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
 )
 
-// ToPatientConsent converts the SimplifiedConsent object to an internal PatientConsent
-func (sc CreateConsentRequest) ToPatientConsent() (pkg.PatientConsent, error) {
+// ToPatientConsent converts the api PatientConsent struct to an internal PatientConsent
+func (sc PatientConsent) ToPatientConsent() (pkg.PatientConsent, error) {
 	var records []pkg.ConsentRecord
 
 	for _, r := range sc.Records {
@@ -48,10 +47,10 @@ func (sc CreateConsentRequest) ToPatientConsent() (pkg.PatientConsent, error) {
 
 // ToConsentRecord converts the API consent record object to the internal DB object
 func (cr ConsentRecord) ToConsentRecord() (pkg.ConsentRecord, error) {
-	var resources []pkg.Resource
+	var resources []pkg.DataClass
 
-	for _, a := range cr.Resources {
-		resources = append(resources, pkg.Resource{ResourceType: a})
+	for _, a := range cr.DataClasses {
+		resources = append(resources, pkg.DataClass{Code: a})
 	}
 
 	validFrom, err := time.Parse(pkg.Iso8601DateTime, string(cr.ValidFrom))
@@ -68,52 +67,44 @@ func (cr ConsentRecord) ToConsentRecord() (pkg.ConsentRecord, error) {
 		ValidTo:      validTo,
 		Hash:         cr.RecordHash,
 		PreviousHash: cr.PreviousRecordHash,
-		Resources:    resources,
+		DataClasses:  resources,
 	}, nil
 }
 
-// FromPatientConsent converts a slice of pkg.PatientConsent to a slice of SimplifiedConsent
-// it cannot convert when multiple actors are involved
-func FromPatientConsent(patientConsent []pkg.PatientConsent) ([]SimplifiedConsent, error) {
-	var (
-		firstActor string
-		consent    []SimplifiedConsent
-	)
+// FromPatientConsent converts a slice of pkg.PatientConsent to a slice of api.PatientConsent
+func FromPatientConsents(pc []pkg.PatientConsent) []PatientConsent {
+	var consents []PatientConsent
 
-	for _, c := range patientConsent {
-		if firstActor == "" {
-			firstActor = c.Actor
-		} else {
-			if firstActor != c.Actor {
-				return nil, errors.New("Can not convert consent rules with multiple actors")
-			}
-		}
-		for _, r := range c.Records {
-			var resources []string
-			for _, r2 := range r.Resources {
-				resources = append(resources, r2.ResourceType)
-			}
-			consent = append(consent, SimplifiedConsent{
-				Id:         c.ID,
-				Subject:    Identifier(c.Subject),
-				Custodian:  Identifier(c.Custodian),
-				Actor:      Identifier(c.Actor),
-				Resources:  resources,
-				RecordHash: &r.Hash,
-				ValidFrom:  ValidFrom(r.ValidFrom.Format(pkg.Iso8601DateTime)),
-				ValidTo:    ValidTo(r.ValidTo.Format(pkg.Iso8601DateTime)),
-			})
-		}
+	for _, c := range pc {
+		consents = append(consents, FromPatientConsent(c))
 	}
 
-	return consent, nil
+	return consents
+}
+
+// FromPatientConsent converts a pkg.PatientConsent to a PatientConsent
+func FromPatientConsent(pc pkg.PatientConsent) PatientConsent {
+	var records []ConsentRecord
+
+	for _, r := range pc.Records {
+		cr := FromConsentRecord(r)
+		records = append(records, cr)
+	}
+
+	return PatientConsent{
+		Id:        pc.ID,
+		Subject:   Identifier(pc.Subject),
+		Custodian: Identifier(pc.Custodian),
+		Actor:     Identifier(pc.Actor),
+		Records:   records,
+	}
 }
 
 // FromConsentRecord converts the DB type to api type
 func FromConsentRecord(consentRecord pkg.ConsentRecord) ConsentRecord {
 	var resources []string
-	for _, r2 := range consentRecord.Resources {
-		resources = append(resources, r2.ResourceType)
+	for _, r2 := range consentRecord.DataClasses {
+		resources = append(resources, r2.Code)
 	}
 
 	version := int(consentRecord.Version)
@@ -121,7 +112,7 @@ func FromConsentRecord(consentRecord pkg.ConsentRecord) ConsentRecord {
 	return ConsentRecord{
 		PreviousRecordHash: consentRecord.PreviousHash,
 		RecordHash:         consentRecord.Hash,
-		Resources:          resources,
+		DataClasses:        resources,
 		ValidFrom:          ValidFrom(consentRecord.ValidFrom.Format(pkg.Iso8601DateTime)),
 		ValidTo:            ValidTo(consentRecord.ValidTo.Format(pkg.Iso8601DateTime)),
 		Version:            &version,

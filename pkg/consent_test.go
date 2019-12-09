@@ -56,9 +56,9 @@ func TestConsentStore_RecordConsent(t *testing.T) {
 						ValidFrom: time.Now().Add(time.Hour * -24),
 						ValidTo:   time.Now().Add(time.Hour * +12),
 						Hash:      "234caef",
-						Resources: []Resource{
+						DataClasses: []DataClass{
 							{
-								ResourceType: "resource",
+								Code: "resource",
 							},
 						},
 						UUID: uuid.NewV4().String(),
@@ -142,9 +142,9 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 						ValidFrom: time.Now().Add(time.Hour * -24),
 						ValidTo:   time.Now().Add(time.Hour * +12),
 						Hash:      "234caef",
-						Resources: []Resource{
+						DataClasses: []DataClass{
 							{
-								ResourceType: "resource",
+								Code: "resource",
 							},
 						},
 						UUID: uuid.NewV4().String(),
@@ -184,9 +184,9 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 						ValidFrom: time.Now().Add(time.Hour * -24),
 						ValidTo:   time.Now().Add(time.Hour * +12),
 						Hash:      "234caefg",
-						Resources: []Resource{
+						DataClasses: []DataClass{
 							{
-								ResourceType: "resource",
+								Code: "resource",
 							},
 						},
 					},
@@ -212,7 +212,7 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 
 				assert.Len(t, consent, 1)
 				assert.Len(t, consent[0].Records, 1)
-				assert.Len(t, consent[0].Records[0].Resources, 1)
+				assert.Len(t, consent[0].Records[0].DataClasses, 1)
 				assert.Equal(t, uint(2), consent[0].Records[0].Version)
 			}
 		}
@@ -232,9 +232,9 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 						ValidFrom: time.Now().Add(time.Hour * -24),
 						ValidTo:   time.Now().Add(time.Hour * +12),
 						Hash:      r,
-						Resources: []Resource{
+						DataClasses: []DataClass{
 							{
-								ResourceType: "resource",
+								Code: "resource",
 							},
 						},
 					},
@@ -275,9 +275,9 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 						ValidTo:      time.Now().Add(time.Hour * +12),
 						Hash:         r,
 						PreviousHash: &r,
-						Resources: []Resource{
+						DataClasses: []DataClass{
 							{
-								ResourceType: "resource",
+								Code: "resource",
 							},
 						},
 					},
@@ -318,9 +318,9 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 						Hash:      random.String(8),
 						ValidFrom: time.Now().Add(time.Hour * -24),
 						ValidTo:   time.Now().Add(time.Hour * -12),
-						Resources: []Resource{
+						DataClasses: []DataClass{
 							{
-								ResourceType: "resource",
+								Code: "resource",
 							},
 						},
 					},
@@ -358,9 +358,9 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 						Hash:      random.String(8),
 						ValidFrom: time.Now().Add(time.Hour * -24),
 						ValidTo:   time.Now().Add(time.Hour * 12),
-						Resources: []Resource{
+						DataClasses: []DataClass{
 							{
-								ResourceType: "resource",
+								Code: "resource",
 							},
 						},
 					},
@@ -402,9 +402,9 @@ func TestConsentStore_QueryConsentForActor(t *testing.T) {
 					ValidFrom: time.Now().Add(time.Hour * -24),
 					ValidTo:   time.Now().Add(time.Hour * 12),
 					Hash:      random.String(8),
-					Resources: []Resource{
+					DataClasses: []DataClass{
 						{
-							ResourceType: "resource",
+							Code: "resource",
 						},
 					},
 				},
@@ -420,9 +420,9 @@ func TestConsentStore_QueryConsentForActor(t *testing.T) {
 					ValidFrom: time.Now().Add(time.Hour * -24),
 					ValidTo:   time.Now().Add(time.Hour * 12),
 					Hash:      random.String(8),
-					Resources: []Resource{
+					DataClasses: []DataClass{
 						{
-							ResourceType: "resource2",
+							Code: "resource2",
 						},
 					},
 				},
@@ -484,9 +484,9 @@ func TestConsentStore_QueryConsentForActorAndSubject(t *testing.T) {
 					ValidFrom: time.Now().Add(time.Hour * -24),
 					ValidTo:   time.Now().Add(time.Hour * 12),
 					Hash:      "1",
-					Resources: []Resource{
+					DataClasses: []DataClass{
 						{
-							ResourceType: "resource",
+							Code: "resource",
 						},
 					},
 				},
@@ -502,9 +502,9 @@ func TestConsentStore_QueryConsentForActorAndSubject(t *testing.T) {
 					ValidFrom: time.Now().Add(time.Hour * -24),
 					ValidTo:   time.Now().Add(time.Hour * 12),
 					Hash:      "2",
-					Resources: []Resource{
+					DataClasses: []DataClass{
 						{
-							ResourceType: "resource2",
+							Code: "resource2",
 						},
 					},
 				},
@@ -615,9 +615,9 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 					ValidTo:   time.Now().Add(time.Hour * 12),
 					Hash:      random.String(8),
 					UUID:      "1",
-					Resources: []Resource{
+					DataClasses: []DataClass{
 						{
-							ResourceType: "resource",
+							Code: "resource",
 						},
 					},
 				},
@@ -626,9 +626,9 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 					ValidTo:   time.Now().Add(time.Hour * 12),
 					Hash:      random.String(8),
 					UUID:      "2",
-					Resources: []Resource{
+					DataClasses: []DataClass{
 						{
-							ResourceType: "resource",
+							Code: "resource",
 						},
 					},
 				},
@@ -645,9 +645,9 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 					ValidTo:   time.Now().Add(time.Hour * 12),
 					Hash:      random.String(8),
 					UUID:      "3",
-					Resources: []Resource{
+					DataClasses: []DataClass{
 						{
-							ResourceType: "resource2",
+							Code: "resource2",
 						},
 					},
 				},
@@ -667,7 +667,7 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 		if assert.NoError(t, err) {
 			assert.Len(t, consent, 2)
 			assert.Equal(t, 3, len(consent[0].Records)+len(consent[1].Records))
-			assert.Len(t, consent[0].Records[0].Resources, 1)
+			assert.Len(t, consent[0].Records[0].DataClasses, 1)
 		}
 
 	})
@@ -707,9 +707,9 @@ func TestConsentStore_DeleteConsentRecordByHash(t *testing.T) {
 					ValidFrom: time.Now().Add(time.Hour * -24),
 					ValidTo:   time.Now().Add(time.Hour * 12),
 					Hash:      hash,
-					Resources: []Resource{
+					DataClasses: []DataClass{
 						{
-							ResourceType: "resource",
+							Code: "resource",
 						},
 					},
 				},
@@ -753,9 +753,9 @@ func patientConsent() []PatientConsent {
 					ValidFrom: time.Now().Add(time.Hour * -24),
 					ValidTo:   time.Now().Add(time.Hour * +12),
 					Hash:      random.String(8),
-					Resources: []Resource{
+					DataClasses: []DataClass{
 						{
-							ResourceType: "resource",
+							Code: "resource",
 						},
 					},
 					UUID: uuid.NewV4().String(),
