@@ -24,7 +24,7 @@ import (
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
 )
 
-// ToPatientConsent converts the SimplifiedConsent object to an internal PatientConsent
+// ToPatientConsent converts the api PatientConsent struct to an internal PatientConsent
 func (sc PatientConsent) ToPatientConsent() (pkg.PatientConsent, error) {
 	var records []pkg.ConsentRecord
 
@@ -71,7 +71,7 @@ func (cr ConsentRecord) ToConsentRecord() (pkg.ConsentRecord, error) {
 	}, nil
 }
 
-// FromPatientConsent converts a slice of pkg.PatientConsent to a slice of SimplifiedConsent
+// FromPatientConsent converts a slice of pkg.PatientConsent to a slice of api.PatientConsent
 func FromPatientConsents(pc []pkg.PatientConsent) []PatientConsent {
 	var consents []PatientConsent
 

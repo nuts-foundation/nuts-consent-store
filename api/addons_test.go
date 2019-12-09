@@ -27,7 +27,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFromSimplifiedConsentRule(t *testing.T) {
+func TestFromPatientConsents(t *testing.T) {
 	t.Run("single patientConsent converted", func(t *testing.T) {
 		scs := FromPatientConsents([]pkg.PatientConsent{patientConsent()})
 
