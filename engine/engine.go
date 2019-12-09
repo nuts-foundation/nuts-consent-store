@@ -110,9 +110,9 @@ func cmd() *cobra.Command {
 	})
 
 	cmd.AddCommand(&cobra.Command{
-		Use:     "record [subject] [custodian] [actor] [resources]",
-		Example: "record urn:oid:2.16.840.1.113883.2.4.6.3:999999990 urn:oid:2.16.840.1.113883.2.4.6.1:00000007 urn:oid:2.16.840.1.113883.2.4.6.1:00000007 Observation,Patient",
-		Short:   "record a new consent in store, resources is comma-separated",
+		Use:     "record [subject] [custodian] [actor] [dataClasses]",
+		Example: "record urn:oid:2.16.840.1.113883.2.4.6.3:999999990 urn:oid:2.16.840.1.113883.2.4.6.1:00000007 urn:oid:2.16.840.1.113883.2.4.6.1:00000007 urn:oid:1.3.6.1.4.1.54851:1:MEDICAL",
+		Short:   "record a new consent in store, dataClasses is comma-separated",
 
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 4 {
@@ -149,8 +149,8 @@ func cmd() *cobra.Command {
 	})
 
 	cmd.AddCommand(&cobra.Command{
-		Use:     "check [subject] [custodian] [actor] [resource]",
-		Example: "check urn:oid:2.16.840.1.113883.2.4.6.3:999999990 urn:oid:2.16.840.1.113883.2.4.6.1:00000007 urn:oid:2.16.840.1.113883.2.4.6.1:00000007 Observation",
+		Use:     "check [subject] [custodian] [actor] [dataClass]",
+		Example: "check urn:oid:2.16.840.1.113883.2.4.6.3:999999990 urn:oid:2.16.840.1.113883.2.4.6.1:00000007 urn:oid:2.16.840.1.113883.2.4.6.1:00000007 urn:oid:1.3.6.1.4.1.54851:1:MEDICAL",
 		Short:   "check if there's an active consent record for the given combination",
 
 		Args: func(cmd *cobra.Command, args []string) error {
