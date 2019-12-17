@@ -207,14 +207,24 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 		err = client.RecordConsent(context.TODO(), rules)
 		if assert.NoError(t, err) {
 			a := "actor333"
-			consent, err := client.QueryConsent(context.TODO(), &a, nil, nil, nil)
-			if assert.NoError(t, err) {
+			t.Run("and query within new period", func(t *testing.T) {
+				consent, err := client.QueryConsent(context.TODO(), &a, nil, nil, nil)
+				if assert.NoError(t, err) {
+					assert.Len(t, consent, 1)
+					assert.Len(t, consent[0].Records, 1)
+					assert.Len(t, consent[0].Records[0].DataClasses, 1)
+					assert.Equal(t, uint(2), consent[0].Records[0].Version)
+				}
+			})
 
-				assert.Len(t, consent, 1)
-				assert.Len(t, consent[0].Records, 1)
-				assert.Len(t, consent[0].Records[0].DataClasses, 1)
-				assert.Equal(t, uint(2), consent[0].Records[0].Version)
-			}
+			// BUG#24
+			t.Run("and query outside new period, inside old period", func(t *testing.T) {
+				tt := time.Now().Add(2 * time.Hour)
+				consent, err := client.QueryConsent(context.TODO(), &a, nil, nil, &tt)
+				if assert.NoError(t, err) {
+					assert.Len(t, consent, 0)
+				}
+			})
 		}
 	})
 

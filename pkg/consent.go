@@ -350,20 +350,27 @@ func (cs *ConsentStore) QueryConsent(context context.Context, _actor *string, _c
 
 	var records []uint
 
-	rows, err := cs.Db.Debug().Where(pc).
+	expr := cs.Db.Debug().Where(pc).
 		Table("patient_consent").
-		//Preload("Records").Preload("Records.DataClasses").
 		Select("consent_record.id").
 		Joins("left join consent_record on consent_record.patient_consent_id = patient_consent.id").
-		Where("consent_record.valid_from <= ?", validAt).
-		Where("consent_record.valid_to > ?", validAt).
-		Group("consent_record.uuid").Having("max(consent_record.version)").
+		Group("consent_record.uuid").Having("max(consent_record.version)").QueryExpr()
+
+	rows, err := cs.Db.Debug().
+		Table("consent_record").
+		Select("id").
+		Where("id IN (?)", expr).
+		Where("valid_from <= ? AND valid_to > ?", validAt, validAt).
 		Rows()
 
-	defer rows.Close()
+	defer func() {
+		if rows != nil {
+			rows.Close()
+		}
+	}()
 
 	if err != nil {
-		return nil, err
+		return []PatientConsent{}, err
 	}
 
 	for rows.Next() {
