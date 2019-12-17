@@ -20,6 +20,7 @@ package cmd
 
 import (
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/nuts-foundation/nuts-consent-store/api"
 	"github.com/nuts-foundation/nuts-consent-store/engine"
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
@@ -56,6 +57,8 @@ func Execute() {
 
 			// start webserver
 			e := echo.New()
+			e.HideBanner = true
+			e.Use(middleware.Logger())
 			api.RegisterHandlers(e, &api.Wrapper{Cs: pkg.ConsentStoreInstance()})
 			logrus.Fatal(e.Start(":1323"))
 		},
