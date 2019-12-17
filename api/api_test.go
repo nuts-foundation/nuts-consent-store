@@ -97,7 +97,7 @@ func TestDefaultConsentStore_CheckConsent(t *testing.T) {
 		echo := mock.NewMockContext(ctrl)
 
 		ccr := consentCheckRequest()
-		validAt := time.Now().Format(pkg.Iso8601DateTime)
+		validAt := time.Now().Format(time.RFC3339)
 		ccr.ValidAt = &validAt
 		json, _ := json.Marshal(ccr)
 		request := &http.Request{
@@ -622,8 +622,8 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 							DataClasses: []string{
 								"resource",
 							},
-							ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format(pkg.Iso8601DateTime)),
-							ValidTo:   ValidTo(time.Now().Add(time.Hour * 24).Format(pkg.Iso8601DateTime)),
+							ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format(time.RFC3339)),
+							ValidTo:   ValidTo(time.Now().Add(time.Hour * 24).Format(time.RFC3339)),
 							Version:   &v,
 						},
 					},
@@ -643,7 +643,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 		echo := mock.NewMockContext(ctrl)
 
 		query := consentQuery()
-		tt := time.Now().Add(time.Hour * 25).Format(pkg.Iso8601DateTime)
+		tt := time.Now().Add(time.Hour * 25).Format(time.RFC3339)
 		query.ValidAt = &tt
 		json, _ := json.Marshal(query)
 		request := &http.Request{
@@ -691,8 +691,8 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 							DataClasses: []string{
 								"resource",
 							},
-							ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format(pkg.Iso8601DateTime)),
-							ValidTo:   ValidTo(time.Now().Add(time.Hour * 24).Format(pkg.Iso8601DateTime)),
+							ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format(time.RFC3339)),
+							ValidTo:   ValidTo(time.Now().Add(time.Hour * 24).Format(time.RFC3339)),
 							Version:   &v,
 						},
 					},
@@ -778,7 +778,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 			t.Error("Expected error got nothing")
 		}
 
-		expected := "code=400, message=invalid format for validAt, required: 2006-01-02T15:04:05-07:00"
+		expected := "code=400, message=invalid format for validAt, required: 2006-01-02T15:04:05Z07:00"
 		if !strings.HasPrefix(err.Error(), expected) {
 			t.Errorf("Expected error [%s], got: [%v]", expected, err)
 		}

@@ -78,7 +78,7 @@ func (hb HttpClient) QueryConsent(context context.Context, actor *string, custod
 	)
 
 	if validAt != nil {
-		s := validAt.Format(pkg.Iso8601DateTime)
+		s := validAt.Format(time.RFC3339)
 		req.ValidAt = &s
 	}
 
@@ -154,7 +154,7 @@ func (hb HttpClient) ConsentAuth(ctx context.Context, custodian string, subject 
 	}
 
 	if checkpoint != nil {
-		s := checkpoint.Format(pkg.Iso8601DateTime)
+		s := checkpoint.Format(time.RFC3339)
 		req.ValidAt = &s
 	}
 
