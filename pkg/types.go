@@ -64,8 +64,8 @@ type ConsentRecord struct {
 	ID               uint `gorm:"AUTO_INCREMENT"`
 	PatientConsentID string
 	ValidFrom        time.Time `gorm:"not null"`
-	ValidTo          time.Time `gorm:"not null"`
-	Hash             string    `gorm:"not null"`
+	ValidTo          *time.Time
+	Hash             string `gorm:"not null"`
 	PreviousHash     *string
 	Version          uint   `gorm:"DEFAULT:1"`
 	UUID             string `gorm:"column:uuid;not null"`
