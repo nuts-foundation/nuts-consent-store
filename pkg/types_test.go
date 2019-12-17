@@ -89,6 +89,7 @@ func TestConsentRule_SameTriple(t *testing.T) {
 }
 
 func testConsent() *PatientConsent {
+	validTo := time.Now().Add(time.Hour * 24 * 365)
 	return &PatientConsent{
 		Actor:     "actor",
 		Custodian: "custodian",
@@ -96,7 +97,7 @@ func testConsent() *PatientConsent {
 		Records: []ConsentRecord{
 			{
 				ValidFrom:   time.Now(),
-				ValidTo:     time.Now().Add(time.Hour * 24 * 365),
+				ValidTo:     &validTo,
 				DataClasses: []DataClass{{Code: "resource"}},
 			},
 		},

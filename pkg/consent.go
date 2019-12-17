@@ -203,7 +203,7 @@ func (cs *ConsentStore) ConsentAuth(context context.Context, custodian string, s
 	tdb = tdb.Preload("Records.DataClasses")
 	tdb = tdb.Where("custodian = ? AND subject = ? AND actor = ?", custodian, subject, actor)
 	tdb = tdb.Where("consent_record.valid_from <= ?", cp)
-	tdb = tdb.Where("consent_record.valid_to > ?", cp)
+	tdb = tdb.Where("consent_record.valid_to IS NULL OR consent_record.valid_to > ?", cp)
 
 	if err := tdb.FirstOrInit(&target).Error; err != nil {
 		return false, err
@@ -280,7 +280,7 @@ func (cs *ConsentStore) RecordConsent(context context.Context, consent []Patient
 				tcr.UUID = pcr.UUID
 			}
 
-			if !tcr.ValidTo.After(tcr.ValidFrom) {
+			if tcr.ValidTo != nil && !tcr.ValidTo.After(tcr.ValidFrom) {
 				tx.Rollback()
 				return ErrorInvalidValidTo
 			}

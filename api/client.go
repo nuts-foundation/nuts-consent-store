@@ -200,8 +200,12 @@ func (hb HttpClient) RecordConsent(ctx context.Context, consent []pkg.PatientCon
 			RecordHash:         r.Hash,
 			PreviousRecordHash: r.PreviousHash,
 			ValidFrom:          ValidFrom(r.ValidFrom.Format(time.RFC3339)),
-			ValidTo:            ValidTo(r.ValidTo.Format(time.RFC3339)),
 			Version:            &version,
+		}
+		if r.ValidTo != nil {
+			validTo := ValidTo(r.ValidTo.Format(time.RFC3339))
+			cr.ValidTo = &validTo
+
 		}
 		for _, sr := range r.DataClasses {
 			cr.DataClasses = append(cr.DataClasses, sr.Code)

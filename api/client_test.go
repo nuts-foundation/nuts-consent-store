@@ -220,6 +220,7 @@ func TestHttpClient_ConsentAuth(t *testing.T) {
 
 func TestHttpClient_QueryConsentForActor(t *testing.T) {
 	t.Run("200", func(t *testing.T) {
+		validTo := ValidTo("2029-01-01T12:00:00+01:00")
 		resp, _ := json.Marshal(ConsentQueryResponse{
 			Results: []PatientConsent{
 				{
@@ -227,7 +228,7 @@ func TestHttpClient_QueryConsentForActor(t *testing.T) {
 						{
 							DataClasses: []string{"test"},
 							ValidFrom:   "2019-01-01T12:00:00+01:00",
-							ValidTo:     "2029-01-01T12:00:00+01:00",
+							ValidTo:     &validTo,
 						},
 					},
 					Actor:     "actor",
@@ -263,13 +264,14 @@ func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
 	s := "urn:subject"
 
 	t.Run("200", func(t *testing.T) {
+		validTo := ValidTo("2029-01-01T12:00:00+01:00")
 		resp, _ := json.Marshal(ConsentQueryResponse{
 			Results: []PatientConsent{
 				{
 					Records: []ConsentRecord{
 						{
 							ValidFrom:   "2019-01-01T12:00:00+01:00",
-							ValidTo:     "2029-01-01T12:00:00+01:00",
+							ValidTo:     &validTo,
 							DataClasses: []string{"test"},
 						},
 					},
