@@ -53,7 +53,7 @@ type ConsentRecord struct {
 	PreviousRecordHash *string   `json:"previousRecordHash,omitempty"`
 	RecordHash         string    `json:"recordHash"`
 	ValidFrom          ValidFrom `json:"validFrom"`
-	ValidTo            ValidTo   `json:"validTo"`
+	ValidTo            *ValidTo  `json:"validTo,omitempty"`
 	Version            *int      `json:"version,omitempty"`
 }
 
@@ -619,6 +619,10 @@ func ParsecreateConsentResponse(rsp *http.Response) (*createConsentResponse, err
 	}
 
 	switch {
+	case rsp.StatusCode == 201:
+		break // No content-type
+	case rsp.StatusCode == 400:
+		// Content-type (text/plain) unsupported
 	}
 
 	return response, nil
@@ -643,7 +647,8 @@ func ParsecheckConsentResponse(rsp *http.Response) (*checkConsentResponse, error
 		if err := json.Unmarshal(bodyBytes, response.JSON200); err != nil {
 			return nil, err
 		}
-
+	case rsp.StatusCode == 400:
+		// Content-type (text/plain) unsupported
 	}
 
 	return response, nil
@@ -668,7 +673,8 @@ func ParsequeryConsentResponse(rsp *http.Response) (*queryConsentResponse, error
 		if err := json.Unmarshal(bodyBytes, response.JSON200); err != nil {
 			return nil, err
 		}
-
+	case rsp.StatusCode == 400:
+		// Content-type (text/plain) unsupported
 	}
 
 	return response, nil
@@ -688,6 +694,10 @@ func ParsedeleteConsentResponse(rsp *http.Response) (*deleteConsentResponse, err
 	}
 
 	switch {
+	case rsp.StatusCode == 202:
+		break // No content-type
+	case rsp.StatusCode == 404:
+		// Content-type (text/plain) unsupported
 	}
 
 	return response, nil
@@ -712,7 +722,8 @@ func ParsefindConsentRecordResponse(rsp *http.Response) (*findConsentRecordRespo
 		if err := json.Unmarshal(bodyBytes, response.JSON200); err != nil {
 			return nil, err
 		}
-
+	case rsp.StatusCode == 404:
+		// Content-type (text/plain) unsupported
 	}
 
 	return response, nil
