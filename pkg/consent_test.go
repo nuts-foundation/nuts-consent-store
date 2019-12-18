@@ -43,6 +43,7 @@ func TestConsentStore_RecordConsent(t *testing.T) {
 	defer client.Shutdown()
 
 	t.Run("It sets the version number to 1", func(t *testing.T) {
+		validTo := time.Now().Add(time.Hour * +12)
 
 		rules := []PatientConsent{
 			{
@@ -54,7 +55,7 @@ func TestConsentStore_RecordConsent(t *testing.T) {
 				Records: []ConsentRecord{
 					{
 						ValidFrom: time.Now().Add(time.Hour * -24),
-						ValidTo:   time.Now().Add(time.Hour * +12),
+						ValidTo:   &validTo,
 						Hash:      "234caef",
 						DataClasses: []DataClass{
 							{
@@ -140,7 +141,6 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 				Records: []ConsentRecord{
 					{
 						ValidFrom: time.Now().Add(time.Hour * -24),
-						ValidTo:   time.Now().Add(time.Hour * +12),
 						Hash:      "234caef",
 						DataClasses: []DataClass{
 							{
@@ -182,7 +182,6 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 				Records: []ConsentRecord{
 					{
 						ValidFrom: time.Now().Add(time.Hour * -24),
-						ValidTo:   time.Now().Add(time.Hour * +12),
 						Hash:      "234caefg",
 						DataClasses: []DataClass{
 							{
@@ -199,7 +198,8 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 		}
 
 		// Update the validTo of the record.
-		rules[0].Records[0].ValidTo = time.Now().Add(time.Hour)
+		newValidTo := time.Now().Add(time.Hour)
+		rules[0].Records[0].ValidTo = &newValidTo
 		hcp := rules[0].Records[0].Hash
 		rules[0].Records[0].PreviousHash = &hcp
 		rules[0].Records[0].Hash = "234caefh_2"
@@ -230,6 +230,8 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 
 	t.Run("Updating consent record not latest in chain", func(t *testing.T) {
 		r := random.String(8)
+		validTo := time.Now().Add(time.Hour * +12)
+
 		rules := []PatientConsent{
 			{
 				ID:        random.String(8),
@@ -240,7 +242,7 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 				Records: []ConsentRecord{
 					{
 						ValidFrom: time.Now().Add(time.Hour * -24),
-						ValidTo:   time.Now().Add(time.Hour * +12),
+						ValidTo:   &validTo,
 						Hash:      r,
 						DataClasses: []DataClass{
 							{
@@ -257,7 +259,8 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 		}
 
 		// Update the validTo of the record.
-		rules[0].Records[0].ValidTo = time.Now()
+		validTo = time.Now()
+		rules[0].Records[0].ValidTo = &validTo
 		rules[0].Records[0].PreviousHash = &r
 		rules[0].Records[0].Hash = fmt.Sprintf("%s_2", r)
 
@@ -272,6 +275,7 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 	t.Run("Updating unknown consent", func(t *testing.T) {
 		r := random.String(8)
 
+		validTo := time.Now().Add(time.Hour * +12)
 		rules := []PatientConsent{
 			{
 				ID:        random.String(8),
@@ -282,7 +286,7 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 				Records: []ConsentRecord{
 					{
 						ValidFrom:    time.Now().Add(time.Hour * -24),
-						ValidTo:      time.Now().Add(time.Hour * +12),
+						ValidTo:      &validTo,
 						Hash:         r,
 						PreviousHash: &r,
 						DataClasses: []DataClass{
@@ -316,6 +320,7 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 
 	t.Run("Authorize against expired consent returns false", func(t *testing.T) {
 
+		validTo := time.Now().Add(time.Hour * -12)
 		rules := []PatientConsent{
 			{
 				ID:        random.String(8),
@@ -327,7 +332,7 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 					{
 						Hash:      random.String(8),
 						ValidFrom: time.Now().Add(time.Hour * -24),
-						ValidTo:   time.Now().Add(time.Hour * -12),
+						ValidTo:   &validTo,
 						DataClasses: []DataClass{
 							{
 								Code: "resource",
@@ -356,6 +361,7 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 
 	t.Run("Authorize against consent at a different point in time returns false", func(t *testing.T) {
 
+		validTo := time.Now().Add(time.Hour * +12)
 		rules := []PatientConsent{
 			{
 				ID:        random.String(8),
@@ -367,7 +373,7 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 					{
 						Hash:      random.String(8),
 						ValidFrom: time.Now().Add(time.Hour * -24),
-						ValidTo:   time.Now().Add(time.Hour * 12),
+						ValidTo:   &validTo,
 						DataClasses: []DataClass{
 							{
 								Code: "resource",
@@ -401,6 +407,8 @@ func TestConsentStore_QueryConsentForActor(t *testing.T) {
 	client := defaultConsentStore()
 	defer client.Shutdown()
 
+	validTo := time.Now().Add(time.Hour * +12)
+
 	rules := []PatientConsent{
 		{
 			ID:        random.String(8),
@@ -410,7 +418,7 @@ func TestConsentStore_QueryConsentForActor(t *testing.T) {
 			Records: []ConsentRecord{
 				{
 					ValidFrom: time.Now().Add(time.Hour * -24),
-					ValidTo:   time.Now().Add(time.Hour * 12),
+					ValidTo:   &validTo,
 					Hash:      random.String(8),
 					DataClasses: []DataClass{
 						{
@@ -428,7 +436,7 @@ func TestConsentStore_QueryConsentForActor(t *testing.T) {
 			Records: []ConsentRecord{
 				{
 					ValidFrom: time.Now().Add(time.Hour * -24),
-					ValidTo:   time.Now().Add(time.Hour * 12),
+					ValidTo:   &validTo,
 					Hash:      random.String(8),
 					DataClasses: []DataClass{
 						{
@@ -483,6 +491,8 @@ func TestConsentStore_QueryConsentForActorAndSubject(t *testing.T) {
 	client := defaultConsentStore()
 	defer client.Shutdown()
 
+	validTo := time.Now().Add(time.Hour * +12)
+
 	rules := []PatientConsent{
 		{
 			ID:        "123",
@@ -492,7 +502,7 @@ func TestConsentStore_QueryConsentForActorAndSubject(t *testing.T) {
 			Records: []ConsentRecord{
 				{
 					ValidFrom: time.Now().Add(time.Hour * -24),
-					ValidTo:   time.Now().Add(time.Hour * 12),
+					ValidTo:   &validTo,
 					Hash:      "1",
 					DataClasses: []DataClass{
 						{
@@ -510,7 +520,7 @@ func TestConsentStore_QueryConsentForActorAndSubject(t *testing.T) {
 			Records: []ConsentRecord{
 				{
 					ValidFrom: time.Now().Add(time.Hour * -24),
-					ValidTo:   time.Now().Add(time.Hour * 12),
+					ValidTo:   &validTo,
 					Hash:      "2",
 					DataClasses: []DataClass{
 						{
@@ -613,6 +623,8 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 	client := defaultConsentStore()
 	defer client.Shutdown()
 
+	validTo := time.Now().Add(time.Hour * +12)
+
 	rules := []PatientConsent{
 		{
 			ID:        random.String(8),
@@ -622,7 +634,7 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 			Records: []ConsentRecord{
 				{
 					ValidFrom: time.Now().Add(time.Hour * -24),
-					ValidTo:   time.Now().Add(time.Hour * 12),
+					ValidTo:   &validTo,
 					Hash:      random.String(8),
 					UUID:      "1",
 					DataClasses: []DataClass{
@@ -633,7 +645,7 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 				},
 				{
 					ValidFrom: time.Now().Add(time.Hour * -24),
-					ValidTo:   time.Now().Add(time.Hour * 12),
+					ValidTo:   &validTo,
 					Hash:      random.String(8),
 					UUID:      "2",
 					DataClasses: []DataClass{
@@ -652,7 +664,7 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 			Records: []ConsentRecord{
 				{
 					ValidFrom: time.Now().Add(time.Hour * -24),
-					ValidTo:   time.Now().Add(time.Hour * 12),
+					ValidTo:   &validTo,
 					Hash:      random.String(8),
 					UUID:      "3",
 					DataClasses: []DataClass{
@@ -705,6 +717,7 @@ func TestConsentStore_DeleteConsentRecordByHash(t *testing.T) {
 	client := defaultConsentStore()
 	defer client.Shutdown()
 	hash := random.String(8)
+	validTo := time.Now().Add(time.Hour * 12)
 
 	rules := []PatientConsent{
 		{
@@ -715,7 +728,7 @@ func TestConsentStore_DeleteConsentRecordByHash(t *testing.T) {
 			Records: []ConsentRecord{
 				{
 					ValidFrom: time.Now().Add(time.Hour * -24),
-					ValidTo:   time.Now().Add(time.Hour * 12),
+					ValidTo:   &validTo,
 					Hash:      hash,
 					DataClasses: []DataClass{
 						{
@@ -751,6 +764,7 @@ func TestConsentStore_DeleteConsentRecordByHash(t *testing.T) {
 }
 
 func patientConsent() []PatientConsent {
+	validTo := time.Now().Add(time.Hour * 12)
 	return []PatientConsent{
 		{
 			ID:        random.String(8),
@@ -761,7 +775,7 @@ func patientConsent() []PatientConsent {
 			Records: []ConsentRecord{
 				{
 					ValidFrom: time.Now().Add(time.Hour * -24),
-					ValidTo:   time.Now().Add(time.Hour * +12),
+					ValidTo:   &validTo,
 					Hash:      random.String(8),
 					DataClasses: []DataClass{
 						{
