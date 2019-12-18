@@ -78,7 +78,7 @@ func (w *Wrapper) CreateConsent(ctx echo.Context) error {
 
 	c, err := createRequest.ToPatientConsent()
 	if err != nil {
-		return err
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	err = w.Cs.RecordConsent(ctx.Request().Context(), []pkg.PatientConsent{c})
@@ -118,7 +118,7 @@ func (w *Wrapper) CheckConsent(ctx echo.Context) error {
 
 	var checkpoint *time.Time
 	if checkRequest.ValidAt != nil {
-		cp, err := time.Parse(pkg.Iso8601DateTime, *checkRequest.ValidAt)
+		cp, err := time.Parse(time.RFC3339, *checkRequest.ValidAt)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid value for validAt: %s", *checkRequest.ValidAt))
 		}
@@ -233,9 +233,9 @@ func (w *Wrapper) QueryConsent(ctx echo.Context) error {
 	}
 
 	if checkRequest.ValidAt != nil {
-		va, err = time.Parse(pkg.Iso8601DateTime, *checkRequest.ValidAt)
+		va, err = time.Parse(time.RFC3339, *checkRequest.ValidAt)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid format for validAt, required: %s", pkg.Iso8601DateTime))
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid format for validAt, required: %s", time.RFC3339))
 		}
 	}
 

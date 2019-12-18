@@ -78,8 +78,8 @@ func TestCreateConsentRequest_ToPatientConsent(t *testing.T) {
 		assert.Len(t, pc.Records, 1)
 		assert.Equal(t, sc.Records[0].RecordHash, pc.Records[0].Hash)
 		assert.Equal(t, sc.Records[0].DataClasses[0], pc.DataClasses()[0].Code)
-		assert.Equal(t, string(sc.Records[0].ValidFrom), pc.Records[0].ValidFrom.Format(pkg.Iso8601DateTime))
-		assert.Equal(t, string(*sc.Records[0].ValidTo), pc.Records[0].ValidTo.Format(pkg.Iso8601DateTime))
+		assert.Equal(t, string(sc.Records[0].ValidFrom), pc.Records[0].ValidFrom.Format(time.RFC3339))
+		assert.Equal(t, string(*sc.Records[0].ValidTo), pc.Records[0].ValidTo.Format(time.RFC3339))
 	})
 
 	t.Run("Incorrect validTo returns error", func(t *testing.T) {
@@ -92,7 +92,7 @@ func TestCreateConsentRequest_ToPatientConsent(t *testing.T) {
 			return
 		}
 
-		expected := "parsing time \"202-01-01\" as \"2006-01-02T15:04:05-07:00\": cannot parse \"01-01\" as \"2006\""
+		expected := "parsing time \"202-01-01\" as \"2006-01-02T15:04:05Z07:00\": cannot parse \"01-01\" as \"2006\""
 		if err.Error() != expected {
 			t.Errorf("Expected error [%s], got [%v]", expected, err.Error())
 		}
@@ -107,7 +107,7 @@ func TestCreateConsentRequest_ToPatientConsent(t *testing.T) {
 			return
 		}
 
-		expected := "parsing time \"202-01-01\" as \"2006-01-02T15:04:05-07:00\": cannot parse \"01-01\" as \"2006\""
+		expected := "parsing time \"202-01-01\" as \"2006-01-02T15:04:05Z07:00\": cannot parse \"01-01\" as \"2006\""
 		if err.Error() != expected {
 			t.Errorf("Expected error [%s], got [%v]", expected, err.Error())
 		}
@@ -143,8 +143,8 @@ func patientConsent() pkg.PatientConsent {
 }
 
 func consentRecord() pkg.ConsentRecord {
-	t1, _ := time.Parse(pkg.Iso8601DateTime, "2001-09-11T12:00:00+02:00")
-	t2, _ := time.Parse(pkg.Iso8601DateTime, "2001-09-12T12:00:00+02:00")
+	t1, _ := time.Parse(time.RFC3339, "2001-09-11T12:00:00+02:00")
+	t2, _ := time.Parse(time.RFC3339, "2001-09-12T12:00:00+02:00")
 
 	prevH := "PreviousHash"
 
