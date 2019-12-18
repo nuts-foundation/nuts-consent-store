@@ -235,7 +235,6 @@ components:
       required:
         - dataClasses
         - validFrom
-        - validTo
         - recordHash
       properties:
         dataClasses:

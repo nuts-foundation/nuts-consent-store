@@ -57,15 +57,17 @@ func (cr ConsentRecord) ToConsentRecord() (pkg.ConsentRecord, error) {
 	if err != nil {
 		return pkg.ConsentRecord{}, err
 	}
-
-	validTo, err := time.Parse(time.RFC3339, string(cr.ValidTo))
-	if err != nil {
-		return pkg.ConsentRecord{}, err
+	var validTo time.Time
+	if cr.ValidTo != nil {
+		validTo, err = time.Parse(time.RFC3339, string(*cr.ValidTo))
+		if err != nil {
+			return pkg.ConsentRecord{}, err
+		}
 	}
 
 	return pkg.ConsentRecord{
 		ValidFrom:    validFrom,
-		ValidTo:      validTo,
+		ValidTo:      &validTo,
 		Hash:         cr.RecordHash,
 		PreviousHash: cr.PreviousRecordHash,
 		DataClasses:  resources,
@@ -110,12 +112,18 @@ func FromConsentRecord(consentRecord pkg.ConsentRecord) ConsentRecord {
 
 	version := int(consentRecord.Version)
 
-	return ConsentRecord{
+	cr := ConsentRecord{
 		PreviousRecordHash: consentRecord.PreviousHash,
 		RecordHash:         consentRecord.Hash,
 		DataClasses:        resources,
 		ValidFrom:          ValidFrom(consentRecord.ValidFrom.Format(time.RFC3339)),
-		ValidTo:            ValidTo(consentRecord.ValidTo.Format(time.RFC3339)),
 		Version:            &version,
 	}
+
+	if consentRecord.ValidTo != nil {
+		validTo := ValidTo(consentRecord.ValidTo.Format(time.RFC3339))
+		cr.ValidTo = &validTo
+	}
+
+	return cr
 }
