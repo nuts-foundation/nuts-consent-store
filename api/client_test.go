@@ -51,7 +51,7 @@ func newTestClient(fn RoundTripFunc) HttpClient {
 }
 
 func TestHttpClient_RecordConsent(t *testing.T) {
-	t.Run("201", func(t *testing.T) {
+	t.Run("empty patient consent returns 201", func(t *testing.T) {
 		client := testClient(201, []byte{})
 
 		c := []pkg.PatientConsent{{}}
@@ -62,10 +62,40 @@ func TestHttpClient_RecordConsent(t *testing.T) {
 		}
 	})
 
-	t.Run("too many rules returns error", func(t *testing.T) {
+	t.Run("full consent with validTo date returns 201", func(t *testing.T) {
+		client := testClient(201, []byte{})
+
+		c := []pkg.PatientConsent{patientConsent()}
+		validTo := time.Now()
+		c[0].Records[0].ValidTo = &validTo
+		err := client.RecordConsent(context.TODO(), c)
+
+		if err != nil {
+			t.Errorf("Expected no error, got [%s]", err.Error())
+		}
+	})
+
+	t.Run("no rules error", func(t *testing.T) {
 		client := testClient(201, []byte{})
 
 		c := []pkg.PatientConsent{}
+		err := client.RecordConsent(context.TODO(), c)
+
+		if err == nil {
+			t.Error("Expected error, got nothing")
+			return
+		}
+
+		expected := "at least one consent record is needed"
+		if expected != err.Error() {
+			t.Errorf("Expected error [%s], got [%v]", expected, err)
+		}
+	})
+
+	t.Run("too many rules returns error", func(t *testing.T) {
+		client := testClient(201, []byte{})
+
+		c := []pkg.PatientConsent{{}, {}}
 		err := client.RecordConsent(context.TODO(), c)
 
 		if err == nil {
@@ -220,6 +250,7 @@ func TestHttpClient_ConsentAuth(t *testing.T) {
 
 func TestHttpClient_QueryConsentForActor(t *testing.T) {
 	t.Run("200", func(t *testing.T) {
+		validTo := ValidTo("2029-01-01T12:00:00+01:00")
 		resp, _ := json.Marshal(ConsentQueryResponse{
 			Results: []PatientConsent{
 				{
@@ -227,7 +258,7 @@ func TestHttpClient_QueryConsentForActor(t *testing.T) {
 						{
 							DataClasses: []string{"test"},
 							ValidFrom:   "2019-01-01T12:00:00+01:00",
-							ValidTo:     "2029-01-01T12:00:00+01:00",
+							ValidTo:     &validTo,
 						},
 					},
 					Actor:     "actor",
@@ -263,13 +294,14 @@ func TestHttpClient_QueryConsentForActorAndSubject(t *testing.T) {
 	s := "urn:subject"
 
 	t.Run("200", func(t *testing.T) {
+		validTo := ValidTo("2029-01-01T12:00:00+01:00")
 		resp, _ := json.Marshal(ConsentQueryResponse{
 			Results: []PatientConsent{
 				{
 					Records: []ConsentRecord{
 						{
 							ValidFrom:   "2019-01-01T12:00:00+01:00",
-							ValidTo:     "2029-01-01T12:00:00+01:00",
+							ValidTo:     &validTo,
 							DataClasses: []string{"test"},
 						},
 					},

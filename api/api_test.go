@@ -97,7 +97,7 @@ func TestDefaultConsentStore_CheckConsent(t *testing.T) {
 		echo := mock.NewMockContext(ctrl)
 
 		ccr := consentCheckRequest()
-		validAt := time.Now().Format(pkg.Iso8601DateTime)
+		validAt := time.Now().Format(time.RFC3339)
 		ccr.ValidAt = &validAt
 		json, _ := json.Marshal(ccr)
 		request := &http.Request{
@@ -605,7 +605,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 		request := &http.Request{
 			Body: ioutil.NopCloser(bytes.NewReader(json)),
 		}
-
+		validTo := ValidTo(time.Now().Add(time.Hour * 24).Format(time.RFC3339))
 		v := 1
 		echo.EXPECT().Request().Return(request).AnyTimes()
 		echo.EXPECT().JSON(200, ConsentQueryResponseMatcher{want: ConsentQueryResponse{
@@ -622,8 +622,8 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 							DataClasses: []string{
 								"resource",
 							},
-							ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format(pkg.Iso8601DateTime)),
-							ValidTo:   ValidTo(time.Now().Add(time.Hour * 24).Format(pkg.Iso8601DateTime)),
+							ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format(time.RFC3339)),
+							ValidTo:   &validTo,
 							Version:   &v,
 						},
 					},
@@ -643,7 +643,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 		echo := mock.NewMockContext(ctrl)
 
 		query := consentQuery()
-		tt := time.Now().Add(time.Hour * 25).Format(pkg.Iso8601DateTime)
+		tt := time.Now().Add(time.Hour * 25).Format(time.RFC3339)
 		query.ValidAt = &tt
 		json, _ := json.Marshal(query)
 		request := &http.Request{
@@ -674,6 +674,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 		request := &http.Request{
 			Body: ioutil.NopCloser(bytes.NewReader(json)),
 		}
+		validTo := ValidTo(time.Now().Add(time.Hour * 24).Format(time.RFC3339))
 
 		v := 1
 		echo.EXPECT().Request().Return(request).AnyTimes()
@@ -691,8 +692,8 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 							DataClasses: []string{
 								"resource",
 							},
-							ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format(pkg.Iso8601DateTime)),
-							ValidTo:   ValidTo(time.Now().Add(time.Hour * 24).Format(pkg.Iso8601DateTime)),
+							ValidFrom: ValidFrom(time.Now().Add(time.Hour * -24).Format(time.RFC3339)),
+							ValidTo:   &validTo,
 							Version:   &v,
 						},
 					},
@@ -778,7 +779,7 @@ func TestDefaultConsentStore_QueryConsent(t *testing.T) {
 			t.Error("Expected error got nothing")
 		}
 
-		expected := "code=400, message=invalid format for validAt, required: 2006-01-02T15:04:05-07:00"
+		expected := "code=400, message=invalid format for validAt, required: 2006-01-02T15:04:05Z07:00"
 		if !strings.HasPrefix(err.Error(), expected) {
 			t.Errorf("Expected error [%s], got: [%v]", expected, err)
 		}
@@ -923,6 +924,7 @@ func TestDefaultConsentStore_FindConsentRecord(t *testing.T) {
 }
 
 func testConsent() PatientConsent {
+	validTo := ValidTo("2030-01-01T12:00:00+01:00")
 	return PatientConsent{
 		Id:        random.String(8),
 		Actor:     "actor",
@@ -933,7 +935,7 @@ func testConsent() PatientConsent {
 				RecordHash:  random.String(8),
 				DataClasses: []string{"resource"},
 				ValidFrom:   ValidFrom("2019-01-01T12:00:00+01:00"),
-				ValidTo:     ValidTo("2030-01-01T12:00:00+01:00"),
+				ValidTo:     &validTo,
 			},
 		},
 	}
@@ -978,6 +980,7 @@ func defaultConsentStore() Wrapper {
 }
 
 func consentRuleForQuery() pkg.PatientConsent {
+	validTo := time.Now().Add(time.Hour * 24)
 	return pkg.PatientConsent{
 		ID:        random.String(8),
 		Subject:   "subject",
@@ -986,7 +989,7 @@ func consentRuleForQuery() pkg.PatientConsent {
 		Records: []pkg.ConsentRecord{
 			{
 				ValidFrom: time.Now().Add(time.Hour * -24),
-				ValidTo:   time.Now().Add(time.Hour * 24),
+				ValidTo:   &validTo,
 				DataClasses: []pkg.DataClass{
 					{Code: "resource"},
 				},

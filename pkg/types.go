@@ -25,9 +25,6 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-// Iso8601DateTime is the date format used in the API for denoting a zoned date time
-const Iso8601DateTime = "2006-01-02T15:04:05-07:00"
-
 // PatientConsent defines struct for patient_consent table.
 // ID refers to the HMAC id for a custodian(subject-actor)
 type PatientConsent struct {
@@ -64,8 +61,8 @@ type ConsentRecord struct {
 	ID               uint `gorm:"AUTO_INCREMENT"`
 	PatientConsentID string
 	ValidFrom        time.Time `gorm:"not null"`
-	ValidTo          time.Time `gorm:"not null"`
-	Hash             string    `gorm:"not null"`
+	ValidTo          *time.Time
+	Hash             string `gorm:"not null"`
 	PreviousHash     *string
 	Version          uint   `gorm:"DEFAULT:1"`
 	UUID             string `gorm:"column:uuid;not null"`

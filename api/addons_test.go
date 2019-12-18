@@ -50,6 +50,7 @@ func TestFromPatientConsents(t *testing.T) {
 
 func TestCreateConsentRequest_ToPatientConsent(t *testing.T) {
 	version := 1
+	validTo := ValidTo("2020-01-01T12:00:00+01:00")
 	sc := PatientConsent{
 		Actor:     "actor",
 		Custodian: "custodian",
@@ -59,7 +60,7 @@ func TestCreateConsentRequest_ToPatientConsent(t *testing.T) {
 				RecordHash:  random.String(8),
 				DataClasses: []string{"resource"},
 				ValidFrom:   "2019-01-01T12:00:00+01:00",
-				ValidTo:     "2020-01-01T12:00:00+01:00",
+				ValidTo:     &validTo,
 				Version:     &version,
 			},
 		},
@@ -77,12 +78,13 @@ func TestCreateConsentRequest_ToPatientConsent(t *testing.T) {
 		assert.Len(t, pc.Records, 1)
 		assert.Equal(t, sc.Records[0].RecordHash, pc.Records[0].Hash)
 		assert.Equal(t, sc.Records[0].DataClasses[0], pc.DataClasses()[0].Code)
-		assert.Equal(t, string(sc.Records[0].ValidFrom), pc.Records[0].ValidFrom.Format(pkg.Iso8601DateTime))
-		assert.Equal(t, string(sc.Records[0].ValidTo), pc.Records[0].ValidTo.Format(pkg.Iso8601DateTime))
+		assert.Equal(t, string(sc.Records[0].ValidFrom), pc.Records[0].ValidFrom.Format(time.RFC3339))
+		assert.Equal(t, string(*sc.Records[0].ValidTo), pc.Records[0].ValidTo.Format(time.RFC3339))
 	})
 
 	t.Run("Incorrect validTo returns error", func(t *testing.T) {
-		sc.Records[0].ValidTo = "202-01-01"
+		validTo := ValidTo("202-01-01")
+		sc.Records[0].ValidTo = &validTo
 		_, err := sc.ToPatientConsent()
 
 		if err == nil {
@@ -90,7 +92,7 @@ func TestCreateConsentRequest_ToPatientConsent(t *testing.T) {
 			return
 		}
 
-		expected := "parsing time \"202-01-01\" as \"2006-01-02T15:04:05-07:00\": cannot parse \"01-01\" as \"2006\""
+		expected := "parsing time \"202-01-01\" as \"2006-01-02T15:04:05Z07:00\": cannot parse \"01-01\" as \"2006\""
 		if err.Error() != expected {
 			t.Errorf("Expected error [%s], got [%v]", expected, err.Error())
 		}
@@ -105,7 +107,7 @@ func TestCreateConsentRequest_ToPatientConsent(t *testing.T) {
 			return
 		}
 
-		expected := "parsing time \"202-01-01\" as \"2006-01-02T15:04:05-07:00\": cannot parse \"01-01\" as \"2006\""
+		expected := "parsing time \"202-01-01\" as \"2006-01-02T15:04:05Z07:00\": cannot parse \"01-01\" as \"2006\""
 		if err.Error() != expected {
 			t.Errorf("Expected error [%s], got [%v]", expected, err.Error())
 		}
@@ -119,8 +121,8 @@ func TestFromConsentRecord(t *testing.T) {
 		assert.Equal(t, "PreviousHash", *pc.PreviousRecordHash)
 		assert.Equal(t, "Hash", pc.RecordHash)
 		assert.Equal(t, 2, *pc.Version)
-		assert.Equal(t, ValidTo("2001-09-12T12:00:00+02:00"), pc.ValidTo)
 		assert.Equal(t, ValidFrom("2001-09-11T12:00:00+02:00"), pc.ValidFrom)
+		assert.Equal(t, ValidTo("2001-09-12T12:00:00+02:00"), *pc.ValidTo)
 	})
 }
 
@@ -141,8 +143,8 @@ func patientConsent() pkg.PatientConsent {
 }
 
 func consentRecord() pkg.ConsentRecord {
-	t1, _ := time.Parse(pkg.Iso8601DateTime, "2001-09-11T12:00:00+02:00")
-	t2, _ := time.Parse(pkg.Iso8601DateTime, "2001-09-12T12:00:00+02:00")
+	t1, _ := time.Parse(time.RFC3339, "2001-09-11T12:00:00+02:00")
+	t2, _ := time.Parse(time.RFC3339, "2001-09-12T12:00:00+02:00")
 
 	prevH := "PreviousHash"
 
@@ -150,7 +152,7 @@ func consentRecord() pkg.ConsentRecord {
 		ID:               1,
 		PatientConsentID: "PatientConsentID",
 		ValidFrom:        t1,
-		ValidTo:          t2,
+		ValidTo:          &t2,
 		Hash:             "Hash",
 		PreviousHash:     &prevH,
 		Version:          2,

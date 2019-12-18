@@ -78,7 +78,7 @@ func (hb HttpClient) QueryConsent(context context.Context, actor *string, custod
 	)
 
 	if validAt != nil {
-		s := validAt.Format(pkg.Iso8601DateTime)
+		s := validAt.Format(time.RFC3339)
 		req.ValidAt = &s
 	}
 
@@ -154,7 +154,7 @@ func (hb HttpClient) ConsentAuth(ctx context.Context, custodian string, subject 
 	}
 
 	if checkpoint != nil {
-		s := checkpoint.Format(pkg.Iso8601DateTime)
+		s := checkpoint.Format(time.RFC3339)
 		req.ValidAt = &s
 	}
 
@@ -184,7 +184,13 @@ func (hb HttpClient) RecordConsent(ctx context.Context, consent []pkg.PatientCon
 	var req CreateConsentJSONRequestBody
 
 	if len(consent) != 1 {
-		err := errors.New("creating multiple consent records currently not supported")
+		var err error
+		if len(consent) > 1 {
+			err = errors.New("creating multiple consent records currently not supported")
+		}
+		if len(consent) == 0 {
+			err = errors.New("at least one consent record is needed")
+		}
 		hb.Logger.Error(err)
 		return err
 	}
@@ -200,8 +206,12 @@ func (hb HttpClient) RecordConsent(ctx context.Context, consent []pkg.PatientCon
 			RecordHash:         r.Hash,
 			PreviousRecordHash: r.PreviousHash,
 			ValidFrom:          ValidFrom(r.ValidFrom.Format(time.RFC3339)),
-			ValidTo:            ValidTo(r.ValidTo.Format(time.RFC3339)),
 			Version:            &version,
+		}
+		if r.ValidTo != nil {
+			validTo := ValidTo(r.ValidTo.Format(time.RFC3339))
+			cr.ValidTo = &validTo
+
 		}
 		for _, sr := range r.DataClasses {
 			cr.DataClasses = append(cr.DataClasses, sr.Code)
@@ -217,13 +227,12 @@ func (hb HttpClient) RecordConsent(ctx context.Context, consent []pkg.PatientCon
 	}
 
 	_, err = hb.checkResponse(result)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
+// checkResponse analyzes response code and body. It returns the body.
+// If body can not be read or status code >= 400 it returns the error.
 func (hb *HttpClient) checkResponse(result *http.Response) ([]byte, error) {
 	body, err := ioutil.ReadAll(result.Body)
 	if err != nil {
