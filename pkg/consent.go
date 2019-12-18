@@ -196,14 +196,21 @@ func (cs *ConsentStore) ConsentAuth(context context.Context, custodian string, s
 		cp = *checkpoint
 	}
 
+	// limit to active records
+	expr := cs.Db.Debug().Where("custodian = ? AND subject = ? AND actor = ?", custodian, subject, actor).
+		Table("patient_consent").
+		Select("consent_record.id").
+		Joins("left join consent_record on consent_record.patient_consent_id = patient_consent.id").
+		Group("consent_record.uuid").Having("max(consent_record.version)").QueryExpr()
+
 	// this will always fill target, but if a record does not exist, resources will be empty
-	var tdb = cs.Db.Debug()
-	tdb = tdb.Table("patient_consent")
-	tdb = tdb.Joins("JOIN consent_record ON consent_record.patient_consent_id = patient_consent.id")
-	tdb = tdb.Preload("Records.DataClasses")
-	tdb = tdb.Where("custodian = ? AND subject = ? AND actor = ?", custodian, subject, actor)
-	tdb = tdb.Where("consent_record.valid_from <= ?", cp)
-	tdb = tdb.Where("consent_record.valid_to > ?", cp)
+	var tdb = cs.Db.Debug().
+		Table("patient_consent").
+		Joins("JOIN consent_record ON consent_record.patient_consent_id = patient_consent.id").
+		Preload("Records.DataClasses").
+		Where("consent_record.id IN (?)", expr).
+		Where("julianday(consent_record.valid_from) <= julianday(?)", cp).
+		Where("julianday(consent_record.valid_to) > julianday(?)", cp)
 
 	if err := tdb.FirstOrInit(&target).Error; err != nil {
 		return false, err
@@ -360,7 +367,7 @@ func (cs *ConsentStore) QueryConsent(context context.Context, _actor *string, _c
 		Table("consent_record").
 		Select("id").
 		Where("id IN (?)", expr).
-		Where("valid_from <= ? AND valid_to > ?", validAt, validAt).
+		Where("julianday(valid_from) <= julianday(?) AND julianday(valid_to) > julianday(?)", validAt, validAt).
 		Rows()
 
 	defer func() {
