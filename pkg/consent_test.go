@@ -171,13 +171,16 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 	})
 
 	t.Run("Updating an existing consent", func(t *testing.T) {
+		a := "actor333"
+		c := "custodian"
+		s := "subject"
 
 		rules := []PatientConsent{
 			{
 				ID:        random.String(8),
-				Actor:     "actor333",
-				Custodian: "custodian",
-				Subject:   "subject",
+				Actor:     a,
+				Custodian: c,
+				Subject:   s,
 
 				Records: []ConsentRecord{
 					{
@@ -206,7 +209,6 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 
 		err = client.RecordConsent(context.TODO(), rules)
 		if assert.NoError(t, err) {
-			a := "actor333"
 			t.Run("and query within new period", func(t *testing.T) {
 				consent, err := client.QueryConsent(context.TODO(), &a, nil, nil, nil)
 				if assert.NoError(t, err) {
@@ -223,6 +225,21 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 				consent, err := client.QueryConsent(context.TODO(), &a, nil, nil, &tt)
 				if assert.NoError(t, err) {
 					assert.Len(t, consent, 0)
+				}
+			})
+
+			t.Run("and check within new period", func(t *testing.T) {
+				cg, err := client.ConsentAuth(context.TODO(), c, s, a, "resource", nil)
+				if assert.NoError(t, err) {
+					assert.True(t, cg)
+				}
+			})
+
+			t.Run("and check outside new period, inside old period", func(t *testing.T) {
+				tt := time.Now().Add(2 * time.Hour)
+				cg, err := client.ConsentAuth(context.TODO(), c, s, a, "resource", &tt)
+				if assert.NoError(t, err) {
+					assert.False(t, cg)
 				}
 			})
 		}
@@ -454,12 +471,21 @@ func TestConsentStore_QueryConsentForActor(t *testing.T) {
 		a := "actor"
 		consent, err := client.QueryConsent(context.TODO(), &a, nil, nil, nil)
 
-		if err != nil {
-			t.Errorf("Expected no error, got [%v]", err)
+		if assert.NoError(t, err) {
+			assert.Len(t, consent, 1)
 		}
+	})
 
-		if len(consent) != 1 {
-			t.Errorf("Expected 1 result, got [%d]", len(consent))
+	// BUG#22
+	t.Run("Recorded consent can be found using different timezone", func(t *testing.T) {
+		secondsEastOfUTC := int((8 * time.Hour).Seconds())
+		beijing := time.FixedZone("Beijing Time", secondsEastOfUTC)
+		va := time.Now().Add(time.Hour * 11).In(beijing)
+		a := "actor"
+		consent, err := client.QueryConsent(context.TODO(), &a, nil, nil, &va)
+
+		if assert.NoError(t, err) {
+			assert.Len(t, consent, 1)
 		}
 	})
 
