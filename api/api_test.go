@@ -55,7 +55,7 @@ func TestDefaultConsentStore_CheckConsent(t *testing.T) {
 			Body: ioutil.NopCloser(bytes.NewReader(json)),
 		}
 
-		authValue := "false"
+		authValue := "no"
 		echo.EXPECT().Request().Return(request).AnyTimes()
 		echo.EXPECT().JSON(200, ConsentCheckResponse{
 			ConsentGiven: &authValue,
@@ -78,7 +78,7 @@ func TestDefaultConsentStore_CheckConsent(t *testing.T) {
 			Body: ioutil.NopCloser(bytes.NewReader(json)),
 		}
 
-		authValue := "true"
+		authValue := "yes"
 		echo.EXPECT().Request().Return(request).AnyTimes()
 		echo.EXPECT().JSON(200, ConsentCheckResponse{
 			ConsentGiven: &authValue,
@@ -104,7 +104,7 @@ func TestDefaultConsentStore_CheckConsent(t *testing.T) {
 			Body: ioutil.NopCloser(bytes.NewReader(json)),
 		}
 
-		authValue := "true"
+		authValue := "yes"
 		echo.EXPECT().Request().Return(request).AnyTimes()
 		echo.EXPECT().JSON(200, ConsentCheckResponse{
 			ConsentGiven: &authValue,
