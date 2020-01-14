@@ -137,9 +137,9 @@ func (w *Wrapper) CheckConsent(ctx echo.Context) error {
 		return err
 	}
 
-	authValue := "false"
+	authValue := "no"
 	if auth {
-		authValue = "true"
+		authValue = "yes"
 	}
 
 	checkResponse := ConsentCheckResponse{
