@@ -669,9 +669,8 @@ func TestConsentStore_QueryConsent(t *testing.T) {
 						},
 					},
 				},
-				{
+				{ // No validTo, means always valid
 					ValidFrom: time.Now().Add(time.Hour * -24),
-					ValidTo:   &validTo,
 					Hash:      random.String(8),
 					UUID:      "2",
 					DataClasses: []DataClass{

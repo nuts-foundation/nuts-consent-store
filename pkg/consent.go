@@ -367,7 +367,7 @@ func (cs *ConsentStore) QueryConsent(context context.Context, _actor *string, _c
 		Table("consent_record").
 		Select("id").
 		Where("id IN (?)", expr).
-		Where("julianday(valid_from) <= julianday(?) AND julianday(valid_to) > julianday(?)", validAt, validAt).
+		Where("julianday(valid_from) <= julianday(?) AND (valid_to IS NULL or julianday(valid_to) > julianday(?))", validAt, validAt).
 		Rows()
 
 	defer func() {
