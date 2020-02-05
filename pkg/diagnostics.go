@@ -25,8 +25,7 @@ import (
 )
 
 type dbDiagnosticResult struct {
-	connectionString string
-	pingError        error
+	pingError error
 }
 
 // Name returns the name of the dbDiagnosticResult
@@ -37,17 +36,16 @@ func (ddr dbDiagnosticResult) Name() string {
 // String returns the outcome of the dbDiagnosticResult
 func (ddr dbDiagnosticResult) String() string {
 	if ddr.pingError == nil {
-		return fmt.Sprintf("connection string: %s, ping: true", ddr.connectionString)
+		return "ping: true"
 	}
 
-	return fmt.Sprintf("connection string: %s, ping: false, error: %v", ddr.connectionString, ddr.pingError)
+	return fmt.Sprintf("ping: false, error: %v", ddr.pingError)
 }
 
 // Diagnostics returns the slice of DiagnosticResults indicating the state of this engine
 func (cs *ConsentStore) Diagnostics() []core.DiagnosticResult {
 	dbState := dbDiagnosticResult{
-		connectionString: cs.Config.Connectionstring,
-		pingError:        cs.sqlDb.Ping(),
+		pingError: cs.sqlDb.Ping(),
 	}
 
 	return []core.DiagnosticResult{

@@ -40,12 +40,13 @@ func NewConsentStoreEngine() *engine.Engine {
 	cs := pkg.ConsentStoreInstance()
 
 	return &engine.Engine{
-		Name:      "ConsentStore",
-		Cmd:       cmd(),
-		Configure: cs.Configure,
-		Config:    &cs.Config,
-		ConfigKey: "cstore",
-		FlagSet:   flagSet(),
+		Name:        "ConsentStore",
+		Cmd:         cmd(),
+		Configure:   cs.Configure,
+		Config:      &cs.Config,
+		ConfigKey:   "cstore",
+		Diagnostics: cs.Diagnostics,
+		FlagSet:     flagSet(),
 		Routes: func(router runtime.EchoRouter) {
 			api.RegisterHandlers(router, &api.Wrapper{Cs: cs})
 		},
