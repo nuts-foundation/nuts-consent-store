@@ -13,7 +13,7 @@ require (
 	github.com/mattn/go-colorable v0.1.4 // indirect
 	github.com/mattn/go-isatty v0.0.10 // indirect
 	github.com/mattn/go-sqlite3 v1.11.0
-	github.com/nuts-foundation/nuts-go-core v0.0.0-20200128062821-3d36593be9c5
+	github.com/nuts-foundation/nuts-go-core v0.0.0-20200130105519-4620adf455e9
 	github.com/pelletier/go-toml v1.5.0 // indirect
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.4.2
