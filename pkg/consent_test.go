@@ -22,6 +22,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	core "github.com/nuts-foundation/nuts-go-core"
 	"testing"
 	"time"
 
@@ -595,7 +596,7 @@ func TestConsentStore_Configure(t *testing.T) {
 			Config: ConsentStoreConfig{
 				//Connectionstring: ":memory:",
 				Connectionstring: "file",
-				Mode:             "server",
+				Mode:             core.ServerEngineMode,
 			},
 		}
 
@@ -608,7 +609,7 @@ func TestConsentStore_Configure(t *testing.T) {
 		client := ConsentStore{
 			Config: ConsentStoreConfig{
 				Connectionstring: "file:test.db?mode=ro",
-				Mode:             "server",
+				Mode:             core.ServerEngineMode,
 			},
 		}
 
@@ -645,7 +646,7 @@ func defaultConsentStore() ConsentStore {
 	client := ConsentStore{
 		Config: ConsentStoreConfig{
 			Connectionstring: ":memory:",
-			Mode:             "server",
+			Mode:             core.ServerEngineMode,
 		},
 	}
 

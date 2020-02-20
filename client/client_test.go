@@ -20,6 +20,7 @@ package client
 
 import (
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
+	core "github.com/nuts-foundation/nuts-go-core"
 	"reflect"
 	"sync"
 	"testing"
@@ -28,7 +29,7 @@ import (
 func TestNewConsentStoreClient(t *testing.T) {
 	t.Run("returns ConsentStore by default", func(t *testing.T) {
 		i := pkg.ConsentStoreInstance()
-		i.Config.Mode = "server"
+		i.Config.Mode = core.ServerEngineMode
 		i.ConfigOnce = sync.Once{}
 		cc := NewConsentStoreClient()
 
@@ -40,7 +41,7 @@ func TestNewConsentStoreClient(t *testing.T) {
 	t.Run("invalid configuration panics", func(t *testing.T) {
 		i := pkg.ConsentStoreInstance()
 		i.Config.Connectionstring = "file:data.db?mode=readonly"
-		i.Config.Mode = "server"
+		i.Config.Mode = core.ServerEngineMode
 		i.ConfigOnce = sync.Once{}
 
 		defer func() {
