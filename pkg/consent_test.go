@@ -624,7 +624,22 @@ func TestConsentStore_Configure(t *testing.T) {
 			t.Errorf("Expected error [%s], got [%v]", expected, err.Error())
 		}
 	})
+
+	t.Run("initialize store in client mode", func(t *testing.T) {
+		client := ConsentStore{
+			Config: ConsentStoreConfig{
+				Mode:             "client",
+			},
+		}
+
+		err := client.Configure()
+		assert.NoError(t, err)
+		err = client.Start()
+		assert.NoError(t, err)
+	})
 }
+
+
 
 func defaultConsentStore() ConsentStore {
 	client := ConsentStore{

@@ -130,7 +130,6 @@ func (cs *ConsentStore) Configure() error {
 				return
 			}
 		}
-
 	})
 
 	return err
@@ -138,18 +137,23 @@ func (cs *ConsentStore) Configure() error {
 
 //Shutdown closes the db connections
 func (cs *ConsentStore) Shutdown() error {
-	return cs.Db.Close()
+	if cs.Db != nil {
+		return cs.Db.Close()
+	}
+	return nil
 }
 
 // Start opens the db connections
 func (cs *ConsentStore) Start() error {
 	var err error
 
-	// gorm db connection
-	cs.Db, err = gorm.Open("sqlite3", cs.sqlDb)
+	if cs.Config.Mode == "server" {
+		// gorm db connection
+		cs.Db, err = gorm.Open("sqlite3", cs.sqlDb)
 
-	// logging
-	cs.Db.SetLogger(logrus.StandardLogger())
+		// logging
+		cs.Db.SetLogger(logrus.StandardLogger())
+	}
 
 	return err
 }
