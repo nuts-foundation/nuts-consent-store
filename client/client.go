@@ -21,6 +21,7 @@ package client
 import (
 	"github.com/nuts-foundation/nuts-consent-store/api"
 	"github.com/nuts-foundation/nuts-consent-store/pkg"
+	core "github.com/nuts-foundation/nuts-go-core"
 	"github.com/sirupsen/logrus"
 	"time"
 )
@@ -29,7 +30,7 @@ import (
 func NewConsentStoreClient() pkg.ConsentStoreClient {
 	consentStore := pkg.ConsentStoreInstance()
 
-	if consentStore.Config.Mode == "server" {
+	if consentStore.Config.Mode == core.ServerEngineMode {
 		if err := consentStore.Configure(); err != nil {
 			logrus.Panic(err)
 		}

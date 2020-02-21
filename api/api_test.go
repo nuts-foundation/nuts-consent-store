@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	core "github.com/nuts-foundation/nuts-go-core"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -963,7 +964,7 @@ func defaultConsentStore() Wrapper {
 	client := pkg.ConsentStore{
 		Config: pkg.ConsentStoreConfig{
 			Connectionstring: ":memory:",
-			Mode:             "server",
+			Mode:             core.ServerEngineMode,
 		},
 	}
 	if err := client.Configure(); err != nil {

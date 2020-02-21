@@ -23,6 +23,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	core "github.com/nuts-foundation/nuts-go-core"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
@@ -112,7 +113,9 @@ func (cs *ConsentStore) Configure() error {
 	)
 
 	cs.ConfigOnce.Do(func() {
-		if cs.Config.Mode == "server" {
+		cfg := core.NutsConfig()
+		cs.Config.Mode = cfg.GetEngineMode(cs.Config.Mode)
+		if cs.Config.Mode == core.ServerEngineMode {
 			cs.sqlDb, err = sql.Open("sqlite3", cs.Config.Connectionstring)
 			if err != nil {
 				return
@@ -147,7 +150,7 @@ func (cs *ConsentStore) Shutdown() error {
 func (cs *ConsentStore) Start() error {
 	var err error
 
-	if cs.Config.Mode == "server" {
+	if cs.Config.Mode == core.ServerEngineMode {
 		// gorm db connection
 		cs.Db, err = gorm.Open("sqlite3", cs.sqlDb)
 
