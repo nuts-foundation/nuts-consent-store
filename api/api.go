@@ -113,7 +113,7 @@ func (w *Wrapper) CheckConsent(ctx echo.Context) error {
 	}
 
 	if len(checkRequest.DataClass) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "missing resourceType in checkRequest")
+		return echo.NewHTTPError(http.StatusBadRequest, "missing dataClass in checkRequest")
 	}
 
 	var checkpoint *time.Time
