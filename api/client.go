@@ -144,13 +144,13 @@ func (hb HttpClient) DeleteConsentRecordByHash(context context.Context, consentR
 	return true, nil
 }
 
-// ConsentAuth checks if there is an active consent for a given custodian, subject, actor, resourceType and an optional moment in time (checkpoint)
-func (hb HttpClient) ConsentAuth(ctx context.Context, custodian string, subject string, actor string, resourceType string, checkpoint *time.Time) (bool, error) {
+// ConsentAuth checks if there is an active consent for a given custodian, subject, actor, dataClass and an optional moment in time (checkpoint)
+func (hb HttpClient) ConsentAuth(ctx context.Context, custodian string, subject string, actor string, dataClass string, checkpoint *time.Time) (bool, error) {
 	req := CheckConsentJSONRequestBody{
 		Actor:     Identifier(actor),
 		Custodian: Identifier(custodian),
 		Subject:   Identifier(subject),
-		DataClass: resourceType,
+		DataClass: dataClass,
 	}
 
 	if checkpoint != nil {

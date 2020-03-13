@@ -317,7 +317,7 @@ func TestDefaultConsentStore_CheckConsent(t *testing.T) {
 			t.Error("Expected error got nothing")
 		}
 
-		expected := "code=400, message=missing resourceType in checkRequest"
+		expected := "code=400, message=missing dataClass in checkRequest"
 		if !strings.Contains(err.Error(), expected) {
 			t.Errorf("Expected error [%s], got: [%v]", expected, err)
 		}
