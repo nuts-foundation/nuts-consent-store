@@ -12,7 +12,7 @@ require (
 	github.com/lib/pq v1.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.4 // indirect
 	github.com/mattn/go-isatty v0.0.10 // indirect
-	github.com/mattn/go-sqlite3 v1.11.0
+	github.com/mattn/go-sqlite3 v1.13.0
 	github.com/nuts-foundation/nuts-go-core v0.0.0-20200220093939-3a4292f30472
 	github.com/pelletier/go-toml v1.5.0 // indirect
 	github.com/satori/go.uuid v1.2.0
