@@ -4,8 +4,8 @@ Nuts consent store
 Consent storage for querying and checking active consent. This is the service space copy of the distributed consent.
 Using the distributed records from the Corda vault is not possible due to the encrypted nature of those records.
 
-.. image:: https://travis-ci.org/nuts-foundation/nuts-consent-store.svg?branch=master
-    :target: https://travis-ci.org/nuts-foundation/nuts-consent-store
+.. image:: https://circleci.com/gh/nuts-foundation/nuts-consent-store.svg?style=svg
+    :target: https://circleci.com/gh/nuts-foundation/nuts-consent-store
     :alt: Build Status
 
 .. image:: https://readthedocs.org/projects/nuts-consent-store/badge/?version=latest
