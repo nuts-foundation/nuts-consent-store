@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	github.com/deepmap/oapi-codegen v1.3.0
-	github.com/golang-migrate/migrate/v4 v4.6.2
+	github.com/golang-migrate/migrate/v4 v4.10.0
 	github.com/golang/mock v1.3.1
 	github.com/jinzhu/gorm v1.9.11
 	github.com/labstack/echo/v4 v4.1.11
