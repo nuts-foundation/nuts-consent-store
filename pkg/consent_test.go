@@ -22,9 +22,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	core "github.com/nuts-foundation/nuts-go-core"
 	"testing"
 	"time"
+
+	core "github.com/nuts-foundation/nuts-go-core"
 
 	"github.com/labstack/gommon/random"
 	uuid "github.com/satori/go.uuid"
@@ -615,21 +616,18 @@ func TestConsentStore_Configure(t *testing.T) {
 
 		err := client.Configure()
 
-		if err == nil {
-			t.Errorf("Expected error, got nothing")
-			return
-		}
-
-		expected := "unable to open database file"
-		if err.Error() != expected {
-			t.Errorf("Expected error [%s], got [%v]", expected, err.Error())
+		if assert.Error(t, err) {
+			expected := "unable to open database file: no such file or directory"
+			if err.Error() != expected {
+				t.Errorf("Expected error [%s], got [%v]", expected, err.Error())
+			}
 		}
 	})
 
 	t.Run("initialize store in client mode", func(t *testing.T) {
 		client := ConsentStore{
 			Config: ConsentStoreConfig{
-				Mode:             "client",
+				Mode: "client",
 			},
 		}
 
@@ -639,8 +637,6 @@ func TestConsentStore_Configure(t *testing.T) {
 		assert.NoError(t, err)
 	})
 }
-
-
 
 func defaultConsentStore() ConsentStore {
 	client := ConsentStore{

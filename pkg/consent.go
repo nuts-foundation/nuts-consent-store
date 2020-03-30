@@ -23,6 +23,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
 	core "github.com/nuts-foundation/nuts-go-core"
 
 	"github.com/golang-migrate/migrate/v4"
