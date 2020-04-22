@@ -13,48 +13,83 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
 // ConsentCheckRequest defines model for ConsentCheckRequest.
 type ConsentCheckRequest struct {
-	Actor     Identifier `json:"actor"`
+
+	// Generic identifier used for representing BSN, agbcode, etc. It's always constructed as an URN followed by a double colon (:) and then the identifying value of the given URN
+	Actor Identifier `json:"actor"`
+
+	// Generic identifier used for representing BSN, agbcode, etc. It's always constructed as an URN followed by a double colon (:) and then the identifying value of the given URN
 	Custodian Identifier `json:"custodian"`
-	DataClass string     `json:"dataClass"`
-	Subject   Identifier `json:"subject"`
-	ValidAt   *string    `json:"validAt,omitempty"`
+
+	// Consent class that is requested
+	DataClass string `json:"dataClass"`
+
+	// Generic identifier used for representing BSN, agbcode, etc. It's always constructed as an URN followed by a double colon (:) and then the identifying value of the given URN
+	Subject Identifier `json:"subject"`
+
+	// Date at which consent has to be valid. Optional, when empty, Now() is used. format: 2020-01-01T12:00:00+01:00
+	ValidAt *string `json:"validAt,omitempty"`
 }
 
 // ConsentCheckResponse defines model for ConsentCheckResponse.
 type ConsentCheckResponse struct {
 	ConsentGiven *string `json:"consentGiven,omitempty"`
-	Limitations  *string `json:"limitations,omitempty"`
+
+	// for future use
+	Limitations *string `json:"limitations,omitempty"`
 }
 
 // ConsentQueryRequest defines model for ConsentQueryRequest.
 type ConsentQueryRequest struct {
-	Actor     *Identifier     `json:"actor,omitempty"`
+
+	// Generic identifier used for representing BSN, agbcode, etc. It's always constructed as an URN followed by a double colon (:) and then the identifying value of the given URN
+	Actor *Identifier `json:"actor,omitempty"`
+
+	// Generic identifier used for representing BSN, agbcode, etc. It's always constructed as an URN followed by a double colon (:) and then the identifying value of the given URN
 	Custodian *Identifier     `json:"custodian,omitempty"`
 	Page      *PageDefinition `json:"page,omitempty"`
-	Subject   *Identifier     `json:"subject,omitempty"`
-	ValidAt   *string         `json:"validAt,omitempty"`
+
+	// Generic identifier used for representing BSN, agbcode, etc. It's always constructed as an URN followed by a double colon (:) and then the identifying value of the given URN
+	Subject *Identifier `json:"subject,omitempty"`
+
+	// Date at which consent has to be valid. Optional, when empty, Now() is used. format: 2020-01-01T12:00:00+01:00
+	ValidAt *string `json:"validAt,omitempty"`
 }
 
 // ConsentQueryResponse defines model for ConsentQueryResponse.
 type ConsentQueryResponse struct {
-	Page         PageDefinition   `json:"page"`
-	Results      []PatientConsent `json:"results"`
-	TotalResults int              `json:"totalResults"`
+	Page    PageDefinition   `json:"page"`
+	Results []PatientConsent `json:"results"`
+
+	// Total number of results
+	TotalResults int `json:"totalResults"`
 }
 
 // ConsentRecord defines model for ConsentRecord.
 type ConsentRecord struct {
-	DataClasses        []string  `json:"dataClasses"`
-	PreviousRecordHash *string   `json:"previousRecordHash,omitempty"`
-	RecordHash         string    `json:"recordHash"`
-	ValidFrom          ValidFrom `json:"validFrom"`
-	ValidTo            *ValidTo  `json:"validTo,omitempty"`
-	Version            *int      `json:"version,omitempty"`
+
+	// Array of consent classes
+	DataClasses []string `json:"dataClasses"`
+
+	// the hash of the previous version of the hash
+	PreviousRecordHash *string `json:"previousRecordHash,omitempty"`
+
+	// the unique hash for the consent record proving consent has been given, can be seen as the unique ID for a consentRecord
+	RecordHash string `json:"recordHash"`
+
+	// DateTime from which a record is valid (inclusive)
+	ValidFrom ValidFrom `json:"validFrom"`
+
+	// DateTime to which a record is valid (exclusive)
+	ValidTo *ValidTo `json:"validTo,omitempty"`
+
+	// the version number for the record, starts at 1, equals the length of the chain when following the previousRecordHash
+	Version *int `json:"version,omitempty"`
 }
 
 // Identifier defines model for Identifier.
@@ -68,11 +103,19 @@ type PageDefinition struct {
 
 // PatientConsent defines model for PatientConsent.
 type PatientConsent struct {
-	Actor     Identifier      `json:"actor"`
-	Custodian Identifier      `json:"custodian"`
-	Id        string          `json:"id"`
-	Records   []ConsentRecord `json:"records"`
-	Subject   Identifier      `json:"subject"`
+
+	// Generic identifier used for representing BSN, agbcode, etc. It's always constructed as an URN followed by a double colon (:) and then the identifying value of the given URN
+	Actor Identifier `json:"actor"`
+
+	// Generic identifier used for representing BSN, agbcode, etc. It's always constructed as an URN followed by a double colon (:) and then the identifying value of the given URN
+	Custodian Identifier `json:"custodian"`
+
+	// Id as generated by the HMAC of custodian(subject-actor)
+	Id      string          `json:"id"`
+	Records []ConsentRecord `json:"records"`
+
+	// Generic identifier used for representing BSN, agbcode, etc. It's always constructed as an URN followed by a double colon (:) and then the identifying value of the given URN
+	Subject Identifier `json:"subject"`
 }
 
 // ValidFrom defines model for ValidFrom.
@@ -81,31 +124,40 @@ type ValidFrom string
 // ValidTo defines model for ValidTo.
 type ValidTo string
 
-// createConsentJSONBody defines parameters for CreateConsent.
-type createConsentJSONBody PatientConsent
+// CreateConsentJSONBody defines parameters for CreateConsent.
+type CreateConsentJSONBody PatientConsent
 
-// checkConsentJSONBody defines parameters for CheckConsent.
-type checkConsentJSONBody ConsentCheckRequest
+// CheckConsentJSONBody defines parameters for CheckConsent.
+type CheckConsentJSONBody ConsentCheckRequest
 
-// queryConsentJSONBody defines parameters for QueryConsent.
-type queryConsentJSONBody ConsentQueryRequest
+// QueryConsentJSONBody defines parameters for QueryConsent.
+type QueryConsentJSONBody ConsentQueryRequest
 
 // FindConsentRecordParams defines parameters for FindConsentRecord.
 type FindConsentRecordParams struct {
+
+	// flag to indicate to only return a value when the given record is the latest in the chain
 	Latest *bool `json:"latest,omitempty"`
 }
 
 // CreateConsentRequestBody defines body for CreateConsent for application/json ContentType.
-type CreateConsentJSONRequestBody createConsentJSONBody
+type CreateConsentJSONRequestBody CreateConsentJSONBody
 
 // CheckConsentRequestBody defines body for CheckConsent for application/json ContentType.
-type CheckConsentJSONRequestBody checkConsentJSONBody
+type CheckConsentJSONRequestBody CheckConsentJSONBody
 
 // QueryConsentRequestBody defines body for QueryConsent for application/json ContentType.
-type QueryConsentJSONRequestBody queryConsentJSONBody
+type QueryConsentJSONRequestBody QueryConsentJSONBody
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
-type RequestEditorFn func(req *http.Request, ctx context.Context) error
+type RequestEditorFn func(ctx context.Context, req *http.Request) error
+
+// Doer performs HTTP requests.
+//
+// The standard http.Client implements this interface.
+type HttpRequestDoer interface {
+	Do(req *http.Request) (*http.Response, error)
+}
 
 // Client which conforms to the OpenAPI3 specification for this service.
 type Client struct {
@@ -113,12 +165,57 @@ type Client struct {
 	// https://api.deepmap.com for example.
 	Server string
 
-	// HTTP client with any customized settings, such as certificate chains.
-	Client http.Client
+	// Doer for performing requests, typically a *http.Client with any
+	// customized settings, such as certificate chains.
+	Client HttpRequestDoer
 
 	// A callback for modifying requests which are generated before sending over
 	// the network.
 	RequestEditor RequestEditorFn
+}
+
+// ClientOption allows setting custom parameters during construction
+type ClientOption func(*Client) error
+
+// Creates a new Client, with reasonable defaults
+func NewClient(server string, opts ...ClientOption) (*Client, error) {
+	// create a client with sane default values
+	client := Client{
+		Server: server,
+	}
+	// mutate client and add all optional params
+	for _, o := range opts {
+		if err := o(&client); err != nil {
+			return nil, err
+		}
+	}
+	// ensure the server URL always has a trailing slash
+	if !strings.HasSuffix(client.Server, "/") {
+		client.Server += "/"
+	}
+	// create httpClient, if not already present
+	if client.Client == nil {
+		client.Client = http.DefaultClient
+	}
+	return &client, nil
+}
+
+// WithHTTPClient allows overriding the default Doer, which is
+// automatically created using http.Client. This is useful for tests.
+func WithHTTPClient(doer HttpRequestDoer) ClientOption {
+	return func(c *Client) error {
+		c.Client = doer
+		return nil
+	}
+}
+
+// WithRequestEditorFn allows setting up a callback function, which will be
+// called right before sending the request. This can be used to mutate the request.
+func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
+	return func(c *Client) error {
+		c.RequestEditor = fn
+		return nil
+	}
 }
 
 // The interface specification for the client above.
@@ -152,7 +249,7 @@ func (c *Client) CreateConsentWithBody(ctx context.Context, contentType string, 
 	}
 	req = req.WithContext(ctx)
 	if c.RequestEditor != nil {
-		err = c.RequestEditor(req, ctx)
+		err = c.RequestEditor(ctx, req)
 		if err != nil {
 			return nil, err
 		}
@@ -167,7 +264,7 @@ func (c *Client) CreateConsent(ctx context.Context, body CreateConsentJSONReques
 	}
 	req = req.WithContext(ctx)
 	if c.RequestEditor != nil {
-		err = c.RequestEditor(req, ctx)
+		err = c.RequestEditor(ctx, req)
 		if err != nil {
 			return nil, err
 		}
@@ -182,7 +279,7 @@ func (c *Client) CheckConsentWithBody(ctx context.Context, contentType string, b
 	}
 	req = req.WithContext(ctx)
 	if c.RequestEditor != nil {
-		err = c.RequestEditor(req, ctx)
+		err = c.RequestEditor(ctx, req)
 		if err != nil {
 			return nil, err
 		}
@@ -197,7 +294,7 @@ func (c *Client) CheckConsent(ctx context.Context, body CheckConsentJSONRequestB
 	}
 	req = req.WithContext(ctx)
 	if c.RequestEditor != nil {
-		err = c.RequestEditor(req, ctx)
+		err = c.RequestEditor(ctx, req)
 		if err != nil {
 			return nil, err
 		}
@@ -212,7 +309,7 @@ func (c *Client) QueryConsentWithBody(ctx context.Context, contentType string, b
 	}
 	req = req.WithContext(ctx)
 	if c.RequestEditor != nil {
-		err = c.RequestEditor(req, ctx)
+		err = c.RequestEditor(ctx, req)
 		if err != nil {
 			return nil, err
 		}
@@ -227,7 +324,7 @@ func (c *Client) QueryConsent(ctx context.Context, body QueryConsentJSONRequestB
 	}
 	req = req.WithContext(ctx)
 	if c.RequestEditor != nil {
-		err = c.RequestEditor(req, ctx)
+		err = c.RequestEditor(ctx, req)
 		if err != nil {
 			return nil, err
 		}
@@ -242,7 +339,7 @@ func (c *Client) DeleteConsent(ctx context.Context, consentRecordHash string) (*
 	}
 	req = req.WithContext(ctx)
 	if c.RequestEditor != nil {
-		err = c.RequestEditor(req, ctx)
+		err = c.RequestEditor(ctx, req)
 		if err != nil {
 			return nil, err
 		}
@@ -257,7 +354,7 @@ func (c *Client) FindConsentRecord(ctx context.Context, consentRecordHash string
 	}
 	req = req.WithContext(ctx)
 	if c.RequestEditor != nil {
-		err = c.RequestEditor(req, ctx)
+		err = c.RequestEditor(ctx, req)
 		if err != nil {
 			return nil, err
 		}
@@ -280,9 +377,22 @@ func NewCreateConsentRequest(server string, body CreateConsentJSONRequestBody) (
 func NewCreateConsentRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
-	queryUrl := fmt.Sprintf("%s/consent", server)
+	queryUrl, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
 
-	req, err := http.NewRequest("POST", queryUrl, body)
+	basePath := fmt.Sprintf("/consent")
+	if basePath[0] == '/' {
+		basePath = basePath[1:]
+	}
+
+	queryUrl, err = queryUrl.Parse(basePath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryUrl.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -306,9 +416,22 @@ func NewCheckConsentRequest(server string, body CheckConsentJSONRequestBody) (*h
 func NewCheckConsentRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
-	queryUrl := fmt.Sprintf("%s/consent/check", server)
+	queryUrl, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
 
-	req, err := http.NewRequest("POST", queryUrl, body)
+	basePath := fmt.Sprintf("/consent/check")
+	if basePath[0] == '/' {
+		basePath = basePath[1:]
+	}
+
+	queryUrl, err = queryUrl.Parse(basePath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryUrl.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -332,9 +455,22 @@ func NewQueryConsentRequest(server string, body QueryConsentJSONRequestBody) (*h
 func NewQueryConsentRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
-	queryUrl := fmt.Sprintf("%s/consent/query", server)
+	queryUrl, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
 
-	req, err := http.NewRequest("POST", queryUrl, body)
+	basePath := fmt.Sprintf("/consent/query")
+	if basePath[0] == '/' {
+		basePath = basePath[1:]
+	}
+
+	queryUrl, err = queryUrl.Parse(basePath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryUrl.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -354,9 +490,22 @@ func NewDeleteConsentRequest(server string, consentRecordHash string) (*http.Req
 		return nil, err
 	}
 
-	queryUrl := fmt.Sprintf("%s/consent/%s", server, pathParam0)
+	queryUrl, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
 
-	req, err := http.NewRequest("DELETE", queryUrl, nil)
+	basePath := fmt.Sprintf("/consent/%s", pathParam0)
+	if basePath[0] == '/' {
+		basePath = basePath[1:]
+	}
+
+	queryUrl, err = queryUrl.Parse(basePath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryUrl.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -375,26 +524,42 @@ func NewFindConsentRecordRequest(server string, consentRecordHash string, params
 		return nil, err
 	}
 
-	queryUrl := fmt.Sprintf("%s/consent/%s", server, pathParam0)
+	queryUrl, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
 
-	var queryStrings []string
+	basePath := fmt.Sprintf("/consent/%s", pathParam0)
+	if basePath[0] == '/' {
+		basePath = basePath[1:]
+	}
 
-	var queryParam0 string
+	queryUrl, err = queryUrl.Parse(basePath)
+	if err != nil {
+		return nil, err
+	}
+
+	queryValues := queryUrl.Query()
+
 	if params.Latest != nil {
 
-		queryParam0, err = runtime.StyleParam("form", true, "latest", *params.Latest)
-		if err != nil {
+		if queryFrag, err := runtime.StyleParam("form", true, "latest", *params.Latest); err != nil {
 			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
 		}
 
-		queryStrings = append(queryStrings, queryParam0)
 	}
 
-	if len(queryStrings) != 0 {
-		queryUrl += "?" + strings.Join(queryStrings, "&")
-	}
+	queryUrl.RawQuery = queryValues.Encode()
 
-	req, err := http.NewRequest("GET", queryUrl, nil)
+	req, err := http.NewRequest("GET", queryUrl.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -407,34 +572,59 @@ type ClientWithResponses struct {
 	ClientInterface
 }
 
-// NewClientWithResponses returns a ClientWithResponses with a default Client:
-func NewClientWithResponses(server string) *ClientWithResponses {
-	return &ClientWithResponses{
-		ClientInterface: &Client{
-			Client: http.Client{},
-			Server: server,
-		},
+// NewClientWithResponses creates a new ClientWithResponses, which wraps
+// Client with return type handling
+func NewClientWithResponses(server string, opts ...ClientOption) (*ClientWithResponses, error) {
+	client, err := NewClient(server, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &ClientWithResponses{client}, nil
+}
+
+// WithBaseURL overrides the baseURL.
+func WithBaseURL(baseURL string) ClientOption {
+	return func(c *Client) error {
+		newBaseURL, err := url.Parse(baseURL)
+		if err != nil {
+			return err
+		}
+		c.Server = newBaseURL.String()
+		return nil
 	}
 }
 
-// NewClientWithResponsesAndRequestEditorFunc takes in a RequestEditorFn callback function and returns a ClientWithResponses with a default Client:
-func NewClientWithResponsesAndRequestEditorFunc(server string, reqEditorFn RequestEditorFn) *ClientWithResponses {
-	return &ClientWithResponses{
-		ClientInterface: &Client{
-			Client:        http.Client{},
-			Server:        server,
-			RequestEditor: reqEditorFn,
-		},
-	}
+// ClientWithResponsesInterface is the interface specification for the client with responses above.
+type ClientWithResponsesInterface interface {
+	// CreateConsent request  with any body
+	CreateConsentWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader) (*CreateConsentResponse, error)
+
+	CreateConsentWithResponse(ctx context.Context, body CreateConsentJSONRequestBody) (*CreateConsentResponse, error)
+
+	// CheckConsent request  with any body
+	CheckConsentWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader) (*CheckConsentResponse, error)
+
+	CheckConsentWithResponse(ctx context.Context, body CheckConsentJSONRequestBody) (*CheckConsentResponse, error)
+
+	// QueryConsent request  with any body
+	QueryConsentWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader) (*QueryConsentResponse, error)
+
+	QueryConsentWithResponse(ctx context.Context, body QueryConsentJSONRequestBody) (*QueryConsentResponse, error)
+
+	// DeleteConsent request
+	DeleteConsentWithResponse(ctx context.Context, consentRecordHash string) (*DeleteConsentResponse, error)
+
+	// FindConsentRecord request
+	FindConsentRecordWithResponse(ctx context.Context, consentRecordHash string, params *FindConsentRecordParams) (*FindConsentRecordResponse, error)
 }
 
-type createConsentResponse struct {
+type CreateConsentResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r createConsentResponse) Status() string {
+func (r CreateConsentResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -442,21 +632,21 @@ func (r createConsentResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r createConsentResponse) StatusCode() int {
+func (r CreateConsentResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type checkConsentResponse struct {
+type CheckConsentResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ConsentCheckResponse
 }
 
 // Status returns HTTPResponse.Status
-func (r checkConsentResponse) Status() string {
+func (r CheckConsentResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -464,21 +654,21 @@ func (r checkConsentResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r checkConsentResponse) StatusCode() int {
+func (r CheckConsentResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type queryConsentResponse struct {
+type QueryConsentResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ConsentQueryResponse
 }
 
 // Status returns HTTPResponse.Status
-func (r queryConsentResponse) Status() string {
+func (r QueryConsentResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -486,20 +676,20 @@ func (r queryConsentResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r queryConsentResponse) StatusCode() int {
+func (r QueryConsentResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type deleteConsentResponse struct {
+type DeleteConsentResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r deleteConsentResponse) Status() string {
+func (r DeleteConsentResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -507,21 +697,21 @@ func (r deleteConsentResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r deleteConsentResponse) StatusCode() int {
+func (r DeleteConsentResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type findConsentRecordResponse struct {
+type FindConsentRecordResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ConsentRecord
 }
 
 // Status returns HTTPResponse.Status
-func (r findConsentRecordResponse) Status() string {
+func (r FindConsentRecordResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -529,7 +719,7 @@ func (r findConsentRecordResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r findConsentRecordResponse) StatusCode() int {
+func (r FindConsentRecordResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -537,193 +727,185 @@ func (r findConsentRecordResponse) StatusCode() int {
 }
 
 // CreateConsentWithBodyWithResponse request with arbitrary body returning *CreateConsentResponse
-func (c *ClientWithResponses) CreateConsentWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader) (*createConsentResponse, error) {
+func (c *ClientWithResponses) CreateConsentWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader) (*CreateConsentResponse, error) {
 	rsp, err := c.CreateConsentWithBody(ctx, contentType, body)
 	if err != nil {
 		return nil, err
 	}
-	return ParsecreateConsentResponse(rsp)
+	return ParseCreateConsentResponse(rsp)
 }
 
-func (c *ClientWithResponses) CreateConsentWithResponse(ctx context.Context, body CreateConsentJSONRequestBody) (*createConsentResponse, error) {
+func (c *ClientWithResponses) CreateConsentWithResponse(ctx context.Context, body CreateConsentJSONRequestBody) (*CreateConsentResponse, error) {
 	rsp, err := c.CreateConsent(ctx, body)
 	if err != nil {
 		return nil, err
 	}
-	return ParsecreateConsentResponse(rsp)
+	return ParseCreateConsentResponse(rsp)
 }
 
 // CheckConsentWithBodyWithResponse request with arbitrary body returning *CheckConsentResponse
-func (c *ClientWithResponses) CheckConsentWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader) (*checkConsentResponse, error) {
+func (c *ClientWithResponses) CheckConsentWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader) (*CheckConsentResponse, error) {
 	rsp, err := c.CheckConsentWithBody(ctx, contentType, body)
 	if err != nil {
 		return nil, err
 	}
-	return ParsecheckConsentResponse(rsp)
+	return ParseCheckConsentResponse(rsp)
 }
 
-func (c *ClientWithResponses) CheckConsentWithResponse(ctx context.Context, body CheckConsentJSONRequestBody) (*checkConsentResponse, error) {
+func (c *ClientWithResponses) CheckConsentWithResponse(ctx context.Context, body CheckConsentJSONRequestBody) (*CheckConsentResponse, error) {
 	rsp, err := c.CheckConsent(ctx, body)
 	if err != nil {
 		return nil, err
 	}
-	return ParsecheckConsentResponse(rsp)
+	return ParseCheckConsentResponse(rsp)
 }
 
 // QueryConsentWithBodyWithResponse request with arbitrary body returning *QueryConsentResponse
-func (c *ClientWithResponses) QueryConsentWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader) (*queryConsentResponse, error) {
+func (c *ClientWithResponses) QueryConsentWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader) (*QueryConsentResponse, error) {
 	rsp, err := c.QueryConsentWithBody(ctx, contentType, body)
 	if err != nil {
 		return nil, err
 	}
-	return ParsequeryConsentResponse(rsp)
+	return ParseQueryConsentResponse(rsp)
 }
 
-func (c *ClientWithResponses) QueryConsentWithResponse(ctx context.Context, body QueryConsentJSONRequestBody) (*queryConsentResponse, error) {
+func (c *ClientWithResponses) QueryConsentWithResponse(ctx context.Context, body QueryConsentJSONRequestBody) (*QueryConsentResponse, error) {
 	rsp, err := c.QueryConsent(ctx, body)
 	if err != nil {
 		return nil, err
 	}
-	return ParsequeryConsentResponse(rsp)
+	return ParseQueryConsentResponse(rsp)
 }
 
 // DeleteConsentWithResponse request returning *DeleteConsentResponse
-func (c *ClientWithResponses) DeleteConsentWithResponse(ctx context.Context, consentRecordHash string) (*deleteConsentResponse, error) {
+func (c *ClientWithResponses) DeleteConsentWithResponse(ctx context.Context, consentRecordHash string) (*DeleteConsentResponse, error) {
 	rsp, err := c.DeleteConsent(ctx, consentRecordHash)
 	if err != nil {
 		return nil, err
 	}
-	return ParsedeleteConsentResponse(rsp)
+	return ParseDeleteConsentResponse(rsp)
 }
 
 // FindConsentRecordWithResponse request returning *FindConsentRecordResponse
-func (c *ClientWithResponses) FindConsentRecordWithResponse(ctx context.Context, consentRecordHash string, params *FindConsentRecordParams) (*findConsentRecordResponse, error) {
+func (c *ClientWithResponses) FindConsentRecordWithResponse(ctx context.Context, consentRecordHash string, params *FindConsentRecordParams) (*FindConsentRecordResponse, error) {
 	rsp, err := c.FindConsentRecord(ctx, consentRecordHash, params)
 	if err != nil {
 		return nil, err
 	}
-	return ParsefindConsentRecordResponse(rsp)
+	return ParseFindConsentRecordResponse(rsp)
 }
 
-// ParsecreateConsentResponse parses an HTTP response from a CreateConsentWithResponse call
-func ParsecreateConsentResponse(rsp *http.Response) (*createConsentResponse, error) {
+// ParseCreateConsentResponse parses an HTTP response from a CreateConsentWithResponse call
+func ParseCreateConsentResponse(rsp *http.Response) (*CreateConsentResponse, error) {
 	bodyBytes, err := ioutil.ReadAll(rsp.Body)
 	defer rsp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &createConsentResponse{
+	response := &CreateConsentResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
-	case rsp.StatusCode == 201:
-		break // No content-type
-	case rsp.StatusCode == 400:
-		// Content-type (text/plain) unsupported
 	}
 
 	return response, nil
 }
 
-// ParsecheckConsentResponse parses an HTTP response from a CheckConsentWithResponse call
-func ParsecheckConsentResponse(rsp *http.Response) (*checkConsentResponse, error) {
+// ParseCheckConsentResponse parses an HTTP response from a CheckConsentWithResponse call
+func ParseCheckConsentResponse(rsp *http.Response) (*CheckConsentResponse, error) {
 	bodyBytes, err := ioutil.ReadAll(rsp.Body)
 	defer rsp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &checkConsentResponse{
+	response := &CheckConsentResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		response.JSON200 = &ConsentCheckResponse{}
-		if err := json.Unmarshal(bodyBytes, response.JSON200); err != nil {
+		var dest ConsentCheckResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-	case rsp.StatusCode == 400:
-		// Content-type (text/plain) unsupported
+		response.JSON200 = &dest
+
 	}
 
 	return response, nil
 }
 
-// ParsequeryConsentResponse parses an HTTP response from a QueryConsentWithResponse call
-func ParsequeryConsentResponse(rsp *http.Response) (*queryConsentResponse, error) {
+// ParseQueryConsentResponse parses an HTTP response from a QueryConsentWithResponse call
+func ParseQueryConsentResponse(rsp *http.Response) (*QueryConsentResponse, error) {
 	bodyBytes, err := ioutil.ReadAll(rsp.Body)
 	defer rsp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &queryConsentResponse{
+	response := &QueryConsentResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		response.JSON200 = &ConsentQueryResponse{}
-		if err := json.Unmarshal(bodyBytes, response.JSON200); err != nil {
+		var dest ConsentQueryResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-	case rsp.StatusCode == 400:
-		// Content-type (text/plain) unsupported
+		response.JSON200 = &dest
+
 	}
 
 	return response, nil
 }
 
-// ParsedeleteConsentResponse parses an HTTP response from a DeleteConsentWithResponse call
-func ParsedeleteConsentResponse(rsp *http.Response) (*deleteConsentResponse, error) {
+// ParseDeleteConsentResponse parses an HTTP response from a DeleteConsentWithResponse call
+func ParseDeleteConsentResponse(rsp *http.Response) (*DeleteConsentResponse, error) {
 	bodyBytes, err := ioutil.ReadAll(rsp.Body)
 	defer rsp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &deleteConsentResponse{
+	response := &DeleteConsentResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
-	case rsp.StatusCode == 202:
-		break // No content-type
-	case rsp.StatusCode == 404:
-		// Content-type (text/plain) unsupported
 	}
 
 	return response, nil
 }
 
-// ParsefindConsentRecordResponse parses an HTTP response from a FindConsentRecordWithResponse call
-func ParsefindConsentRecordResponse(rsp *http.Response) (*findConsentRecordResponse, error) {
+// ParseFindConsentRecordResponse parses an HTTP response from a FindConsentRecordWithResponse call
+func ParseFindConsentRecordResponse(rsp *http.Response) (*FindConsentRecordResponse, error) {
 	bodyBytes, err := ioutil.ReadAll(rsp.Body)
 	defer rsp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &findConsentRecordResponse{
+	response := &FindConsentRecordResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		response.JSON200 = &ConsentRecord{}
-		if err := json.Unmarshal(bodyBytes, response.JSON200); err != nil {
+		var dest ConsentRecord
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-	case rsp.StatusCode == 404:
-		// Content-type (text/plain) unsupported
+		response.JSON200 = &dest
+
 	}
 
 	return response, nil
@@ -731,15 +913,20 @@ func ParsefindConsentRecordResponse(rsp *http.Response) (*findConsentRecordRespo
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// Create a new consent record for a C-S-A combination.// (POST /consent)
+	// Create a new consent record for a C-S-A combination.
+	// (POST /consent)
 	CreateConsent(ctx echo.Context) error
-	// Send a request for checking if the given combination exists// (POST /consent/check)
+	// Send a request for checking if the given combination exists
+	// (POST /consent/check)
 	CheckConsent(ctx echo.Context) error
-	// Do a query for available consent// (POST /consent/query)
+	// Do a query for available consent
+	// (POST /consent/query)
 	QueryConsent(ctx echo.Context) error
-	// Remove a consent record for a C-S-A combination.// (DELETE /consent/{consentRecordHash})
+	// Remove a consent record for a C-S-A combination.
+	// (DELETE /consent/{consentRecordHash})
 	DeleteConsent(ctx echo.Context, consentRecordHash string) error
-	// Retrieve a consent record by hash, use latest query param to only return a value if the given consent record is the latest in the chain.// (GET /consent/{consentRecordHash})
+	// Retrieve a consent record by hash, use latest query param to only return a value if the given consent record is the latest in the chain.
+	// (GET /consent/{consentRecordHash})
 	FindConsentRecord(ctx echo.Context, consentRecordHash string, params FindConsentRecordParams) error
 }
 
@@ -805,9 +992,6 @@ func (w *ServerInterfaceWrapper) FindConsentRecord(ctx echo.Context) error {
 	// Parameter object where we will unmarshal all parameters from the context
 	var params FindConsentRecordParams
 	// ------------- Optional query parameter "latest" -------------
-	if paramValue := ctx.QueryParam("latest"); paramValue != "" {
-
-	}
 
 	err = runtime.BindQueryParameter("form", true, false, "latest", ctx.QueryParams(), &params.Latest)
 	if err != nil {
@@ -819,8 +1003,23 @@ func (w *ServerInterfaceWrapper) FindConsentRecord(ctx echo.Context) error {
 	return err
 }
 
+// This is a simple interface which specifies echo.Route addition functions which
+// are present on both echo.Echo and echo.Group, since we want to allow using
+// either of them for path registration
+type EchoRouter interface {
+	CONNECT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	DELETE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	GET(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	HEAD(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	OPTIONS(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	PATCH(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	POST(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	PUT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	TRACE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+}
+
 // RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router runtime.EchoRouter, si ServerInterface) {
+func RegisterHandlers(router EchoRouter, si ServerInterface) {
 
 	wrapper := ServerInterfaceWrapper{
 		Handler: si,

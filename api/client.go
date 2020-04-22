@@ -254,7 +254,7 @@ func (hb HttpClient) client() *Client {
 	if hb.customClient != nil {
 		return &Client{
 			Server: fmt.Sprintf("http://%v", hb.ServerAddress),
-			Client: *hb.customClient,
+			Client: hb.customClient,
 		}
 	}
 

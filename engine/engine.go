@@ -23,7 +23,6 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	_ "github.com/mattn/go-sqlite3"
@@ -47,7 +46,7 @@ func NewConsentStoreEngine() *engine.Engine {
 		ConfigKey:   "cstore",
 		Diagnostics: cs.Diagnostics,
 		FlagSet:     flagSet(),
-		Routes: func(router runtime.EchoRouter) {
+		Routes: func(router engine.EchoRouter) {
 			api.RegisterHandlers(router, &api.Wrapper{Cs: cs})
 		},
 		Start:    cs.Start,
