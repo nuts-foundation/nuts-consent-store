@@ -44,34 +44,34 @@ func TestConsentStore_RecordConsent(t *testing.T) {
 	client := defaultConsentStore()
 	defer client.Shutdown()
 
-	t.Run("It sets the version number to 1", func(t *testing.T) {
-		validTo := time.Now().Add(time.Hour * +12)
+	validTo := time.Now().Add(time.Hour * +12)
 
-		rules := []PatientConsent{
-			{
-				ID:        random.String(8),
-				Actor:     "actor",
-				Custodian: "custodian",
-				Subject:   "subject",
+	rules := []PatientConsent{
+		{
+			ID:        random.String(8),
+			Actor:     "actor",
+			Custodian: "custodian",
+			Subject:   "subject",
 
-				Records: []ConsentRecord{
-					{
-						ValidFrom: time.Now().Add(time.Hour * -24),
-						ValidTo:   &validTo,
-						Hash:      "234caef",
-						DataClasses: []DataClass{
-							{
-								Code: "resource",
-							},
+			Records: []ConsentRecord{
+				{
+					ValidFrom: time.Now().Add(time.Hour * -24),
+					ValidTo:   &validTo,
+					Hash:      "234caef",
+					DataClasses: []DataClass{
+						{
+							Code: "resource",
 						},
-						UUID: uuid.NewV4().String(),
 					},
+					UUID: uuid.NewV4().String(),
 				},
 			},
-		}
+		},
+	}
 
-		err := client.RecordConsent(context.TODO(), rules)
+	err := client.RecordConsent(context.TODO(), rules)
 
+	t.Run("It sets the version number to 1", func(t *testing.T) {
 		if assert.NoError(t, err) {
 			a := "actor"
 			s := "subject"
@@ -81,6 +81,12 @@ func TestConsentStore_RecordConsent(t *testing.T) {
 				assert.Equal(t, uint(1), pcs[0].Records[0].Version)
 			}
 		}
+	})
+
+	t.Run("ConsentRecord with existing hash can be recorded with no changes as result", func(t *testing.T) {
+		err := client.RecordConsent(context.TODO(), rules)
+
+		assert.NoError(t, err)
 	})
 }
 
