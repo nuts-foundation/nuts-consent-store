@@ -292,6 +292,7 @@ func TestConsentStore_RecordConsent_AuthConsent(t *testing.T) {
 		err = client.RecordConsent(context.TODO(), rules)
 		if assert.NoError(t, err) {
 			// update again
+			rules[0].Records[0].Hash = fmt.Sprintf("%s_3", r)
 			err = client.RecordConsent(context.TODO(), rules)
 			assert.Error(t, err) // unique constraint violation
 		}
