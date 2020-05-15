@@ -280,6 +280,19 @@ func (cs *ConsentStore) RecordConsent(context context.Context, consent []Patient
 				Version:          1,
 			}
 
+			// check if record already exists based on hash
+			var ecr ConsentRecord
+			if err := tx.Where("hash = ?", cr.Hash).First(&ecr).Error; err != nil {
+				if !gorm.IsRecordNotFoundError(err) {
+					return fmt.Errorf("error when cheking for duplicate consent record with hash %s: %w", cr.Hash, err)
+				}
+			}
+
+			// ignore existing record
+			if ecr.Hash == cr.Hash {
+				continue
+			}
+
 			// if this is an update to an existing entry, find UUID and version
 			if cr.PreviousHash != nil {
 				var pcr ConsentRecord
