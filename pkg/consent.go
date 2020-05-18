@@ -280,6 +280,15 @@ func (cs *ConsentStore) RecordConsent(context context.Context, consent []Patient
 				Version:          1,
 			}
 
+			// check if record already exists based on hash
+			var ecr ConsentRecord
+			tx.Where("hash = ?", cr.Hash).First(&ecr)
+
+			// ignore existing record
+			if ecr.Hash == cr.Hash {
+				continue
+			}
+
 			// if this is an update to an existing entry, find UUID and version
 			if cr.PreviousHash != nil {
 				var pcr ConsentRecord
