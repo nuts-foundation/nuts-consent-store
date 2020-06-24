@@ -25,5 +25,25 @@ Using the distributed records from the Corda vault is not possible due to the en
 Configuration
 *************
 
-.. include:: docs/pages/configuration/consent-store.rst
-    :start-after: .. marker-for-readme
+The following configuration parameters are available:
+
+.. include:: README_options.rst
+
+As with all other properties for nuts-go, they can be set through yaml:
+
+.. sourcecode:: yaml
+
+    cstore:
+       connectionstring: :memory"
+
+as commandline property
+
+.. sourcecode:: shell
+
+    ./nuts --cstore.connectionstring :memory:
+
+Or by using environment variables
+
+.. sourcecode:: shell
+
+    NUTS_CSTORE_CONNECTIONSTRING=:memory: ./nuts
