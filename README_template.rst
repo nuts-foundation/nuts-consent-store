@@ -15,8 +15,9 @@ Using the distributed records from the Corda vault is not possible due to the en
 .. image:: https://codecov.io/gh/nuts-foundation/nuts-consent-store/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/nuts-foundation/nuts-consent-store
 
-.. image:: https://api.codacy.com/project/badge/Grade/bbabffbece1a4ff4a34493f90078a66a
-    :target: https://www.codacy.com/app/woutslakhorst/nuts-consent-store
+.. image:: https://api.codeclimate.com/v1/badges/ddb963b417745047c472/maintainability
+   :target: https://codeclimate.com/github/nuts-foundation/nuts-consent-store/maintainability
+   :alt: Maintainability
 
 .. include:: docs/pages/development/consent-store.rst
     :start-after: .. marker-for-readme
