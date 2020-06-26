@@ -91,15 +91,15 @@ The resulting html will be available from ``docs/_build/html/index.html``
 Configuration
 *************
 
-The following configuration parameters are available.
+The following configuration parameters are available:
 
-=====================================   ====================    ================================================================
-Property                                Default                 Description
-=====================================   ====================    ================================================================
-nuts.cstore.connectionstring            :memory:                Sqlite connection string
-nuts.cstore.mode                        server                  Server or client mode
-nuts.cstore.address                     localhost:1323          Address of the server when in client mode
-=====================================   ====================    ================================================================
+================  ==============  ====================================================
+Key               Default         Description
+================  ==============  ====================================================
+address           localhost:1323  Address of the server when in client mode
+connectionstring  \:memory:        Db connectionString
+mode                              server or client, when client it uses the HttpClient
+================  ==============  ====================================================
 
 As with all other properties for nuts-go, they can be set through yaml:
 
