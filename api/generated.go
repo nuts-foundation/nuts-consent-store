@@ -8,13 +8,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/deepmap/oapi-codegen/pkg/runtime"
-	"github.com/labstack/echo/v4"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/deepmap/oapi-codegen/pkg/runtime"
+	"github.com/labstack/echo/v4"
 )
 
 // ConsentCheckRequest defines model for ConsentCheckRequest.
@@ -162,7 +163,9 @@ type HttpRequestDoer interface {
 // Client which conforms to the OpenAPI3 specification for this service.
 type Client struct {
 	// The endpoint of the server conforming to this interface, with scheme,
-	// https://api.deepmap.com for example.
+	// https://api.deepmap.com for example. This can contain a path relative
+	// to the server, such as https://api.deepmap.com/dev-test, and all the
+	// paths in the swagger spec will be appended to the server.
 	Server string
 
 	// Doer for performing requests, typically a *http.Client with any
@@ -1020,16 +1023,22 @@ type EchoRouter interface {
 
 // RegisterHandlers adds each server route to the EchoRouter.
 func RegisterHandlers(router EchoRouter, si ServerInterface) {
+	RegisterHandlersWithBaseURL(router, si, "")
+}
+
+// Registers handlers, and prepends BaseURL to the paths, so that the paths
+// can be served under a prefix.
+func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string) {
 
 	wrapper := ServerInterfaceWrapper{
 		Handler: si,
 	}
 
-	router.POST("/consent", wrapper.CreateConsent)
-	router.POST("/consent/check", wrapper.CheckConsent)
-	router.POST("/consent/query", wrapper.QueryConsent)
-	router.DELETE("/consent/:consentRecordHash", wrapper.DeleteConsent)
-	router.GET("/consent/:consentRecordHash", wrapper.FindConsentRecord)
+	router.POST(baseURL+"/consent", wrapper.CreateConsent)
+	router.POST(baseURL+"/consent/check", wrapper.CheckConsent)
+	router.POST(baseURL+"/consent/query", wrapper.QueryConsent)
+	router.DELETE(baseURL+"/consent/:consentRecordHash", wrapper.DeleteConsent)
+	router.GET(baseURL+"/consent/:consentRecordHash", wrapper.FindConsentRecord)
 
 }
 
